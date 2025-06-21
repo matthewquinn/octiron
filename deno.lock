@@ -1,7 +1,7 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@std/assert@1": "1.0.13",
+    "jsr:@std/assert@^1.0.13": "1.0.13",
     "jsr:@std/internal@^1.0.6": "1.0.7",
     "npm:@types/mithril@^2.2.7": "2.2.7",
     "npm:mithril@^2.3.2": "2.3.2"
@@ -27,7 +27,7 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@std/assert@1",
+      "jsr:@std/assert@^1.0.13",
       "npm:@types/mithril@^2.2.7",
       "npm:mithril@^2.3.2"
     ]
