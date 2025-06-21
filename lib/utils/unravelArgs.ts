@@ -7,7 +7,7 @@ type AllArgs =
 
 /**
  * @description
- * Numerious Octiron view functions take a combination of string selector,
+ * Numerous Octiron view functions take a combination of string selector,
  * object args and function view arguments.
  *
  * This `unravelArgs` identifies which arguments are present and returns
@@ -25,7 +25,7 @@ export function unravelArgs(
 
 /**
  * @description
- * Numerious Octiron view functions take a combination of string selector,
+ * Numerous Octiron view functions take a combination of string selector,
  * object args and function view arguments.
  *
  * This `unravelArgs` identifies which arguments are present and returns
@@ -42,7 +42,7 @@ export function unravelArgs(
 
 /**
  * @description
- * Numerious Octiron view functions take a combination of string selector,
+ * Numerous Octiron view functions take a combination of string selector,
  * object args and function view arguments.
  *
  * This `unravelArgs` identifies which arguments are present and returns

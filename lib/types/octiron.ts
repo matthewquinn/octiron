@@ -1,4 +1,4 @@
-import type { Children, ComponentTypes } from 'mithril';
+import type { Children, ClosureComponent } from 'mithril';
 import type { JSONValue } from './common.ts'
 import type { OctironStore } from './store.ts';
 import type {
@@ -47,13 +47,14 @@ export type PresentAttrs<
 export type PresentComponent<
   Value extends JSONValue = JSONValue,
   Attrs extends BaseAttrs = BaseAttrs,
-> = ComponentTypes<PresentAttrs<Value, Attrs>>;
+> = ClosureComponent<PresentAttrs<Value, Attrs>>;
 
-export type TypeDef<Value extends JSONValue = JSONValue> = {
-  type: string;
+export type TypeDef<
+  Value extends JSONValue = JSONValue,
+  Type extends string = string,
+> = {
+  type: Type;
   present?: PresentComponent<Value>;
-  toString?: (value: Value) => string;
-  fromString?: (strValue: string) => Value | null;
 };
 
 export type TypeDefs = Record<string, TypeDef>;
