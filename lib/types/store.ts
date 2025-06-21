@@ -6,7 +6,7 @@ export type HTTPErrorView = (status: number) => Children;
 
 export type ContentParsingView = (error: Error) => Children;
 
-export interface FailureReason {
+export interface Failure {
 
   /**
    * Returns the given children if the error is
@@ -82,7 +82,7 @@ export type EntitySelectionResult = {
   /**
    * The error type.
    */
-  readonly reason?: FailureReason;
+  readonly reason?: Failure;
 };
 
 export type ValueSelectionResult = {
@@ -256,7 +256,7 @@ export type FailureEntityState = {
   /**
    * An object describing the reason and source of the failure.
    */
-  readonly reason: FailureReason;
+  readonly reason: Failure;
 };
 
 export type EntityState =
