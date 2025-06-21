@@ -8,7 +8,7 @@ import type {
 } from '../failures.ts';
 
 /**
- * An iri, see url, to an entity.
+ * An iri (see url) to an entity.
  * In theory this could use other protocols (see 'tel:*') but http is the only
  * one currently supported.
  */
@@ -20,7 +20,7 @@ export type IRI = `http:${string}` | `https://${string}`;
 export type Type = IRI;
 
 /**
- * A term, which could be a type, but for berevity is probably a term
+ * A term, which could be a type, but for brevity is probably a term
  * under the configured vocab or alias.
  */
 export type Term = Type | string;
@@ -60,7 +60,7 @@ export type TypeDefs = Record<string, TypeDef>;
 
 /**
  * A view which is rendered in the following situations:
- *  - A selection attempts to select values not avaliable
+ *  - A selection attempts to select values not available
  *    in the representation context.
  *  - When non-successful http statuses are returned.
  *  - An error occurs parsing a response body.
@@ -141,7 +141,7 @@ export interface SelectView {
 
 export interface Origin {
   /**
-   * Fetches the root entity ands presents it using the type defs.
+   * Fetches the root entity and presents it using the type defs.
    */
   root(): Children;
   root(selector: Selector): Children;
@@ -207,7 +207,7 @@ export interface Filterable {
 export interface OctironRoot
   extends
     Origin,
-    EntryPoint,
+    // EntryPoint,
     Selectable,
     Filterable,
     Presentable {
