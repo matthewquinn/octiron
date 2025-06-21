@@ -1,6 +1,7 @@
 import type { PresentComponent, TypeDefs } from "../types/octiron.ts";
 
 /**
+ * @description
  * Returns a component based of Octiron's selection rules:
  *
  * 1. If the first pick component is given, return it.
