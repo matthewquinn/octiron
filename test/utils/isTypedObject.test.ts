@@ -20,6 +20,10 @@ Deno.test('isTypedObject()', async (t) => {
   });
 
   await t.step('An @type object with non string values is not a typed object', () => {
+    assert(!isTypeObject({ '@type': 42, foo: 'baa' }));
+  });
+
+  await t.step('An @type object with array of non string values is not a typed object', () => {
     assert(!isTypeObject({ '@type': ['MyTypeFoo', 42], foo: 'baa' }));
   });
 });
