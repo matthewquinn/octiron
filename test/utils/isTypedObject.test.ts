@@ -7,7 +7,7 @@ Deno.test('isTypedObject()', async (t) => {
     assert(!isTypeObject({ foo: 'baa' }));
   });
 
-  await t.step('A value object is not typed object', () => {
+  await t.step('A value object is not a typed object', () => {
     assert(!isTypeObject({ '@value': 'baz' }));
   });
 
