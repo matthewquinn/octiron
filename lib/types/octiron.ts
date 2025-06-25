@@ -57,7 +57,13 @@ export type TypeDef<
   present?: PresentComponent<Value>;
 };
 
-export type TypeDefs = Record<string, TypeDef>;
+export type TypeDefs<
+  Type extends string = string,
+  // deno-lint-ignore no-explicit-any
+  TypeDefList extends TypeDef<any, Type> = TypeDef<any, Type>,
+> = {
+  [TypeDef in TypeDefList as TypeDef["type"]]: TypeDef;
+};
 
 /**
  * A view which is rendered in the following situations:
