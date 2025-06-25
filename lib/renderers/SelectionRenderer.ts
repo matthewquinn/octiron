@@ -1,10 +1,23 @@
-import type { JSONValue } from '../types/common.ts';
-import type { Octiron, OctironSelectArgs, OctironSelection, Selector, SelectView, TypeDefs } from '../types/octiron.ts';
-import type { Failure, OctironStore, ReadonlySelectionResult, SelectionDetails } from '../types/store.ts';
-import m from 'mithril';
-import { selectionFactory } from '../factories/selectionFactory.ts';
-import { isJSONObject } from '../utils/isJSONObject.ts';
-import { mithrilRedraw } from '../utils/mithrilRedraw.ts';
+import type { JSONValue } from "../types/common.ts";
+import type {
+  Octiron,
+  OctironSelectArgs,
+  OctironSelection,
+  Selector,
+  SelectView,
+  TypeDefs,
+} from "../types/octiron.ts";
+import type {
+  Failure,
+  OctironStore,
+  ReadonlySelectionResult,
+  SelectionDetails,
+} from "../types/store.ts";
+import m from "mithril";
+import { selectionFactory } from "../factories/selectionFactory.ts";
+import { isJSONObject } from "../utils/isJSONObject.ts";
+import { mithrilRedraw } from "../utils/mithrilRedraw.ts";
+import { isBrowserRender } from "../const.ts";
 
 export type SelectionRendererInternals = {
   store: OctironStore;
@@ -73,7 +86,7 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
         }
       }
 
-      if (hasChanges && typeof window !== 'undefined') {
+      if (hasChanges) {
         mithrilRedraw();
       }
 
