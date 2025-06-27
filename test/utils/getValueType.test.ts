@@ -1,28 +1,29 @@
-import { assertEquals } from "@std/assert";
+import assert from "node:assert";
+import { describe, it } from "node:test";
 import { getValueType } from "../../lib/utils/getValueType.ts";
 
 
-Deno.test('getValueType()', async (t) => {
-  await t.step('It returns undefined for non objects', () => {
-    assertEquals(getValueType(true), undefined);
-    assertEquals(getValueType(1), undefined);
-    assertEquals(getValueType('foo'), undefined);
-    assertEquals(getValueType([]), undefined);
+describe('getValueType()', () => {
+  it('It returns undefined for non objects', () => {
+    assert.deepEqual(getValueType(true), undefined);
+    assert.deepEqual(getValueType(1), undefined);
+    assert.deepEqual(getValueType('foo'), undefined);
+    assert.deepEqual(getValueType([]), undefined);
   });
 
-  await t.step('It returns undefined for un-typed objects', () => {
-    assertEquals(getValueType({}), undefined);
-    assertEquals(getValueType({ foo: 'bar' }), undefined);
+  it('It returns undefined for un-typed objects', () => {
+    assert.deepEqual(getValueType({}), undefined);
+    assert.deepEqual(getValueType({ foo: 'bar' }), undefined);
   });
 
-  await t.step('It returns undefined for invalid typed objects', () => {
-    assertEquals(getValueType({ '@type': 42 }), undefined);
-    assertEquals(getValueType({ '@type': ['Foo', 42] }), undefined);
+  it('It returns undefined for invalid typed objects', () => {
+    assert.deepEqual(getValueType({ '@type': 42 }), undefined);
+    assert.deepEqual(getValueType({ '@type': ['Foo', 42] }), undefined);
   });
 
-  await t.step('It the type for typed objects', () => {
-    assertEquals(getValueType({ '@type': 'Baz', foo: 'bar' }), 'Baz');
-    assertEquals(getValueType({ '@type': ['Fee', 'Fi'], foo: 'bar' }), [
+  it('It the type for typed objects', () => {
+    assert.deepEqual(getValueType({ '@type': 'Baz', foo: 'bar' }), 'Baz');
+    assert.deepEqual(getValueType({ '@type': ['Fee', 'Fi'], foo: 'bar' }), [
       'Fee', 'Fi',
     ]);
   });

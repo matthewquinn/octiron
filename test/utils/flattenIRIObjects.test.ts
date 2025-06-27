@@ -1,11 +1,11 @@
-import { assertEquals } from "@std/assert";
+import { describe, it } from "node:test";
 import type { JSONObject } from "../../lib/types/common.ts";
 import { flattenIRIObjects } from "../../lib/utils/flattenIRIObjects.ts";
-import { assertArrayIncludes } from "@std/assert/array-includes";
+import assert from "node:assert";
 
 
-Deno.test('flattenIRIObjects()', async (t) => {
-  await t.step('It pulls all deeply nested IRI objects that contain values into a flattened array', () => {
+describe('flattenIRIObjects()', () => {
+  it('It pulls all deeply nested IRI objects that contain values into a flattened array', () => {
     const value = {
       '@id': 'fee',
       fie: {
@@ -35,14 +35,11 @@ Deno.test('flattenIRIObjects()', async (t) => {
 
     const result = flattenIRIObjects(value as unknown as JSONObject);
 
-    // deno-lint-ignore no-explicit-any
-    assertArrayIncludes(result as any[], [
-      value,
-      value.fie['@list'][0],
-      value.fum[1],
-      value.foo.lee,
-    ]);
+    assert(result.includes(value as any));
+    assert(result.includes(value.fie['@list'][0] as any));
+    assert(result.includes(value.fum[1] as any));
+    assert(result.includes(value.foo.lee as any));
 
-    assertEquals(result.length, 4);
+    assert.equal(result.length, 4);
   });
 });

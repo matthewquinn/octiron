@@ -1,23 +1,23 @@
-import { assert } from "@std/assert";
+import assert from "node:assert";
+import { describe, it } from "node:test";
 import { isMetadataObject } from "../../lib/utils/isMetadataObject.ts";
 
 
-
-Deno.test('isMetaDataObject()', async (t) =>  {
-  await t.step("Object with only '@id' passes", () => {
+describe('isMetaDataObject()', () =>  {
+  it("Object with only '@id' passes", () => {
     assert(isMetadataObject({
       '@id': 'foo',
     }));
   });
 
-  await t.step("Object with only '@id' and '@type' passes", () => {
+  it("Object with only '@id' and '@type' passes", () => {
     assert(isMetadataObject({
       '@id': 'foo',
       '@type': 'Bar',
     }));
   });
 
-  await t.step("Object with a concrete value fails", () => {
+  it("Object with a concrete value fails", () => {
     assert(!isMetadataObject({
       '@id': 'foo',
       '@type': 'Bar',
@@ -25,7 +25,7 @@ Deno.test('isMetaDataObject()', async (t) =>  {
     }));
   });
 
-  await t.step("Object with a JSON-LD @set fails", () => {
+  it("Object with a JSON-LD @set fails", () => {
     assert(!isMetadataObject({
       '@id': 'foo',
       '@type': 'Bar',
@@ -33,7 +33,7 @@ Deno.test('isMetaDataObject()', async (t) =>  {
     }));
   });
 
-  await t.step("Object with a JSON-LD @list fails", () => {
+  it("Object with a JSON-LD @list fails", () => {
     assert(!isMetadataObject({
       '@id': 'foo',
       '@type': 'Bar',
@@ -41,7 +41,7 @@ Deno.test('isMetaDataObject()', async (t) =>  {
     }));
   });
 
-  await t.step("Object with a JSON-LD @set fails", () => {
+  it("Object with a JSON-LD @set fails", () => {
     assert(!isMetadataObject({
       '@id': 'foo',
       '@type': 'Bar',

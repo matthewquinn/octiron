@@ -1,61 +1,60 @@
-import { assert } from "@std/assert";
+import assert from "node:assert";
+import { describe, it } from "node:test";
 import { unravelArgs } from "../../lib/utils/unravelArgs.ts";
-import { assertEquals } from "@std/assert/equals";
 
 
-
-Deno.test('unravelArgs()', async (t) => {
-  await t.step('Handles no arguments', () => {
+describe('unravelArgs()', () => {
+  it('Handles no arguments', () => {
     const [selector, args, view] = unravelArgs();
 
     assert(typeof selector === 'undefined');
-    assertEquals(args, {});
+    assert.deepEqual(args, {});
     assert(typeof view === 'function');
   });
 
-  await t.step('Handles single selector argument', () => {
+  it('Handles single selector argument', () => {
     const [selector, args, view] = unravelArgs('foo bar baz');
 
-    assertEquals(selector, 'foo bar baz');
-    assertEquals(args, {});
+    assert.deepEqual(selector, 'foo bar baz');
+    assert.deepEqual(args, {});
     assert(typeof view === 'function');
   });
 
-  await t.step('Handles single args argument', () => {
+  it('Handles single args argument', () => {
     const [selector, args, view] = unravelArgs({ sep: ',' });
 
     assert(typeof selector === 'undefined');
-    assertEquals(args, { sep: ',' });
+    assert.deepEqual(args, { sep: ',' });
     assert(typeof view === 'function');
   });
 
-  await t.step('Handles single view argument', () => {
+  it('Handles single view argument', () => {
     const testView = () => null;
     const [selector, args, view] = unravelArgs(testView);
 
     assert(typeof selector === 'undefined');
-    assertEquals(args, {});
-    assertEquals(view, testView);
+    assert.deepEqual(args, {});
+    assert.deepEqual(view, testView);
   });
 
-  await t.step('Handles selector and args argument', () => {
+  it('Handles selector and args argument', () => {
     const [selector, args, view] = unravelArgs('foo bar baz', { sep: ',' });
 
-    assertEquals(selector, 'foo bar baz');
-    assertEquals(args, { sep: ',' });
+    assert.deepEqual(selector, 'foo bar baz');
+    assert.deepEqual(args, { sep: ',' });
     assert(typeof view === 'function');
   });
 
-  await t.step('Handles selector and view argument', () => {
+  it('Handles selector and view argument', () => {
     const testView = () => null;
     const [selector, args, view] = unravelArgs('foo bar baz', testView);
 
-    assertEquals(selector, 'foo bar baz');
-    assertEquals(args, {});
-    assertEquals(view, testView);
+    assert.deepEqual(selector, 'foo bar baz');
+    assert.deepEqual(args, {});
+    assert.deepEqual(view, testView);
   });
 
-  await t.step('Handles all arguments', () => {
+  it('Handles all arguments', () => {
     const testView = () => null;
     const [selector, args, view] = unravelArgs(
       'foo bar baz',
@@ -63,8 +62,8 @@ Deno.test('unravelArgs()', async (t) => {
       testView,
     );
 
-    assertEquals(selector, 'foo bar baz');
-    assertEquals(args, { sep: ',' });
-    assertEquals(view, testView);
+    assert.deepEqual(selector, 'foo bar baz');
+    assert.deepEqual(args, { sep: ',' });
+    assert.deepEqual(view, testView);
   });
 });

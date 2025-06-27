@@ -31,9 +31,12 @@ export function getComponent({
   datatype?: string;
   type?: string | string[];
   typeDefs: TypeDefs;
-  firstPickComponent?: PresentComponent;
-  fallbackComponent?: PresentComponent;
-}): PresentComponent | undefined {
+  // deno-lint-ignore no-explicit-any
+  firstPickComponent?: PresentComponent<any>;
+  // deno-lint-ignore no-explicit-any
+  fallbackComponent?: PresentComponent<any>;
+  // deno-lint-ignore no-explicit-any
+}): PresentComponent<any> | undefined {
   if (typeof firstPickComponent !== "undefined") {
     return firstPickComponent;
   }
@@ -42,14 +45,16 @@ export function getComponent({
     typeof datatype !== "undefined" &&
     typeof typeDefs[datatype]?.[style] !== "undefined"
   ) {
-    return typeDefs[datatype][style] as PresentComponent;
+    // deno-lint-ignore no-explicit-any
+    return typeDefs[datatype][style] as PresentComponent<any>;
   }
 
   if (
     typeof type === "string" &&
     typeof typeDefs[type]?.[style] !== "undefined"
   ) {
-    return typeDefs[type][style] as PresentComponent;
+    // deno-lint-ignore no-explicit-any
+    return typeDefs[type][style] as PresentComponent<any>;
   }
 
   if (Array.isArray(type)) {
@@ -57,12 +62,14 @@ export function getComponent({
       if (
         typeof typeDefs[item]?.[style] !== "undefined"
       ) {
-        return typeDefs[item][style] as PresentComponent;
+        // deno-lint-ignore no-explicit-any
+        return typeDefs[item][style] as PresentComponent<any>;
       }
     }
   }
 
   if (typeof fallbackComponent !== "undefined") {
-    return fallbackComponent as PresentComponent;
+    // deno-lint-ignore no-explicit-any
+    return fallbackComponent as PresentComponent<any>;
   }
 }
