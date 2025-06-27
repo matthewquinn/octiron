@@ -12,7 +12,7 @@ Deno.test('isIRIObject()', async (t) => {
   });
 
   await t.step('An IRI object passes', () => {
-    assert(!isIRIObject({
+    assert(isIRIObject({
       '@id': 'http://example.com',
       '@type': 'Foo',
       '@value': 'baz',
