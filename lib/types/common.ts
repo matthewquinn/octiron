@@ -22,6 +22,12 @@ export type TypeObject<Properties extends JSONObject = JSONObject> =
     '@type': string | string[];
   };
 
+export type ValueObject<Properties extends JSONObject = JSONObject> =
+  & Properties
+  & {
+    '@value': JSONValue;
+  };
+
 export type IterableJSONLD<Properties extends JSONObject = JSONObject> =
   | JSONArray
   | (Properties & { '@list': JSONArray })

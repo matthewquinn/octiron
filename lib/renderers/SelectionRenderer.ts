@@ -154,7 +154,7 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
       }
     }
 
-    if (hasChanges && typeof window !== 'undefined') {
+    if (hasChanges) {
       mithrilRedraw();
     }
   }

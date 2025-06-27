@@ -29,7 +29,18 @@
     "dependencies": [
       "jsr:@std/assert@^1.0.13",
       "npm:@types/mithril@^2.2.7",
+      "npm:jsonld@*",
       "npm:mithril@^2.3.2"
-    ]
+    ],
+    "packageJson": {
+      "dependencies": [
+        "npm:@types/jsonld@^1.5.15",
+        "npm:@types/mithril@^2.2.7",
+        "npm:@types/node@^24.0.4",
+        "npm:jsonld@^8.3.3",
+        "npm:mithril@^2.3.3",
+        "npm:typescript@^5.8.3"
+      ]
+    }
   }
 }

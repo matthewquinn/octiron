@@ -13,5 +13,5 @@ export function isIRIObject<
 >(value: JSONValue): value is IRIObject<Properties> {
   return isJSONObject(value)
     && typeof value['@id'] === 'string'
-    && value['@type'] !== '';
+    && value['@id'] !== '';
 }
