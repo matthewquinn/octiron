@@ -11,6 +11,8 @@ import { isValueObject } from "./isValueObject.ts";
 import { parseSelectorString } from './parseSelectorString.ts';
 
 
+export class CircularSelectionError extends Error {}
+
 export type SelectorObject = {
   subject: string;
   filter?: string;
@@ -141,8 +143,8 @@ function resolveValue({
   value,
   datatype,
   filter,
-  spec,
-  actionValue,
+  // spec,
+  // actionValue,
   store,
   details,
 }: {
@@ -455,6 +457,7 @@ function selectEntity({
   selector,
   store,
   details,
+  handledIRIs,
 }: {
   pointer: string;
   iri: string;
@@ -462,12 +465,12 @@ function selectEntity({
   selector?: SelectorObject[];
   store: OctironStore;
   details: SelectionDetails;
+  handledIRIs?: Set<string>;
 }): void {
   pointer = makePointer(pointer, iri);
 
   const cache = store.entities[iri];
 
-  // in theory it could loop around...
   details.dependencies.push(iri);
 
   // if loading is required mark found as false
@@ -503,6 +506,16 @@ function selectEntity({
   const value = cache.value;
 
   if (isMetadataObject(value)) {
+    // in theory serveral entities could be metadata objects
+    // referencing each other and end up looping around...
+    if (handledIRIs == null) {
+      handledIRIs = new Set([value['@id']]);
+    } else if (!handledIRIs.has(value['@id'])) {
+      handledIRIs.add(value['@id']);
+    } else {
+      throw new CircularSelectionError(`Circular selection loop detected`);
+    }
+    
     // select the entity this entity is referencing
     return selectEntity({
       pointer,
@@ -511,6 +524,7 @@ function selectEntity({
       selector,
       details,
       store,
+      handledIRIs,
     });
   }
 

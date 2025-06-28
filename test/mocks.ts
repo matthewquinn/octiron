@@ -187,8 +187,8 @@ async function toEntityState({
   for (const entity of flattenIRIObjects(compacted)) {
     result[entity["@id"]] = {
       iri: entity["@id"],
-      loading: false,
       ok: true,
+      loading: false,
       value: entity,
       contentType: 'application/ld+json',
     };
@@ -197,10 +197,23 @@ async function toEntityState({
   return result;
 }
 
+function createEntityState(url: string, value: IRIObject): OctironStore['entities'] {
+  return {
+    [url]: {
+      iri: value['@id'],
+      ok: true,
+      loading: false,
+      value,
+      contentType: 'application/ld+json',
+    },
+  };
+}
+
 export const mocks = {
   createEpic,
   createTodo,
   createUser,
   createTodoListing,
   toEntityState,
+  createEntityState,
 } as const;

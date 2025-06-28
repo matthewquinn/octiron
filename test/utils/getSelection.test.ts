@@ -6,7 +6,7 @@ import {
   todosVocab,
   TodoTypes,
 } from "../mocks.ts";
-import { getSelection } from "../../lib/utils/getSelection.ts";
+import { getSelection, CircularSelectionError } from "../../lib/utils/getSelection.ts";
 import { makeStore } from "../../lib/store.ts";
 import { isJSONObject } from "../../lib/utils/isJSONObject.ts";
 
@@ -95,20 +95,7 @@ Deno.test("getSelection()", async (t) => {
     assert.equal(selection.dependencies.length, 0);
   });
 
-  await t.step("Selects an entity", async () => {
-    const entities = await mocks.toEntityState(
-      {},
-      user1,
-      epic2,
-    );
-    const store = makeStore({
-      rootIRI: todosRootIRI,
-      entities,
-      vocab: todosVocab,
-      aliases: {
-        scm: scmVocab,
-      },
-    });
+  await t.step("Selects an entity", () => {
     const iri = epic2["https://todos.example.com/subtodos"][0]["@id"];
     const selection = getSelection({
       store,
@@ -211,5 +198,38 @@ Deno.test("getSelection()", async (t) => {
       selection.result[3].value,
       user1['https://todos.example.com/username'],
     );
+  });
+
+  await t.step('Catches cirular loops in selections', () => {
+    const iri1 = `${todosRootIRI}/path/1`;
+    const iri2 = `${todosRootIRI}/path/2`;
+    const iri3 = `${todosRootIRI}/path/3`;
+
+    // each of these objects only have iris pointing to the next
+    // object. The `getSelection` will loop round following the
+    // pointers until it finds an object containing concrete values.
+    // In this case there are no concrete values and the references
+    // are circular.
+    const entities = {
+      ...mocks.createEntityState(iri1, { '@id': iri2 }),
+      ...mocks.createEntityState(iri2, { '@id': iri3 }),
+      ...mocks.createEntityState(iri3, { '@id': iri1 }),
+    };
+
+    const store = makeStore({
+      rootIRI: todosRootIRI,
+      entities,
+      vocab: todosVocab,
+      aliases: {
+        scm: scmVocab,
+      },
+    });
+
+    // will cause maximum call stack if fails
+    try {
+      getSelection({ store, selector: iri1 });
+    } catch (err) {
+      assert(err instanceof CircularSelectionError);
+    }
   });
 });
