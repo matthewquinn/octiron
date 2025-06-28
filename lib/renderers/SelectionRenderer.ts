@@ -17,11 +17,10 @@ import m from "mithril";
 import { selectionFactory } from "../factories/selectionFactory.ts";
 import { isJSONObject } from "../utils/isJSONObject.ts";
 import { mithrilRedraw } from "../utils/mithrilRedraw.ts";
-import { isBrowserRender } from "../const.ts";
 
 export type SelectionRendererInternals = {
   store: OctironStore;
-  typeDefs: TypeDefs;
+  typeDefs?: TypeDefs;
   parent?: OctironSelection;
   value?: JSONValue;
 };

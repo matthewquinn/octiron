@@ -10,7 +10,7 @@ import { isJSONObject } from "../utils/isJSONObject.ts";
 
 export type SelectionFactoryInternals = {
   store: OctironStore;
-  typeDefs: TypeDefs;
+  typeDefs?: TypeDefs;
   parent?: OctironSelection;
   value?: JSONValue;
   datatype?: string;
@@ -183,7 +183,7 @@ export function selectionFactory<Attrs extends object = object>(
           type,
           firstPickComponent: firstPickComponent as unknown as PresentComponent,
           fallbackComponent: fallbackComponent as unknown as PresentComponent,
-          typeDefs: internals.typeDefs,
+          typeDefs: internals.typeDefs ?? {},
         });
 
         if (typeof component === "undefined") {

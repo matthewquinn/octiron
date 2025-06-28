@@ -11,6 +11,14 @@ import { isValueObject } from "./isValueObject.ts";
 import { parseSelectorString } from './parseSelectorString.ts';
 
 
+/**
+ * A circular selection error occurs when two or more
+ * entities contain no concrete values and their '@id'
+ * values point to each other in a way that creates a
+ * loop. The `getSelection` function will throw when
+ * this scenario is detected to prevent an infinite
+ * loop.
+ */
 export class CircularSelectionError extends Error {}
 
 export type SelectorObject = {

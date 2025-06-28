@@ -6,10 +6,13 @@
     "dev": "deno run --watch lib/mod.ts"
   },
   "imports": {
+    "@b-fuze/deno-dom": "jsr:@b-fuze/deno-dom@^0.1.49",
+    "@faker-js/faker": "npm:@faker-js/faker@^9.8.0",
     "@std/assert": "jsr:@std/assert@^1.0.13",
     "@types/mithril": "npm:@types/mithril@^2.2.7",
     "mithril": "npm:mithril@^2.3.2",
-    "jsonld": "npm:jsonld"
+    "jsonld": "npm:jsonld",
+    "mithril-node-render": "npm:mithril-node-render@^3.0.2"
   },
   "publish": {
     "include": [

@@ -64,9 +64,6 @@ Deno.test("getSelection()", async (t) => {
   });
 
   await t.step("Selects values in a deep object", () => {
-    const store = makeStore({
-      rootIRI: todosRootIRI,
-    });
     const selection = getSelection({
       store,
       selector: "foo baa baz",

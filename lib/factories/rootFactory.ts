@@ -6,7 +6,7 @@ import { unravelArgs } from "../utils/unravelArgs.ts";
 
 export type RootFactoryInternals = {
   store: OctironStore;
-  typeDefs: TypeDefs;
+  typeDefs?: TypeDefs;
 };
 
 /**
