@@ -1,4 +1,4 @@
-import type { Children, ClosureComponent } from 'mithril';
+import type { Children, ComponentTypes } from 'mithril';
 import type { JSONValue } from './common.ts'
 import type { OctironStore } from './store.ts';
 import type {
@@ -47,7 +47,7 @@ export type PresentAttrs<
 export type PresentComponent<
   Value extends JSONValue = JSONValue,
   Attrs extends BaseAttrs = BaseAttrs,
-> = ClosureComponent<PresentAttrs<Value, Attrs>>;
+> = ComponentTypes<PresentAttrs<Value, Attrs>>;
 
 export type TypeDef<
   Value extends JSONValue = JSONValue,
@@ -114,7 +114,7 @@ export type PresentableArgs<
   store?: OctironStore;
 };
 
-export type IterablePeridcate = (value: JSONValue) => boolean;
+export type IterablePeridcate = (octiron: Octiron) => boolean;
 
 export type IterableArgs = {
   start?: number;
@@ -152,32 +152,40 @@ export interface Origin {
    */
   root(): Children;
   root(selector: Selector): Children;
-  root(args: OctironSelectArgs): Children;
+  // deno-lint-ignore no-explicit-any
+  root(args: OctironSelectArgs<any>): Children;
   root(view: SelectView): Children;
-  root(selector: Selector, args: OctironSelectArgs): Children;
+  // deno-lint-ignore no-explicit-any
+  root(selector: Selector, args: OctironSelectArgs<any>): Children;
   root(selector: Selector, view: SelectView): Children;
-  root(args: OctironSelectArgs, view: SelectView): Children;
-  root(selector: Selector, args: OctironSelectArgs, view: SelectView): Children;
+  // deno-lint-ignore no-explicit-any
+  root(args: OctironSelectArgs<any>, view: SelectView): Children;
+  // deno-lint-ignore no-explicit-any
+  root(selector: Selector, args: OctironSelectArgs<any>, view: SelectView): Children;
 }
 
 export interface EntryPoint {
   enter(selector: Selector): Children;
-  enter(selector: Selector, args: OctironSelectArgs): Children;
+  // deno-lint-ignore no-explicit-any
+  enter(selector: Selector, args: OctironSelectArgs<any>): Children;
   enter(selector: Selector, view: SelectView): Children;
   enter(
     selector: Selector,
-    args: OctironSelectArgs,
+  // deno-lint-ignore no-explicit-any
+    args: OctironSelectArgs<any>,
     view: SelectView,
   ): Children;
 }
 
 export interface Selectable {
   select(selector: Selector): Children;
-  select(selector: Selector, args: OctironSelectArgs): Children;
+  // deno-lint-ignore no-explicit-any
+  select(selector: Selector, args: OctironSelectArgs<any>): Children;
   select(selector: Selector, view: SelectView): Children;
   select(
     selector: Selector,
-    args: OctironSelectArgs,
+  // deno-lint-ignore no-explicit-any
+    args: OctironSelectArgs<any>,
     view: SelectView,
   ): Children;
 }

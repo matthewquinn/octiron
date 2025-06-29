@@ -12,7 +12,7 @@ export type TodoStatus =
   | "in-progress"
   | "done";
 
-export const todosRootIRI = 'http://example.com/api';
+export const todosRootIRI = 'https://example.com/api';
 export const todosVocab = 'https://todos.example.com/';
 export const scmVocab = 'https://schema.org/';
 
@@ -54,7 +54,7 @@ function makeUniqueId() {
 }
 
 function makeIRI(type: string) {
-  return `${todosRootIRI}/api/${type}`;
+  return `${todosRootIRI}/${type}`;
 }
 
 function makeDetailIRI(type: string) {

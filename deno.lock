@@ -5,12 +5,17 @@
     "jsr:@denosaurs/plug@1.0.3": "1.0.3",
     "jsr:@std/assert@^1.0.13": "1.0.13",
     "jsr:@std/assert@~0.213.1": "0.213.1",
+    "jsr:@std/data-structures@^1.0.8": "1.0.8",
     "jsr:@std/encoding@0.213.1": "0.213.1",
     "jsr:@std/fmt@0.213.1": "0.213.1",
     "jsr:@std/fs@0.213.1": "0.213.1",
-    "jsr:@std/internal@^1.0.6": "1.0.7",
+    "jsr:@std/fs@^1.0.18": "1.0.18",
+    "jsr:@std/internal@^1.0.6": "1.0.8",
+    "jsr:@std/internal@^1.0.8": "1.0.8",
     "jsr:@std/path@0.213.1": "0.213.1",
+    "jsr:@std/path@^1.1.0": "1.1.0",
     "jsr:@std/path@~0.213.1": "0.213.1",
+    "jsr:@std/testing@^1.0.14": "1.0.14",
     "npm:@faker-js/faker@^9.8.0": "9.8.0",
     "npm:@types/mithril@^2.2.7": "2.2.7",
     "npm:@types/node@*": "22.15.15",
@@ -30,7 +35,7 @@
       "dependencies": [
         "jsr:@std/encoding",
         "jsr:@std/fmt",
-        "jsr:@std/fs",
+        "jsr:@std/fs@0.213.1",
         "jsr:@std/path@0.213.1"
       ]
     },
@@ -40,8 +45,11 @@
     "@std/assert@1.0.13": {
       "integrity": "ae0d31e41919b12c656c742b22522c32fb26ed0cba32975cb0de2a273cb68b29",
       "dependencies": [
-        "jsr:@std/internal"
+        "jsr:@std/internal@^1.0.6"
       ]
+    },
+    "@std/data-structures@1.0.8": {
+      "integrity": "2fb7219247e044c8fcd51341788547575653c82ae2c759ff209e0263ba7d9b66"
     },
     "@std/encoding@0.213.1": {
       "integrity": "fcbb6928713dde941a18ca5db88ca1544d0755ec8fb20fe61e2dc8144b390c62"
@@ -56,13 +64,35 @@
         "jsr:@std/path@~0.213.1"
       ]
     },
+    "@std/fs@1.0.18": {
+      "integrity": "24bcad99eab1af4fde75e05da6e9ed0e0dce5edb71b7e34baacf86ffe3969f3a",
+      "dependencies": [
+        "jsr:@std/path@^1.1.0"
+      ]
+    },
     "@std/internal@1.0.7": {
       "integrity": "39eeb5265190a7bc5d5591c9ff019490bd1f2c3907c044a11b0d545796158a0f"
+    },
+    "@std/internal@1.0.8": {
+      "integrity": "fc66e846d8d38a47cffd274d80d2ca3f0de71040f855783724bb6b87f60891f5"
     },
     "@std/path@0.213.1": {
       "integrity": "f187bf278a172752e02fcbacf6bd78a335ed320d080a7ed3a5a59c3e88abc673",
       "dependencies": [
         "jsr:@std/assert@~0.213.1"
+      ]
+    },
+    "@std/path@1.1.0": {
+      "integrity": "ddc94f8e3c275627281cbc23341df6b8bcc874d70374f75fec2533521e3d6886"
+    },
+    "@std/testing@1.0.14": {
+      "integrity": "144b3737105b9071cb50c957681f58a1b8ec0f3e5b19ad830f401c5fa931e8f0",
+      "dependencies": [
+        "jsr:@std/assert@^1.0.13",
+        "jsr:@std/data-structures",
+        "jsr:@std/fs@^1.0.18",
+        "jsr:@std/internal@^1.0.8",
+        "jsr:@std/path@^1.1.0"
       ]
     }
   },
@@ -194,6 +224,7 @@
     "dependencies": [
       "jsr:@b-fuze/deno-dom@~0.1.49",
       "jsr:@std/assert@^1.0.13",
+      "jsr:@std/testing@^1.0.14",
       "npm:@faker-js/faker@^9.8.0",
       "npm:@types/mithril@^2.2.7",
       "npm:jsonld@*",

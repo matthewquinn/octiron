@@ -1,6 +1,6 @@
 import type { JSONValue } from '../types/common.ts';
 import type { OctironStore } from "../types/store.ts";
-import type { OctironSelectArgs, OctironSelection, Predicate, PresentComponent, Selector, SelectView, TypeDefs } from '../types/octiron.ts';
+import type { OctironPresentArgs, OctironSelectArgs, OctironSelection, Predicate, PresentComponent, Selector, SelectView, TypeDefs } from '../types/octiron.ts';
 import m from "mithril";
 import { SelectionRenderer } from "../renderers/SelectionRenderer.ts";
 import { getComponent } from '../utils/getComponent.ts';
@@ -151,7 +151,8 @@ export function selectionFactory<Attrs extends object = object>(
         );
       },
 
-      present() {
+      // deno-lint-ignore no-explicit-any
+      present(args?: OctironPresentArgs<any, Attrs>) {
         let attrs: Attrs = {} as Attrs;
         let firstPickComponent: PresentComponent<JSONValue, Attrs> | undefined;
         let fallbackComponent: PresentComponent<JSONValue> | undefined;

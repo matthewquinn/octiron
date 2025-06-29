@@ -240,8 +240,10 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
       attrs.internals.store.unsubscribe(key);
     },
     view: ({ attrs }): m.Children => {
-      if (typeof details === 'undefined' || !details.complete) {
+      if (details == null || !details.complete) {
         return attrs.args.loading;
+      } else if (details.hasErrors && typeof attrs.args.fallback !== 'function') {
+        return attrs.args.fallback;
       }
 
       const view = currentAttrs.view;
@@ -249,6 +251,9 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
         pre,
         sep,
         post,
+        start,
+        end,
+        predicate,
         fallback,
       } = currentAttrs.args;
 
@@ -256,8 +261,23 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
         return;
       }
 
-      const list = Object.values(instances);
-      const children = [m.fragment({ key: '@pre' }, [pre])];
+      const children: m.Children = [];
+      let list = Object.values(instances);
+
+      if (start != null || end != null) {
+        list = list.slice(
+          start ?? 0,
+          end,
+        );
+      }
+
+      if (predicate != null) {
+        list = list.filter(({ octiron }) => predicate(octiron));
+      }
+
+      if (pre != null) {
+        children.push(m.fragment({ key: '@pre' }, [pre]));
+      }
 
       for (let index = 0; index < list.length; index++) {
         const { selectionResult, octiron } = list[index];
@@ -280,7 +300,9 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
         }
       }
 
-      children.push(m.fragment({ key: '@post' }, [post]));
+      if (post != null) {
+        children.push(m.fragment({ key: '@post' }, [post]));
+      }
 
       return children;
     },
