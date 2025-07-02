@@ -1,4 +1,4 @@
-import type { Children, ComponentTypes } from 'mithril';
+import type { Attributes, Children, ComponentTypes } from 'mithril';
 import type { JSONValue } from './common.ts'
 import type { OctironStore } from './store.ts';
 import type {
@@ -31,8 +31,7 @@ export type Term = Type | string;
  */
 export type Selector = string;
 
-// deno-lint-ignore no-explicit-any
-export type BaseAttrs = Record<string, any>;
+export type BaseAttrs = Attributes;
 
 export type PresentAttrs<
   Value extends JSONValue = JSONValue,

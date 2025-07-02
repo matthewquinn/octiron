@@ -1,6 +1,6 @@
 import type { JSONValue } from '../types/common.ts';
 import type { OctironStore } from "../types/store.ts";
-import type { OctironPresentArgs, OctironSelectArgs, OctironSelection, Predicate, PresentComponent, Selector, SelectView, TypeDefs } from '../types/octiron.ts';
+import type { BaseAttrs, OctironPresentArgs, OctironSelectArgs, OctironSelection, Predicate, PresentComponent, Selector, SelectView, TypeDefs } from '../types/octiron.ts';
 import m from "mithril";
 import { SelectionRenderer } from "../renderers/SelectionRenderer.ts";
 import { getComponent } from '../utils/getComponent.ts';
@@ -29,7 +29,7 @@ export interface OctironHooks {
  * @param internals Internally held values from upstream.
  * @param args User given arguments.
  */
-export function selectionFactory<Attrs extends object = object>(
+export function selectionFactory<Attrs extends BaseAttrs = {}>(
   internals: SelectionFactoryInternals,
   args?: OctironSelectArgs<JSONValue, Attrs>,
 ): OctironSelection & OctironHooks {
@@ -152,29 +152,29 @@ export function selectionFactory<Attrs extends object = object>(
       },
 
       // deno-lint-ignore no-explicit-any
-      present(args?: OctironPresentArgs<any, Attrs>) {
-        let attrs: Attrs = {} as Attrs;
-        let firstPickComponent: PresentComponent<JSONValue, Attrs> | undefined;
+      present(args?: OctironPresentArgs<any, BaseAttrs>) {
+        let attrs: BaseAttrs = {} as BaseAttrs;
+        let firstPickComponent: PresentComponent<JSONValue, BaseAttrs> | undefined;
         let fallbackComponent: PresentComponent<JSONValue> | undefined;
 
-        if (typeof args?.attrs !== "undefined") {
-          attrs = args.attrs;
-        } else if (typeof factoryArgs?.attrs !== "undefined") {
-          attrs = factoryArgs.attrs as unknown as Attrs;
+        if (args?.attrs != null) {
+          attrs = args.attrs as BaseAttrs;
+        } else if (factoryArgs?.attrs != null) {
+          attrs = factoryArgs.attrs as unknown as BaseAttrs;
         }
 
-        if (typeof args?.component !== "undefined") {
-          firstPickComponent = args.component as PresentComponent<JSONValue, Attrs>;
-        } else if (typeof factoryArgs?.component !== "undefined") {
+        if (args?.component != null) {
+          firstPickComponent = args.component as PresentComponent<JSONValue, BaseAttrs>;
+        } else if (factoryArgs?.component != null) {
           firstPickComponent = factoryArgs.component as unknown as PresentComponent<
             JSONValue,
-            Attrs
+            BaseAttrs
           >;
         }
 
         if (args?.fallbackComponent != null) {
           fallbackComponent = args.fallbackComponent as unknown as PresentComponent<JSONValue>;
-        } else if (typeof factoryArgs?.fallbackComponent !== "undefined") {
+        } else if (factoryArgs?.fallbackComponent != null) {
           fallbackComponent = factoryArgs.fallbackComponent as unknown as PresentComponent<JSONValue>;
         }
 
@@ -187,7 +187,7 @@ export function selectionFactory<Attrs extends object = object>(
           typeDefs: internals.typeDefs ?? {},
         });
 
-        if (typeof component === "undefined") {
+        if (component == null) {
           return null;
         }
 
