@@ -45,6 +45,11 @@ export type EntitySelectionResult = {
    * A unique key for identifing this selection result.
    * Useful for caching objects which use the result.
    */
+  readonly key: symbol;
+
+  /**
+   * A json pointer referencing the item within the parent value.
+   */
   readonly pointer: string;
 
   /**
@@ -89,6 +94,11 @@ export type ValueSelectionResult = {
   /**
    * A unique key for identifing this selection result.
    * Useful for caching objects which use the result.
+   */
+  readonly key: symbol;
+
+  /**
+   * A json pointer referencing the item within the parent value.
    */
   readonly pointer: string;
 
@@ -137,6 +147,11 @@ export type SelectionDetails<T = SelectionResult> = {
    * True if any entities the selection traverses are in an error state.
    */
   hasErrors: boolean;
+
+  /**
+   * True if any selections are not defined in the data.
+   */
+  hasMissing: boolean;
 
   /**
    * The result of the selection.

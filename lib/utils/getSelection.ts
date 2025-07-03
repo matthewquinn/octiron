@@ -1,6 +1,6 @@
 
-import type { JSONArray, JSONObject, JSONValue } from '../types/common.ts';
-import type { OctironStore, SelectionDetails, SelectionResult } from '../types/store.ts';
+import type { JSONArray, JSONObject, JSONValue, Mutable } from '../types/common.ts';
+import type { EntitySelectionResult, OctironStore, SelectionDetails, SelectionResult, ValueSelectionResult } from '../types/store.ts';
 import { escapeJSONPointerParts } from './escapeJSONPointerParts.ts';
 import { getIterableValue } from "./getIterableValue.ts";
 import { isIRIObject } from "./isIRIObject.ts";
@@ -25,6 +25,42 @@ export type SelectorObject = {
   subject: string;
   filter?: string;
 };
+
+type SourceSelectionResults =
+  | EntitySelectionResult
+  | ValueSelectionResult
+;
+
+type ProcessingEntitySelectionResult = {
+  // used to build the final key value.
+  keySource: string;
+} & Omit<EntitySelectionResult, 'key'>;
+
+type ProcessingValueSelectionResult = {
+  // used to build the final key value.
+  keySource: string;
+} & Omit<ValueSelectionResult, 'key'>;
+
+type ProcessingSelectionDetails = SelectionDetails<
+  | ProcessingEntitySelectionResult
+  | ProcessingValueSelectionResult
+>;
+
+
+export function transformProcessedDetails<T extends SelectionResult>(
+  processing: ProcessingSelectionDetails,
+): SelectionDetails<T> {
+  for (let index = 0; index < processing.result.length; index++) {
+    const element = processing.result[index];
+    
+    (element as unknown as Mutable<SourceSelectionResults>).key = Symbol.for(element.keySource);
+
+    // deno-lint-ignore no-explicit-any
+    delete (element as any).keySource;
+  }
+
+  return processing as unknown as SelectionDetails<T>;
+}
 
 /**
  * @description
@@ -54,9 +90,10 @@ export function getSelection<T extends SelectionResult>({
   actionValue?: JSONObject;
   store: OctironStore;
 }): SelectionDetails<T> {
-  const details: SelectionDetails<T> = {
+  const details: ProcessingSelectionDetails = {
     complete: false,
     hasErrors: false,
+    hasMissing: false,
     required: [],
     dependencies: [],
     result: [],
@@ -67,6 +104,7 @@ export function getSelection<T extends SelectionResult>({
       parseSelectorString(selectorStr);
 
     selectEntity({
+      keySource: '',
       pointer: '',
       iri,
       filter,
@@ -77,12 +115,13 @@ export function getSelection<T extends SelectionResult>({
 
     details.complete = details.required.length === 0;
 
-    return details;
+    return transformProcessedDetails<T>(details);
   }
 
   const selector = parseSelectorString(selectorStr);
 
   traverseSelector({
+    keySource: '',
     pointer: '',
     value,
     actionValue,
@@ -93,7 +132,13 @@ export function getSelection<T extends SelectionResult>({
 
   details.complete = details.required.length === 0;
 
-  return details;
+  for (let index = 0; index < details.result.length; index++) {
+    const element = details.result[index];
+    
+    (element as unknown as Mutable<SourceSelectionResults>).key = Symbol.for(element.keySource);
+  }
+
+  return transformProcessedDetails<T>(details);
 }
 
 function makePointer(pointer: string, addition: string | number) {
@@ -147,6 +192,7 @@ function isTraversable(value: JSONValue): value is JSONObject | JSONArray {
  * recursion might be nessacary.
  */
 function resolveValue({
+  keySource,
   pointer,
   value,
   datatype,
@@ -156,6 +202,7 @@ function resolveValue({
   store,
   details,
 }: {
+  keySource: string;
   pointer: string;
   value: JSONValue;
   spec?: JSONObject;
@@ -163,9 +210,11 @@ function resolveValue({
   datatype: string;
   filter?: string;
   store: OctironStore;
-  details: SelectionDetails;
+  details: ProcessingSelectionDetails;
 }) {
-  if (typeof value === 'undefined') {
+  if (value == null) {
+    details.hasMissing = true;
+    
     return;
   }
 
@@ -190,6 +239,7 @@ function resolveValue({
 
   if (!isTraversable(value)) {
     details.result.push({
+      keySource: pointer,
       pointer: pointer,
       type: 'value',
       datatype,
@@ -203,7 +253,12 @@ function resolveValue({
     for (let index = 0; index < list.length; index++) {
       const item = list[index];
 
+      if (!isIRIObject(item)) {
+        keySource = makePointer(keySource, index);
+      }
+
       resolveValue({
+        keySource,
         pointer: makePointer(pointer, index),
         value: item,
         datatype,
@@ -211,6 +266,10 @@ function resolveValue({
         store,
         details,
       });
+
+      if (details.hasErrors || details.hasMissing) {
+        return;
+      }
     }
 
     return;
@@ -221,6 +280,7 @@ function resolveValue({
 
   if (isValueObject(value)) {
     resolveValue({
+      keySource,
       pointer,
       value: value['@value'],
       datatype,
@@ -231,6 +291,7 @@ function resolveValue({
     return;
   } else if (isMetadataObject(value)) {
     selectEntity({
+      keySource,
       pointer,
       iri: value['@id'],
       filter,
@@ -246,7 +307,8 @@ function resolveValue({
     const contentType = store.entities[iri].contentType as string;
 
     details.result.push({
-      pointer: pointer,
+      keySource,
+      pointer,
       type: 'entity',
       iri,
       ok: true,
@@ -258,7 +320,8 @@ function resolveValue({
   }
 
   details.result.push({
-    pointer: pointer,
+    keySource,
+    pointer,
     type: 'value',
     datatype,
     value,
@@ -269,6 +332,7 @@ function resolveValue({
  * Selects a type from a json value, handling invalid situations.
  */
 function selectTypedValue({
+  keySource,
   pointer,
   type,
   value,
@@ -277,13 +341,14 @@ function selectTypedValue({
   store,
   details,
 }: {
+  keySource: string;
   pointer: string;
   type: string;
   value: JSONValue;
   actionValue?: JSONObject;
   filter?: string;
   store: OctironStore;
-  details: SelectionDetails;
+  details: ProcessingSelectionDetails;
 }): void {
   pointer = makePointer(pointer, type);
 
@@ -297,7 +362,12 @@ function selectTypedValue({
     for (let index = 0; index < list.length; index++) {
       const item = list[index];
 
+      if (!isIRIObject(item)) {
+        keySource = makePointer(keySource, index);
+      }
+
       selectTypedValue({
+        keySource,
         pointer: makePointer(pointer, index),
         type,
         value: item,
@@ -306,6 +376,10 @@ function selectTypedValue({
         store,
         details,
       });
+
+      if (details.hasErrors || details.hasMissing) {
+        return;
+      }
     }
 
     return;
@@ -313,6 +387,7 @@ function selectTypedValue({
 
   if (isMetadataObject(value) && isIRIObject(value)) {
     selectEntity({
+      keySource,
       pointer,
       iri: value['@id'],
       selector: [{ subject: type, filter }],
@@ -332,6 +407,7 @@ function selectTypedValue({
   }
 
   resolveValue({
+    keySource,
     pointer,
     value: value[type],
     spec,
@@ -347,6 +423,7 @@ function selectTypedValue({
  * Recurses through the selection until there are no further selection items.
  */
 function traverseSelector({
+  keySource,
   pointer,
   selector,
   value,
@@ -354,12 +431,13 @@ function traverseSelector({
   store,
   details,
 }: {
+  keySource: string;
   pointer: string;
   selector: SelectorObject[];
   value: JSONValue;
   actionValue?: JSONObject;
   store: OctironStore;
-  details: SelectionDetails;
+  details: ProcessingSelectionDetails;
 }): void {
 
   if (selector.length === 0) {
@@ -374,10 +452,15 @@ function traverseSelector({
     for (let index = 0; index < list.length; index++) {
       const item = list[index];
 
+      if (!isIRIObject(item)) {
+        keySource = makePointer(keySource, index);
+      }
+
       // keep nesting on the full selector
       // as only objects can be subscripted
       // with terms
       traverseSelector({
+        keySource,
         pointer: makePointer(pointer, index),
         selector,
         value: item,
@@ -385,11 +468,16 @@ function traverseSelector({
         store,
         details,
       });
+
+      if (details.hasErrors || details.hasMissing) {
+        return;
+      }
     }
 
     return;
   } else if (isValueObject(value)) {
     traverseSelector({
+      keySource,
       pointer,
       selector,
       value: value['@value'],
@@ -401,6 +489,7 @@ function traverseSelector({
 
   if (isMetadataObject(value) && isIRIObject(value)) {
     selectEntity({
+      keySource,
       pointer,
       selector,
       iri: value['@id'],
@@ -420,8 +509,15 @@ function traverseSelector({
   const [next, ...rest] = selector;
   const { subject: type, filter } = next;
 
+  if (value[type] == null) {
+    details.hasMissing = true;
+
+    return;
+  }
+
   if (rest.length === 0) {
     selectTypedValue({
+      keySource,
       pointer,
       type,
       filter,
@@ -445,6 +541,7 @@ function traverseSelector({
   }
 
   traverseSelector({
+    keySource: makePointer(keySource, type),
     pointer: makePointer(pointer, type),
     selector: rest,
     value: value[type],
@@ -459,6 +556,7 @@ function traverseSelector({
  * if the branch has not completed.
  */
 function selectEntity({
+  keySource,
   pointer,
   iri,
   filter,
@@ -467,14 +565,16 @@ function selectEntity({
   details,
   handledIRIs,
 }: {
+  keySource: string;
   pointer: string;
   iri: string;
   filter?: string;
   selector?: SelectorObject[];
   store: OctironStore;
-  details: SelectionDetails;
+  details: ProcessingSelectionDetails;
   handledIRIs?: Set<string>;
 }): void {
+  keySource = makePointer(keySource, iri);
   pointer = makePointer(pointer, iri);
 
   const cache = store.entities[iri];
@@ -498,7 +598,8 @@ function selectEntity({
     }
 
     details.result.push({
-      pointer: pointer,
+      keySource,
+      pointer,
       type: 'entity',
       iri: cache.iri,
       ok: false,
@@ -526,6 +627,7 @@ function selectEntity({
     
     // select the entity this entity is referencing
     return selectEntity({
+      keySource,
       pointer,
       iri: value['@id'],
       filter,
@@ -543,7 +645,8 @@ function selectEntity({
 
   if (typeof selector === 'undefined') {
     details.result.push({
-      pointer: pointer,
+      keySource,
+      pointer,
       type: 'entity',
       iri: cache.iri,
       ok: true,
@@ -555,6 +658,7 @@ function selectEntity({
   }
 
   traverseSelector({
+    keySource,
     pointer,
     value,
     selector,
