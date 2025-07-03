@@ -1,16 +1,16 @@
-import type { IRIObject, JSONObject } from "../../lib/types/common.ts";
-import type { PresentComponent } from "../../lib/types/octiron.ts";
-import type { OctironStore } from "../../lib/types/store.ts";
+import { DOMParser, type HTMLDocument } from "@b-fuze/deno-dom";
 import { assert, assertEquals } from "@std/assert";
 import { assertArrayIncludes } from "@std/assert/array-includes";
 import m from "mithril";
+import render from "mithril-node-render";
 import { rootFactory } from "../../lib/factories/rootFactory.ts";
 import { selectionFactory } from "../../lib/factories/selectionFactory.ts";
 import { makeStore } from "../../lib/store.ts";
-import { mocks, todosRootIRI } from "../mocks.ts";
-import render from "mithril-node-render";
-import { DOMParser } from "@b-fuze/deno-dom";
+import type { IRIObject, JSONObject } from "../../lib/types/common.ts";
+import type { PresentComponent } from "../../lib/types/octiron.ts";
+import type { OctironStore } from "../../lib/types/store.ts";
 import { isJSONObject } from "../../lib/utils/isJSONObject.ts";
+import { mocks, todosRootIRI } from "../mocks.ts";
 
 
 function scenario() {
@@ -88,9 +88,25 @@ function scenario() {
   };
 
   // deno-lint-ignore no-explicit-any
-  function isRenderChildArgs(value: any): value is RenderChildArgs {
-    return isJSONObject(value);
+  function isRenderChildArgs(value: any): value is m.Children {
+    return isJSONObject(value) && Object.hasOwn(value, 'tag');
   }
+
+
+  async function renderChild(
+    children: m.Children,
+  ): Promise<{
+    html: string;
+    dom: HTMLDocument;
+  }>;
+
+  async function renderChild(
+    args: RenderChildArgs,
+    children: m.Children,
+  ): Promise<{
+    html: string;
+    dom: HTMLDocument;
+  }>;
 
   async function renderChild(
     arg1: RenderChildArgs | m.Children,
@@ -98,10 +114,11 @@ function scenario() {
   ) {
     let maxRenders: number | undefined;
     let children: m.Children;
-    if (isRenderChildArgs(arg1)) {
-      maxRenders = arg1.maxRenders;
+
+    if (isRenderChildArgs(arg2)) {
+      maxRenders = (arg1 as RenderChildArgs).maxRenders;
       children = arg2;
-    } else {
+    } else if (isRenderChildArgs(arg1)) {
       children = arg1;
     }
 
@@ -123,18 +140,22 @@ function scenario() {
       html = await render(m(component));
       renderPasses++;
 
-      if (maxRenders != null && renderPasses === maxRenders) {
-        break;
-      }
 
       while (loopLength !== responses.length) {
         loopLength = responses.length;
 
         await Promise.all(responses);
-
         count++;
       }
+
+      if (maxRenders != null && renderPasses === maxRenders) {
+        const dom = new DOMParser().parseFromString(html, "text/html");
+
+        return { html, dom }
+      }
     } while (responses.length !== currentLength);
+
+    html = await render(m(component));
 
     const dom = new DOMParser().parseFromString(html, "text/html");
 
@@ -564,7 +585,6 @@ Deno.test("o.root({ pre, sep, post, start, end, predicate })", async (t) => {
 
 Deno.test("o.root({ loading })", async (t) => {
   const {
-    users,
     root,
     select,
     reset,
@@ -625,13 +645,11 @@ Deno.test("o.root({ fallback })", async (t) => {
         });
 
         const { html } = await renderChild(
-          o.root("does not exist", {
+          o.root('does not exits', {
             component,
             fallback: 'FALLBACK',
           }),
         );
-
-        console.log(html)
 
         assertEquals(html, 'FALLBACK');
         reset();

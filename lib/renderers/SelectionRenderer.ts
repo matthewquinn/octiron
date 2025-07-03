@@ -59,7 +59,7 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
   let currentAttrs = vnode.attrs;
   let details: undefined | SelectionDetails<ReadonlySelectionResult>;
 
-  const instances: Record<string, {
+  const instances: Record<symbol, {
     octiron: OctironSelection;
     selectionResult: ReadonlySelectionResult;
   }> = {};
@@ -72,10 +72,10 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
       typeDefs,
     } = currentAttrs.internals;
 
-    const nextKeys: Array<string> = [];
+    const nextKeys: Array<symbol> = [];
 
     if (details == null) {
-      const prevKeys = Object.keys(instances);
+      const prevKeys = Reflect.ownKeys(instances) as symbol[];
 
       for (const key of prevKeys) {
         if (!nextKeys.includes(key)) {
@@ -93,11 +93,11 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
     }
 
     for (const selectionResult of details.result) {
-      nextKeys.push(selectionResult.pointer);
+      nextKeys.push(selectionResult.key);
 
-      if (Object.hasOwn(instances, selectionResult.pointer)) {
+      if (Object.hasOwn(instances, selectionResult.key)) {
         const next = selectionResult;
-        const prev = instances[selectionResult.pointer].selectionResult;
+        const prev = instances[selectionResult.key].selectionResult;
 
         if (
           prev.type === 'value' &&
@@ -137,13 +137,13 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
         });
       }
 
-      instances[selectionResult.pointer] = {
+      instances[selectionResult.key] = {
         octiron,
         selectionResult,
       };
     }
 
-    const prevKeys = Object.keys(instances);
+    const prevKeys = Reflect.ownKeys(instances) as symbol[];
 
     for (const key of prevKeys) {
       if (!nextKeys.includes(key)) {
@@ -242,7 +242,7 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
     view: ({ attrs }): m.Children => {
       if (details == null || !details.complete) {
         return attrs.args.loading;
-      } else if (details.hasErrors && typeof attrs.args.fallback !== 'function') {
+      } else if ((details.hasErrors || details.hasMissing) && typeof attrs.args.fallback !== 'function') {
         return attrs.args.fallback;
       }
 
@@ -262,7 +262,7 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
       }
 
       const children: m.Children = [];
-      let list = Object.values(instances);
+      let list = Reflect.ownKeys(instances).map(((key) => instances[key as symbol]));
 
       if (start != null || end != null) {
         list = list.slice(
@@ -276,35 +276,38 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
       }
 
       if (pre != null) {
-        children.push(m.fragment({ key: '@pre' }, [pre]));
+        children.push(m.fragment({ key: preKey }, [pre]));
       }
 
       for (let index = 0; index < list.length; index++) {
         const { selectionResult, octiron } = list[index];
-        const { pointer } = selectionResult;
+        const { key } = selectionResult;
 
         if (index !== 0) {
-          children.push(m.fragment({ key: pointer }, [sep]));
+          children.push(m.fragment({ key: `@${Symbol.keyFor(key)}` }, [sep]));
         }
 
         if (selectionResult.type === 'value') {
-          children.push(m.fragment({ key: pointer }, [view(octiron)]));
+          children.push(m.fragment({ key }, [view(octiron)]));
         } else if (!selectionResult.ok && typeof fallback === 'function') {
           children.push(
-            m.fragment({ key: pointer }, [fallback(octiron, selectionResult.reason as Failure)]),
+            m.fragment({ key }, [fallback(octiron, selectionResult.reason as Failure)]),
           );
         } else if (!selectionResult.ok) {
-          children.push(m.fragment({ key: pointer }, [fallback as m.Children]));
+          children.push(m.fragment({ key }, [fallback as m.Children]));
         } else {
-          children.push(m.fragment({ key: pointer }, [view(octiron)]));
+          children.push(m.fragment({ key }, [view(octiron)]));
         }
       }
 
       if (post != null) {
-        children.push(m.fragment({ key: '@post' }, [post]));
+        children.push(m.fragment({ key: postKey }, [post]));
       }
 
       return children;
     },
   };
 };
+
+const preKey = Symbol.for('@pre');
+const postKey = Symbol.for('@post');
