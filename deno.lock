@@ -5,6 +5,7 @@
     "jsr:@denosaurs/plug@1.0.3": "1.0.3",
     "jsr:@std/assert@^1.0.13": "1.0.13",
     "jsr:@std/assert@~0.213.1": "0.213.1",
+    "jsr:@std/async@^1.0.13": "1.0.13",
     "jsr:@std/data-structures@^1.0.8": "1.0.8",
     "jsr:@std/encoding@0.213.1": "0.213.1",
     "jsr:@std/fmt@0.213.1": "0.213.1",
@@ -50,6 +51,9 @@
         "jsr:@std/internal@^1.0.6"
       ]
     },
+    "@std/async@1.0.13": {
+      "integrity": "1d76ca5d324aef249908f7f7fe0d39aaf53198e5420604a59ab5c035adc97c96"
+    },
     "@std/data-structures@1.0.8": {
       "integrity": "2fb7219247e044c8fcd51341788547575653c82ae2c759ff209e0263ba7d9b66"
     },
@@ -91,6 +95,7 @@
       "integrity": "144b3737105b9071cb50c957681f58a1b8ec0f3e5b19ad830f401c5fa931e8f0",
       "dependencies": [
         "jsr:@std/assert@^1.0.13",
+        "jsr:@std/async",
         "jsr:@std/data-structures",
         "jsr:@std/fs@^1.0.18",
         "jsr:@std/internal@^1.0.8",
@@ -395,6 +400,15 @@
       "npm:mithril-node-render@^3.0.2",
       "npm:mithril@^2.3.2",
       "npm:typescript@^5.8.3"
-    ]
+    ],
+    "packageJson": {
+      "dependencies": [
+        "npm:esbuild@~0.25.5",
+        "npm:jsonld@^8.3.3",
+        "npm:mithril-node-render@^3.0.2",
+        "npm:mithril@^2.3.2",
+        "npm:typescript@^5.8.3"
+      ]
+    }
   }
 }

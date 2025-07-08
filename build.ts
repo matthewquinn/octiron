@@ -2,7 +2,7 @@ import esbuild from 'esbuild';
 
 
 await esbuild.build({
-  entryPoints: ['lib/mod.ts'],
+  entryPoints: ['lib/octiron.ts'],
   target: 'es6',
   bundle: true,
   outfile: 'octiron.js',
@@ -12,7 +12,7 @@ await esbuild.build({
 });
 
 await esbuild.build({
-  entryPoints: ['lib/mod.ts'],
+  entryPoints: ['lib/octiron.ts'],
   target: 'es6',
   bundle: true,
   outfile: 'octiron.min.js',
@@ -24,7 +24,7 @@ await esbuild.build({
 
 const command = new Deno.Command('./node_modules/.bin/tsc', {
   args: [
-    './lib/mod.ts',
+    './lib/octiron.ts',
     '--outFile', './octiron.d.ts',
     '--emitDeclarationOnly',
     '--declaration',

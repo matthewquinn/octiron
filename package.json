@@ -1,0 +1,41 @@
+{
+  "name": "@octiron/octicon",
+  "version": "0.0.1",
+  "description": "WIP framework for mithril.js and json-ld APIs.",
+  "main": "octiron.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "files": [
+    "./README.md",
+    "./LICENCE",
+    "./octiron.d.ts",
+    "./octiron.js",
+    "./octiron.min.js"
+  ],
+  "devDependencies": {
+    "esbuild": "^0.25.5",
+    "jsonld": "^8.3.3",
+    "mithril": "^2.3.2",
+    "mithril-node-render": "^3.0.2",
+    "typescript": "^5.8.3"
+  },
+  "peerDependencies": {
+    "mithril": "^2.3.2"
+  },
+  "optionalDependencies": {
+    "jsonld": "^8.3.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/matthewquinn/octiron.git"
+  },
+  "author": "Matthew Quinn",
+  "license": "MIT",
+  "types": "./octiron.d.ts",
+  "bugs": {
+    "url": "https://github.com/matthewquinn/octiron/issues"
+  },
+  "homepage": "https://github.com/matthewquinn/octiron#readme"
+}

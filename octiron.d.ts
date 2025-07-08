@@ -925,10 +925,7 @@ declare module "store" {
     import type { EntityState, OctironStore } from "types/store";
     export type Aliases = Record<string, string>;
     export type Headers = Record<string, string>;
-    export type Origins = Record<string, {
-        originRoot: string;
-        headers: Headers;
-    }>;
+    export type Origins = Record<string, Headers>;
     export type ContentTypePurpose = 'json-ld' | 'problem-details';
     export type ContentTypeHandler = (args: {
         res: Response;
@@ -945,7 +942,7 @@ declare module "store" {
     };
     export type Fetcher = (iri: string, args: FetcherArgs) => Promise<Response>;
     export type ResponseHook = (res: Promise<Response>) => void;
-    export function makeStore({ rootIRI, vocab, fetcher: argsFetcher, responseHook, ...args }: {
+    export function makeStore({ rootIRI, vocab, responseHook, ...args }: {
         rootIRI: string;
         vocab?: string;
         aliases?: Aliases;
@@ -968,11 +965,30 @@ declare module "utils/makeTypeDefs" {
      */
     export function makeTypeDefs<const Type extends string = string, const TypeDefList extends TypeDef<any, Type> = TypeDef<any, Type>>(...typeDefs: Readonly<TypeDefList[]>): TypeDefs<Type, TypeDefList>;
 }
-declare module "mod" {
+declare module "utils/makeTypeDef" {
+    import type { JSONValue } from "types/common";
+    import type { TypeDef } from "types/octiron";
+    /**
+     * @description
+     * Utility for creating a well typed typeDef.
+     *
+     * @param typeDef An object to property define the types for.
+     */
+    export function makeTypeDef<const Model extends JSONValue = JSONValue, const Type extends string = string>(typeDef: TypeDef<Model, Type>): TypeDef<Model, Type>;
+}
+declare module "octiron" {
     import type { TypeDef } from "types/octiron";
     import { makeStore } from "store";
-    export default function octiron({ typeDefs, ...storeArgs }: Omit<Parameters<typeof makeStore>[0], 'rootIRI'> & {
-        rootIRI: string;
+    export * from "types/common";
+    export * from "types/store";
+    export * from "types/octiron";
+    export * from "store";
+    export * from "utils/makeTypeDef";
+    export * from "utils/makeTypeDefs";
+    /**
+     * Creates a root octiron instance.
+     */
+    export default function octiron({ typeDefs, ...storeArgs }: Parameters<typeof makeStore>[0] & {
         typeDefs?: TypeDef<any>[];
     }): import("types/octiron").OctironRoot;
 }

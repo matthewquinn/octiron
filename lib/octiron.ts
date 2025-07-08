@@ -3,15 +3,24 @@ import { rootFactory } from "./factories/rootFactory.ts";
 import { makeStore } from "./store.ts";
 import { makeTypeDefs } from "./utils/makeTypeDefs.ts";
 
+export * from './types/common.ts';
+export * from './types/store.ts';
+export * from './types/octiron.ts';
+export * from './store.ts';
+export * from './utils/makeTypeDef.ts';
+export * from './utils/makeTypeDefs.ts';
+
+/**
+ * Creates a root octiron instance.
+ */
 export default function octiron({
   typeDefs,
   ...storeArgs
-}: Omit<Parameters<typeof makeStore>[0], 'rootIRI'> & {
-  rootIRI: string;
+}: Parameters<typeof makeStore>[0] & {
   // deno-lint-ignore no-explicit-any
   typeDefs?: TypeDef<any>[];
 }) {
-  const config = typeof typeDefs !== 'undefined'
+  const config = typeDefs != null
     ? makeTypeDefs(...typeDefs)
     : {};
 

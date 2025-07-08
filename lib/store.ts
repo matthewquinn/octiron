@@ -11,10 +11,7 @@ export type Aliases = Record<string, string>;
 
 export type Headers = Record<string, string>;
 
-export type Origins = Record<string, {
-  originRoot: string;
-  headers: Headers;
-}>;
+export type Origins = Record<string, Headers>;
 
 export type ContentTypePurpose =
   | 'json-ld'
@@ -46,7 +43,6 @@ export type ResponseHook = (res: Promise<Response>) => void;
 export function makeStore({
   rootIRI,
   vocab,
-  fetcher: argsFetcher,
   responseHook,
   ...args
 }: {
@@ -61,13 +57,16 @@ export function makeStore({
   responseHook?: ResponseHook;
 }): OctironStore {
   const context: Record<string, string> = {};
-  const headers = args.headers || {};
-  const handlers: Handlers = args.handlers || {};
-  // const origins = (args.origins ??= {});
-  const entities = args.entities || {};
-  const aliases = args.aliases || {};
-  // const rootURL = new URL(rootIRI);
-  const fetcher = argsFetcher || fetch;
+  const headers = args.headers ?? {};
+  const handlers: Handlers = args.handlers ?? {};
+  const origins = new Map([
+    [rootIRI, headers],
+    ...Object.entries(Object.assign({}, args.origins)),
+  ]);
+  const entities = args.entities ?? {};
+  const aliases = args.aliases ?? {};
+  const fetcher = args.fetcher ?? fetch;
+
 
   if (typeof vocab === 'string') {
     context['@vocab'] = vocab;
@@ -131,7 +130,6 @@ export function makeStore({
   }
 
   function publish(iri: string) {
-    // infinite loop can occur if looping over source array in dep mapper
     const keys = [...(dependentsMapper[iri] || [])];
 
     for (const key of keys) {
@@ -164,6 +162,13 @@ export function makeStore({
     headers?: Headers;
     body?: string;
   } = {}): Promise<void> {
+    const url = new URL(iri);
+
+    if (!origins.has(url.origin)) {
+      // don't allow requests to un-configured servers
+      throw new Error(`Unconfigured origin`);
+    }
+    
     if (entities[iri]) {
       return;
     }
@@ -177,11 +182,15 @@ export function makeStore({
       setTimeout(async () => {
         const res = await fetcher(iri, {
           method: args.method ?? 'get',
-          headers: Object.assign({}, headers, args.headers),
+          headers: Object.assign({}, origins.get(iri), args.headers),
           body: args.body,
         });
 
-        const contentType = res.headers.get('content-type');
+        const contentType = res.headers.get('content-type')?.split(';')[0];
+
+        if (contentType == null) {
+          throw new Error('No content type');
+        }
 
         if (
           contentType === null || handlers[contentType] === null

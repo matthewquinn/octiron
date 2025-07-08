@@ -1,7 +1,8 @@
 {
   "name": "@octiron/octiron",
   "version": "0.0.1",
-  "exports": "./lib/mod.ts",
+  "nodeModulesDir": "auto",
+  "exports": "./lib/octiron.ts",
   "tasks": {
     "build": "deno run --allow-env --allow-read --allow-run build.ts"
   },

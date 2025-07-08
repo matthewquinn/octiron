@@ -1156,20 +1156,23 @@ function makeStore(_a) {
   var _b = _a, {
     rootIRI,
     vocab,
-    fetcher: argsFetcher,
     responseHook
   } = _b, args = __objRest(_b, [
     "rootIRI",
     "vocab",
-    "fetcher",
     "responseHook"
   ]);
+  var _a2, _b2, _c, _d, _e;
   const context = {};
-  const headers = args.headers || {};
-  const handlers = args.handlers || {};
-  const entities = args.entities || {};
-  const aliases = args.aliases || {};
-  const fetcher = argsFetcher || fetch;
+  const headers = (_a2 = args.headers) != null ? _a2 : {};
+  const handlers = (_b2 = args.handlers) != null ? _b2 : {};
+  const origins = new Map([
+    [rootIRI, headers],
+    ...Object.entries(Object.assign({}, args.origins))
+  ]);
+  const entities = (_c = args.entities) != null ? _c : {};
+  const aliases = (_d = args.aliases) != null ? _d : {};
+  const fetcher = (_e = args.fetcher) != null ? _e : fetch;
   if (typeof vocab === "string") {
     context["@vocab"] = vocab;
   }
@@ -1231,6 +1234,10 @@ function makeStore(_a) {
   }
   function callFetcher(_0) {
     return __async(this, arguments, function* (iri, args2 = {}) {
+      const url = new URL(iri);
+      if (!origins.has(url.origin)) {
+        throw new Error(`Unconfigured origin`);
+      }
       if (entities[iri]) {
         return;
       }
@@ -1240,13 +1247,16 @@ function makeStore(_a) {
       };
       const promise = new Promise((resolve) => {
         setTimeout(() => __async(null, null, function* () {
-          var _a2;
+          var _a3, _b3;
           const res = yield fetcher(iri, {
-            method: (_a2 = args2.method) != null ? _a2 : "get",
-            headers: Object.assign({}, headers, args2.headers),
+            method: (_a3 = args2.method) != null ? _a3 : "get",
+            headers: Object.assign({}, origins.get(iri), args2.headers),
             body: args2.body
           });
-          const contentType = res.headers.get("content-type");
+          const contentType = (_b3 = res.headers.get("content-type")) == null ? void 0 : _b3.split(";")[0];
+          if (contentType == null) {
+            throw new Error("No content type");
+          }
           if (contentType === null || handlers[contentType] === null) {
             const error = new Error(`Unsupported content type ${contentType}`);
             const reason = new ContentHandlingFailure(error);
@@ -1365,8 +1375,8 @@ function makeStore(_a) {
     return details;
   };
   store.unsubscribe = function(key) {
-    var _a2;
-    (_a2 = listenersMapper[key]) == null ? void 0 : _a2.cleanup();
+    var _a3;
+    (_a3 = listenersMapper[key]) == null ? void 0 : _a3.cleanup();
   };
   if (typeof vocab === "string") {
     context["@vocab"] = vocab;
@@ -1389,14 +1399,19 @@ function makeTypeDefs(...typeDefs) {
   return config;
 }
 
-// lib/mod.ts
+// lib/utils/makeTypeDef.ts
+function makeTypeDef(typeDef) {
+  return typeDef;
+}
+
+// lib/octiron.ts
 function octiron(_a) {
   var _b = _a, {
     typeDefs
   } = _b, storeArgs = __objRest(_b, [
     "typeDefs"
   ]);
-  const config = typeof typeDefs !== "undefined" ? makeTypeDefs(...typeDefs) : {};
+  const config = typeDefs != null ? makeTypeDefs(...typeDefs) : {};
   const store = makeStore(storeArgs);
   return rootFactory({
     store,
@@ -1404,5 +1419,8 @@ function octiron(_a) {
   });
 }
 export {
-  octiron as default
+  octiron as default,
+  makeStore,
+  makeTypeDef,
+  makeTypeDefs
 };
