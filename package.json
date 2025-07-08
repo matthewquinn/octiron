@@ -1,5 +1,5 @@
 {
-  "name": "@octiron/octicon",
+  "name": "@octiron/octiron",
   "version": "0.0.1",
   "description": "WIP framework for mithril.js and json-ld APIs.",
   "main": "octiron.js",
