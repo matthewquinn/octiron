@@ -14,7 +14,7 @@ export const jsonLDHandler: ContentTypeHandler = async ({
   if (!isJSONObject(json) && !Array.isArray(json)) {
     throw new Error('JSON-LD Document should be an object');
   }
-  
+
   const expanded = await jsonld.expand(json, {
     documentLoader: async (url: string) => {
       const res = await fetch(url, {
@@ -35,6 +35,6 @@ export const jsonLDHandler: ContentTypeHandler = async ({
 
   return {
     value,
-    purpose: 'json-ld',
+    outputType: 'jsonld',
   };
 }

@@ -926,13 +926,13 @@ declare module "store" {
     export type Aliases = Record<string, string>;
     export type Headers = Record<string, string>;
     export type Origins = Record<string, Headers>;
-    export type ContentTypePurpose = 'json-ld' | 'problem-details';
+    export type ContentTypeTarget = 'json-ld' | 'problem-details';
     export type ContentTypeHandler = (args: {
         res: Response;
         store: OctironStore;
     }) => Promise<{
         value: JSONObject;
-        purpose: ContentTypePurpose;
+        target: ContentTypeTarget;
     }>;
     export type Handlers = Record<string, ContentTypeHandler>;
     export type FetcherArgs = {

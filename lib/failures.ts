@@ -29,11 +29,11 @@ export class HTTPFailure implements Failure {
     this.#res = res;
   }
 
-  get status() {
+  get status(): number {
     return this.#status;
   }
 
-  get res() {
+  get res(): Response {
     return this.#res;
   }
 
@@ -65,7 +65,7 @@ export class ContentHandlingFailure implements Failure {
     this.#error = error;
   }
 
-  get error() {
+  get error(): Error {
     return this.#error;
   }
 

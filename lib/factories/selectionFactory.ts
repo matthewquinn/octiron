@@ -20,7 +20,7 @@ export type SelectionFactoryInternals = {
 export interface OctironHooks {
   _updateArgs(args: OctironSelectArgs): void;
   _updateValue(value: JSONValue): void;
-}
+};
 
 /**
  * @description

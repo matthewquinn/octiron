@@ -1,4 +1,4 @@
-import type { TypeDef } from "./types/octiron.ts";
+import type { OctironRoot, TypeDef } from "./types/octiron.ts";
 import { rootFactory } from "./factories/rootFactory.ts";
 import { makeStore } from "./store.ts";
 import { makeTypeDefs } from "./utils/makeTypeDefs.ts";
@@ -19,7 +19,7 @@ export default function octiron({
 }: Parameters<typeof makeStore>[0] & {
   // deno-lint-ignore no-explicit-any
   typeDefs?: TypeDef<any>[];
-}) {
+}): OctironRoot {
   const config = typeDefs != null
     ? makeTypeDefs(...typeDefs)
     : {};

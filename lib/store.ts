@@ -13,8 +13,8 @@ export type Headers = Record<string, string>;
 
 export type Origins = Record<string, Headers>;
 
-export type ContentTypePurpose =
-  | 'json-ld'
+export type OutputTypes =
+  | 'jsonld'
   | 'problem-details'
 ;
 
@@ -23,7 +23,7 @@ export type ContentTypeHandler = (args: {
   store: OctironStore;
 }) => Promise<{
   value: JSONObject;
-  purpose: ContentTypePurpose;
+  outputType: OutputTypes;
 }>;
 
 
@@ -168,7 +168,7 @@ export function makeStore({
       // don't allow requests to un-configured servers
       throw new Error(`Unconfigured origin`);
     }
-    
+
     if (entities[iri]) {
       return;
     }
@@ -212,7 +212,7 @@ export function makeStore({
         }
 
         try {
-          const { purpose, value } = await handlers[contentType]({
+          const { outputType, value } = await handlers[contentType]({
             res,
             store,
           });
@@ -241,7 +241,7 @@ export function makeStore({
             };
           }
 
-          if (purpose === 'json-ld') {
+          if (outputType === 'jsonld') {
             for (const entity of flattenIRIObjects(value)) {
               if (iris.includes(entity['@id'])) {
                 continue;
