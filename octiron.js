@@ -1093,7 +1093,7 @@ var jsonLDHandler = (_0) => __async(null, [_0], function* ({
   const value = yield jsonld.compact(expanded, store.context);
   return {
     value,
-    purpose: "json-ld"
+    outputType: "jsonld"
   };
 });
 
@@ -1272,7 +1272,7 @@ function makeStore(_a) {
             return;
           }
           try {
-            const { purpose, value } = yield handlers[contentType]({
+            const { outputType, value } = yield handlers[contentType]({
               res,
               store
             });
@@ -1297,7 +1297,7 @@ function makeStore(_a) {
                 reason
               };
             }
-            if (purpose === "json-ld") {
+            if (outputType === "jsonld") {
               for (const entity of flattenIRIObjects(value)) {
                 if (iris.includes(entity["@id"])) {
                   continue;

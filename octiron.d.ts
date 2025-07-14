@@ -926,13 +926,13 @@ declare module "store" {
     export type Aliases = Record<string, string>;
     export type Headers = Record<string, string>;
     export type Origins = Record<string, Headers>;
-    export type ContentTypeTarget = 'json-ld' | 'problem-details';
+    export type OutputTypes = 'jsonld' | 'problem-details';
     export type ContentTypeHandler = (args: {
         res: Response;
         store: OctironStore;
     }) => Promise<{
         value: JSONObject;
-        target: ContentTypeTarget;
+        outputType: OutputTypes;
     }>;
     export type Handlers = Record<string, ContentTypeHandler>;
     export type FetcherArgs = {
@@ -977,7 +977,7 @@ declare module "utils/makeTypeDef" {
     export function makeTypeDef<const Model extends JSONValue = JSONValue, const Type extends string = string>(typeDef: TypeDef<Model, Type>): TypeDef<Model, Type>;
 }
 declare module "octiron" {
-    import type { TypeDef } from "types/octiron";
+    import type { OctironRoot, TypeDef } from "types/octiron";
     import { makeStore } from "store";
     export * from "types/common";
     export * from "types/store";
@@ -990,5 +990,5 @@ declare module "octiron" {
      */
     export default function octiron({ typeDefs, ...storeArgs }: Parameters<typeof makeStore>[0] & {
         typeDefs?: TypeDef<any>[];
-    }): import("types/octiron").OctironRoot;
+    }): OctironRoot;
 }

@@ -1,44 +1,26 @@
-import type { JSONObject } from "./types/common.ts";
-import type { EntityState, FailureEntityState, Method, OctironStore, ReadonlySelectionResult, SelectionDetails, SuccessEntityState } from './types/store.ts';
-import { flattenIRIObjects } from './utils/flattenIRIObjects.ts';
-import { getSelection } from './utils/getSelection.ts';
-import { jsonLDHandler } from './handlers/jsonLDHandler.ts';
-import { ContentHandlingFailure, HTTPFailure } from "./failures.ts";
 import { isBrowserRender } from "./consts.ts";
-
-
-export type Aliases = Record<string, string>;
-
-export type Headers = Record<string, string>;
-
-export type Origins = Record<string, Headers>;
-
-export type OutputTypes =
-  | 'jsonld'
-  | 'problem-details'
-;
-
-export type ContentTypeHandler = (args: {
-  res: Response;
-  store: OctironStore;
-}) => Promise<{
-  value: JSONObject;
-  outputType: OutputTypes;
-}>;
-
-
-export type Handlers = Record<string, ContentTypeHandler>;
-
-export type FetcherArgs = {
-  method?: string;
-  body?: string;
-  headers?: Record<string, string>;
-};
-
-export type Fetcher = (iri: string, args: FetcherArgs) => Promise<Response>;
-
-export type ResponseHook = (res: Promise<Response>) => void;
-
+import { ContentHandlingFailure, HTTPFailure } from "./failures.ts";
+import { jsonLDHandler } from "./handlers/jsonLDHandler.ts";
+import type { JSONObject } from "./types/common.ts";
+import type {
+  Aliases,
+  AlternativesStateStore,
+  EntitiesStateStore,
+  FailureEntityState,
+  Fetcher,
+  Handlers,
+  Headers,
+  LoadingStateStore,
+  Method,
+  OctironStore,
+  Origins,
+  ReadonlySelectionResult,
+  ResponseHook,
+  SelectionDetails,
+  SuccessEntityState,
+} from "./types/store.ts";
+import { flattenIRIObjects } from "./utils/flattenIRIObjects.ts";
+import { getSelection } from "./utils/getSelection.ts";
 
 export function makeStore({
   rootIRI,
@@ -52,7 +34,8 @@ export function makeStore({
   headers?: Headers;
   origins?: Origins;
   handlers?: Handlers;
-  entities?: Record<string, EntityState>;
+  entities?: EntitiesStateStore;
+  alternatives?: AlternativesStateStore;
   fetcher?: Fetcher;
   responseHook?: ResponseHook;
 }): OctironStore {
@@ -63,16 +46,17 @@ export function makeStore({
     [rootIRI, headers],
     ...Object.entries(Object.assign({}, args.origins)),
   ]);
-  const entities = args.entities ?? {};
-  const aliases = args.aliases ?? {};
-  const fetcher = args.fetcher ?? fetch;
+  const aliases: Aliases = args.aliases ?? {};
+  const fetcher: Fetcher = args.fetcher ?? fetch;
+  const entities: EntitiesStateStore = args.entities ?? {};
+  const loading: LoadingStateStore = {};
+  const alternatives: AlternativesStateStore = args.alternatives ?? {};
 
-
-  if (typeof vocab === 'string') {
-    context['@vocab'] = vocab;
+  if (typeof vocab === "string") {
+    context["@vocab"] = vocab;
   }
 
-  if (typeof args.aliases !== 'undefined') {
+  if (typeof args.aliases !== "undefined") {
     for (const [key, value] of Object.entries(args.aliases)) {
       context[key] = value;
     }
@@ -86,8 +70,8 @@ export function makeStore({
     context,
   } as OctironStore;
 
-  if (handlers['application/ld+json'] == null) {
-    handlers['application/ld+json'] = jsonLDHandler;
+  if (handlers["application/ld+json"] == null) {
+    handlers["application/ld+json"] = jsonLDHandler;
   }
 
   const dependentsMapper: Record<string, symbol[]> = {};
@@ -115,7 +99,7 @@ export function makeStore({
       delete listenersMapper[key];
 
       for (const dependency of details.dependencies) {
-        if (typeof dependentsMapper[dependency] === 'undefined') {
+        if (typeof dependentsMapper[dependency] === "undefined") {
           continue;
         }
         const index = dependentsMapper[dependency].indexOf(key);
@@ -135,11 +119,13 @@ export function makeStore({
     for (const key of keys) {
       const { selector, value, listener } = listenersMapper[key];
 
-      const details = getSelection<ReadonlySelectionResult>({
-        selector,
-        value,
-        store,
-      } as Parameters<typeof getSelection>[0]);
+      const details = getSelection<ReadonlySelectionResult>(
+        {
+          selector,
+          value,
+          store,
+        } as Parameters<typeof getSelection>[0],
+      );
       const cleanup = makeCleanupFn({ key, details });
 
       // track each dependency using the key so updates can easliy be published
@@ -181,15 +167,15 @@ export function makeStore({
     const promise = new Promise<Response>((resolve) => {
       setTimeout(async () => {
         const res = await fetcher(iri, {
-          method: args.method ?? 'get',
+          method: args.method ?? "get",
           headers: Object.assign({}, origins.get(iri), args.headers),
           body: args.body,
         });
 
-        const contentType = res.headers.get('content-type')?.split(';')[0];
+        const contentType = res.headers.get("content-type")?.split(";")[0];
 
         if (contentType == null) {
-          throw new Error('No content type');
+          throw new Error("No content type");
         }
 
         if (
@@ -211,87 +197,90 @@ export function makeStore({
           return;
         }
 
-        try {
-          const { outputType, value } = await handlers[contentType]({
-            res,
-            store,
-          });
+        const output = await handlers[contentType]({
+          res,
+          store,
+        });
 
-          const iris = [iri];
+        if (output.outputType === "jsonld") {
+          try {
+            const iris = [iri];
 
-          if (res.ok) {
-            entities[iri] = {
-              iri,
-              loading: false,
-              ok: true,
-              value,
-              contentType,
-            };
-          } else {
-            const reason = new HTTPFailure(res.status, res);
+            if (res.ok) {
+              entities[iri] = {
+                iri,
+                loading: false,
+                ok: true,
+                value: output.value,
+                contentType,
+              };
+            } else {
+              const reason = new HTTPFailure(res.status, res);
 
-            entities[iri] = {
-              iri,
-              loading: false,
-              ok: false,
-              value,
-              status: res.status,
-              contentType,
-              reason,
-            };
-          }
+              entities[iri] = {
+                iri,
+                loading: false,
+                ok: false,
+                value: output.value,
+                status: res.status,
+                contentType,
+                reason,
+              };
+            }
 
-          if (outputType === 'jsonld') {
             for (const entity of flattenIRIObjects(value)) {
-              if (iris.includes(entity['@id'])) {
+              if (iris.includes(entity["@id"])) {
                 continue;
               }
 
-              entities[entity['@id']] = {
-                iri: entity['@id'],
+              entities[entity["@id"]] = {
+                iri: entity["@id"],
                 loading: false,
                 ok: true,
                 value: entity,
                 contentType,
               };
             }
-          }
 
-          for (const iri of iris) {
-            publish(iri);
+            for (const iri of iris) {
+              publish(iri);
+            }
+          } catch (err) {
+            console.error(err);
           }
-        } catch (err) {
-          console.error(err);
+        } else if (output.outputType === 'html') {
+
         }
+
 
         resolve(res);
       });
     });
 
-    if (typeof responseHook === 'function') {
+    if (typeof responseHook === "function") {
       responseHook(promise);
     }
 
     await promise;
-  };
+  }
 
-  store.fetch = async function(iri: string) {
+  store.fetch = async function (iri: string) {
     await callFetcher(iri);
 
     return entities[iri] as SuccessEntityState | FailureEntityState;
-  } satisfies OctironStore['fetch'];
+  } satisfies OctironStore["fetch"];
 
   store.expand = function (term) {
-    if (term.includes(':')) {
-      const [alias, rest] = term.split(':');
+    if (term.includes(":")) {
+      const [alias, rest] = term.split(":");
 
       return `${aliases[alias]}${rest}`;
-    } else if (typeof vocab !== 'string') {
+    } else if (typeof vocab !== "string") {
       return term;
     }
 
     return `${vocab}${term}`;
-  } satisfies OctironStore['expand'];
+  } satisfies OctironStore["expand"];
 
   store.select = (selector, value) => {
     return getSelection({
@@ -330,15 +319,31 @@ export function makeStore({
     };
 
     return details;
-  } satisfies OctironStore['subscribe'];
+  } satisfies OctironStore["subscribe"];
 
   store.unsubscribe = function (key: symbol) {
     listenersMapper[key]?.cleanup();
-  } satisfies OctironStore['unsubscribe'];
+  } satisfies OctironStore["unsubscribe"];
 
+  store.stateToHTML = function (): string {
+    let html = `<script id="octiron-jsonld-entities" type="application/json">${JSON.stringify(entities)}</script>\n`;
 
-  if (typeof vocab === 'string') {
-    context['@vocab'] = vocab;
+    for (const [iri, alternative] of Object.entries(alternatives)) {
+      for (const state of Object.values(alternative)) {
+        switch (state.type) {
+          case 'problem-details': {
+            html += `<script class="octiron-problem-details" data-iri="${state.iri}" type="application/json>${JSON.stringify(state)}</script>\n`;
+            break;
+          }
+        }
+      }
+    }
+
+    return html;
+  };
+
+  if (typeof vocab === "string") {
+    context["@vocab"] = vocab;
   }
 
   for (const [key, value] of Object.entries(aliases)) {
@@ -346,8 +351,14 @@ export function makeStore({
   }
 
   if (headers.accept == null) {
-    headers['accept'] = 'application/ld+json';
+    headers["accept"] = "application/ld+json";
   }
 
   return store;
+}
+
+export function collectInitialState() {
+  const entities = JSON.parse(
+    document.getElementById("octiron-jsonld-entities")?.innerText as string,
+  );
 }

@@ -1,10 +1,86 @@
-import type { Children } from 'mithril';
+import type { Children, ComponentTypes } from 'mithril';
 import type { JSONObject, JSONValue } from './common.ts';
+
+
+export type Aliases = Record<string, string>;
+
+export type Headers = Record<string, string>;
+
+export type Origins = Record<string, Headers>;
+
+export type OutputTypes =
+  | 'jsonld'
+  | 'problem-details'
+  | 'html'
+  | 'html-fragments'
+;
+
+export type ContentTypeHandlerArgs = {
+  res: Response;
+  store: OctironStore;
+};
+
+export type CleanupFn = () => void;
+
+export type HandlerCallback = (el: HTMLElement) => CleanupFn;
+
+export type JSONLDContentTypeResult = {
+  outputType: 'jsonld';
+  value: JSONObject;
+};
+
+export type ProblemDetailsContentTypeResult = {
+  outputType: 'problem-details';
+  value: JSONObject;
+};
+
+export type HTMLContentTypeResult = {
+  outputType: 'html';
+  value: string;
+  callback?: HandlerCallback;
+};
+
+export type HTMLFragmentsContentTypeResult = {
+  outputType: 'html-fragments';
+  root?: string;
+  id: Record<string, string>;
+  fragments: Record<string, string>;
+  callback?: HandlerCallback;
+};
+
+export type ContentTypeResult =
+  | JSONLDContentTypeResult
+  | ProblemDetailsContentTypeResult
+  | HTMLContentTypeResult
+  | HTMLFragmentsContentTypeResult
+;
+
+export type ContentTypeHandler = (args: ContentTypeHandlerArgs) => Promise<ContentTypeResult>;
+
+
+export type Handlers = Record<string, ContentTypeHandler>;
+
+export type FetcherArgs = {
+  method?: string;
+  body?: string;
+  headers?: Record<string, string>;
+};
+
+export type Fetcher = (iri: string, args: FetcherArgs) => Promise<Response>;
+
+export type ResponseHook = (res: Promise<Response>) => void;
+
 
 
 export type HTTPErrorView = (status: number) => Children;
 
 export type ContentParsingView = (error: Error) => Children;
+
+export type AlternativeContentProps = {
+  fragment?: string;
+};
+
+export type AlternativeContentComponent = ComponentTypes<AlternativeContentProps>;
 
 export interface Failure {
 
@@ -38,7 +114,6 @@ export interface Failure {
    */
   unparserable(view: ContentParsingView): Children;
 }
-
 
 export type EntitySelectionResult = {
   /**
@@ -126,14 +201,32 @@ export type ValueSelectionResult = {
   readonly contentType?: undefined;
 };
 
+export type AlternativeTypeResult = {
+  readonly key: symbol;
+
+  readonly pointer: string;
+
+  readonly type: 'alt';
+
+  readonly datatype?: undefined;
+
+  readonly value?: undefined;
+
+  readonly contentType: string;
+
+  readonly component: AlternativeContentComponent;
+};
+
 export type ReadonlySelectionResult =
   | EntitySelectionResult
   | ValueSelectionResult
+  | AlternativeTypeResult
 ;
 
 export type SelectionResult =
   | EntitySelectionResult
   | ValueSelectionResult
+  | AlternativeTypeResult
 ;
 
 export type SelectionDetails<T = SelectionResult> = {
@@ -198,7 +291,7 @@ export type LoadingEntityState = {
    * The response status. Only used for failure responses.
    */
   readonly status?: undefined;
-
+ 
   /**
    * The content type of the response.
    */
@@ -230,7 +323,7 @@ export type SuccessEntityState = {
    * The response status. Only used for failure responses.
    */
   readonly status?: undefined;
-
+ 
   /**
    * The content type of the response.
    */
@@ -262,22 +355,76 @@ export type FailureEntityState = {
    * The response status. Only used for failure responses.
    */
   readonly status: number;
-
+ 
   /**
    * The content type of the response.
    */
-  readonly contentType: string | null;
+  readonly contentType?: string;
 
   /**
    * An object describing the reason and source of the failure.
    */
   readonly reason: Failure;
+
+  /**
+   * Component to render if the returned content type is
+   * not jsonld or problem detail types.
+   */
+  readonly component?: AlternativeContentComponent;
 };
+
+export type AlternativeContentLoadingState = Record<string, Record<string, LoadingEntityState>>;
+
+export type LoadingResult = {
+  contentType: string;
+}
+
+export type LoadingAlternativeAcceptState = Record<string, true | LoadingResult>;
 
 export type EntityState =
   | LoadingEntityState
   | SuccessEntityState
   | FailureEntityState;
+
+export type ProblemDetailsState = {
+  type: 'problem-details';
+  iri: string;
+  contentType: string;
+  value: JSONObject;
+};
+  
+export type HTMLState = {
+  type: 'html';
+  iri: string;
+  contentType: string;
+  value: string;
+  rendered?: boolean;
+  callback?: HandlerCallback;
+};
+
+export type LooseFragementsState = {
+  contentType: string;
+  rendered: boolean;
+  html: string;
+};
+
+export type HTMLFragmentsState = {
+  type: 'html-fragments';
+  rootRendered: boolean;
+  root?: string;
+  ided: Record<string, LooseFragementsState>;
+  anon: Record<string, LooseFragementsState>;
+};
+
+export type ContentTypeState =
+  | ProblemDetailsState
+  | HTMLState
+  | HTMLFragmentsState
+;
+
+export type EntitiesStateStore = Record<string, EntityState>;
+export type LoadingStateStore = Record<string, LoadingAlternativeAcceptState>;
+export type AlternativesStateStore = Record<string, Record<string, ContentTypeState>>;
 
 export type Method =
   | 'get'
@@ -429,4 +576,6 @@ export interface OctironStore {
    * @param {symbol} key The unique sybmol used to identify the subscriber.
    */
   unsubscribe(key: symbol): void;
+
+  stateToHTML(): string;
 };

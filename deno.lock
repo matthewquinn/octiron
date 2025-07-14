@@ -21,7 +21,7 @@
     "npm:@types/mithril@^2.2.7": "2.2.7",
     "npm:@types/node@*": "22.15.15",
     "npm:esbuild@~0.25.5": "0.25.5",
-    "npm:jsonld@*": "8.3.3",
+    "npm:jsonld@^8.3.3": "8.3.3",
     "npm:mithril-node-render@^3.0.2": "3.0.2_mithril@2.3.2",
     "npm:mithril@^2.3.2": "2.3.2",
     "npm:typescript@^5.8.3": "5.8.3"
@@ -396,7 +396,7 @@
       "npm:@faker-js/faker@^9.8.0",
       "npm:@types/mithril@^2.2.7",
       "npm:esbuild@~0.25.5",
-      "npm:jsonld@*",
+      "npm:jsonld@^8.3.3",
       "npm:mithril-node-render@^3.0.2",
       "npm:mithril@^2.3.2",
       "npm:typescript@^5.8.3"

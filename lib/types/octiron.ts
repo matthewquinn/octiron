@@ -85,6 +85,16 @@ export type Fallback = FallbackView | Children;
  * Arguments for all methods which afford fetching entities.
  */
 export type FetchableArgs = {
+  /*
+   * Override the accept header
+   */
+  accept?: string;
+
+  /**
+   * Optional URL fragment which can be accessed by the content-type handler function.
+   */
+  fragment?: string;
+
   /**
    * Forces the retrieval of the latest representation even if the entity is in
    * the Octiron store.
