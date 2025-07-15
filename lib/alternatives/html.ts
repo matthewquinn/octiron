@@ -1,5 +1,6 @@
 import { isBrowserRender } from "consts";
 import m from 'mithril';
+import { AlternativeState } from "../types/store.ts";
 
 export type AlternativeHandler<Alternative> = (res: Response) => Promise<Alternative>;
 export type HTMLAlternativeOnRemove = () => void;
@@ -50,7 +51,9 @@ export type HTMLAlternativeArgs = {
   onCreate?: HTMLAlternativeOnCreate;
 };
 
-export class HTMLAlternative {
+export class HTMLAlternative implements AlternativeState {
+  static type = 'html';
+
   #rendered: boolean = false;
   #iri: string;
   #contentType: string;

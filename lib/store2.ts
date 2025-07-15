@@ -1,5 +1,6 @@
 import { OctironStore } from "octiron";
 import { AlternativesStateStore, EntitiesStateStore, LoadingStateStore } from "./types/store.ts";
+import { ContentTypes } from "./contentTypes.ts";
 
 
 enum InitialStateIds {
@@ -8,9 +9,10 @@ enum InitialStateIds {
 };
 
 export type StoreArgs = {
-    rootIRI: string;
-    vocab?: string;
-    aliases?: Record<string, string>;
+  rootIRI: string;
+  vocab?: string;
+  aliases?: Record<string, string>;
+  contentTypes?: ContentTypes;
 };
 
 export class Store implements OctironStore {
@@ -29,21 +31,10 @@ export class Store implements OctironStore {
     }
 
     static fromInitialState(): Store {
-      document.querySelector(`[data-octiron-html][data-iri=""`)
     }
 
     public toInitialState(): string {
-      let html = `<script id="${InitialStateIds.Primary}" type="application/json">${JSON.stringify(this.#primaryStore)}</script>\n`;
 
-      for (const alternative of Object.values(this.#alternativesStore)) {
-        for (const state of Object.values(alternative)) {
-          if (state.type === 'html' && state.rendered) {
-            
-          }
-        }
-      }
-      
-      return html;
     }
 
 }

@@ -28,7 +28,8 @@
   },
   "compilerOptions": {
     "lib": [
-      "dom"
+      "dom",
+      "es2022"
     ]
   }
 }

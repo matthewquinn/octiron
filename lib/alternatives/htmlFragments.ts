@@ -1,5 +1,6 @@
 import { isBrowserRender } from "consts";
 import m from 'mithril';
+import { AlternativeState } from "../types/store.ts";
 
 export type AlternativeHandler<Alternative> = (res: Response) => Promise<Alternative>;
 export type HTMLFragmentsAlternativeOnRemove = () => void;
@@ -37,7 +38,9 @@ export type HTMLFragmentsAlternativeArgs = {
   anon?: Record<string, string>;
 };
 
-export class HTMLFragmentsAlternative {
+export class HTMLFragmentsAlternative implements AlternativeState {
+  static type = 'html-fragments';
+
   #rendered: Set<string> = new Set();
   #iri: string;
   #fragment?: string;

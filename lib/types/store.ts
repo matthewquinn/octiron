@@ -8,7 +8,7 @@ export type Headers = Record<string, string>;
 
 export type Origins = Record<string, Headers>;
 
-export type OutputTypes =
+export type ContentTypeOutputs =
   | 'jsonld'
   | 'problem-details'
   | 'html'
@@ -36,15 +36,17 @@ export type ProblemDetailsContentTypeResult = {
 
 export type HTMLContentTypeResult = {
   outputType: 'html';
-  value: string;
+  id: string;
+  html: string;
   callback?: HandlerCallback;
 };
 
 export type HTMLFragmentsContentTypeResult = {
   outputType: 'html-fragments';
+  rootId?: string;
   root?: string;
-  id: Record<string, string>;
-  fragments: Record<string, string>;
+  ided: Record<string, string>;
+  anon: Record<string, string>;
   callback?: HandlerCallback;
 };
 
@@ -291,7 +293,7 @@ export type LoadingEntityState = {
    * The response status. Only used for failure responses.
    */
   readonly status?: undefined;
- 
+
   /**
    * The content type of the response.
    */
@@ -323,7 +325,7 @@ export type SuccessEntityState = {
    * The response status. Only used for failure responses.
    */
   readonly status?: undefined;
- 
+
   /**
    * The content type of the response.
    */
@@ -355,7 +357,7 @@ export type FailureEntityState = {
    * The response status. Only used for failure responses.
    */
   readonly status: number;
- 
+
   /**
    * The content type of the response.
    */
@@ -392,7 +394,7 @@ export type ProblemDetailsState = {
   contentType: string;
   value: JSONObject;
 };
-  
+
 export type HTMLState = {
   type: 'html';
   iri: string;
@@ -415,6 +417,13 @@ export type HTMLFragmentsState = {
   ided: Record<string, LooseFragementsState>;
   anon: Record<string, LooseFragementsState>;
 };
+
+export interface AlternativeState {
+  render(): Children;
+  getStateInfo(): JSONObject;
+  toInitialState(): string;
+};
+
 
 export type ContentTypeState =
   | ProblemDetailsState
