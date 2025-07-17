@@ -91,7 +91,6 @@ export class ContentTypes {
 
   public debug(): Record<string, RegisterHandlerArgs> {
     return Reflect.ownKeys(this.#handlers)
-      // deno-lint-ignore no-prototype-builtins
       .filter((key) => typeof key === 'symbol')
       .reduce(
       (acc, key: symbol) => ({ ...acc, [key.keyFor()]: this.#handlers[key] }),

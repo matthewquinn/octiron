@@ -1,30 +1,32 @@
 import { isBrowserRender } from "consts";
 import m from 'mithril';
-import { AlternativeState } from "../types/store.ts";
+import type { HTMLCleanupFn, HTMLHandler, IntegrationState, IntegrationType } from "../types/store.ts";
+import { Octiron } from "types/octiron";
 
-export type AlternativeHandler<Alternative> = (res: Response) => Promise<Alternative>;
-export type HTMLAlternativeOnRemove = () => void;
-export type HTMLAlternativeOnCreate = (el: Element) => HTMLAlternativeOnRemove;
-
-export type HTMLAlternativeComponentAttrs = {
+export type HTMLIntegrationComponentAttrs = {
+  o: Octiron,
   html: string;
   el?: Element;
-  onCreate?: HTMLAlternativeOnCreate;
+  handler: HTMLHandler;
 };
 
-export type HTMLAlternativeComponentType = m.ComponentTypes<HTMLAlternativeComponentAttrs>;
+export type HTMLIntegrationComponentType = m.ComponentTypes<HTMLIntegrationComponentAttrs>;
 
-export const HTMLAlternativeComponent: HTMLAlternativeComponentType = () => {
-  let onRemove: HTMLAlternativeOnRemove | undefined;
+export const HTMLIntegrationComponent: HTMLIntegrationComponentType = () => {
+  let onRemove: HTMLCleanupFn;
 
   return {
-    oncreate({ dom, attrs: { el, onCreate } }) {
+    oncreate({ dom, attrs: { o, el, handler } }) {
       if (el != null) {
         dom.append(el);
       }
 
-      if (onCreate != null) {
-        onRemove = onCreate(el ?? dom)
+      if (handler.onCreate != null) {
+        onRemove = handler.onCreate({
+          o,
+          dom,
+          addFragmentListener: () => {},
+        });
       }
     },
     onbeforeremove() {
@@ -42,51 +44,60 @@ export const HTMLAlternativeComponent: HTMLAlternativeComponentType = () => {
   }
 };
 
-export type HTMLAlternativeArgs = {
+export type HTMLIntegrationArgs = {
   iri: string;
   contentType: string;
   html: string;
   id?: string;
   el?: Element;
-  onCreate?: HTMLAlternativeOnCreate;
 };
 
-export class HTMLAlternative implements AlternativeState {
-  static type = 'html';
+export class HTMLIntegration implements IntegrationState {
+  static type = 'html' as const;
 
+  readonly integrationType = 'html' as const;
+
+  #handler: HTMLHandler;
   #rendered: boolean = false;
   #iri: string;
   #contentType: string;
   #html: string;
   #id: string | undefined;
   #el: Element | undefined;
-  #onCreate: HTMLAlternativeOnCreate | undefined;
 
-  constructor({
+  constructor(handler: HTMLHandler, {
     iri,
     contentType,
     html,
-    onCreate,
     id,
     el,
-  }: HTMLAlternativeArgs) {
+  }: HTMLIntegrationArgs) {
+    this.#handler = handler;
     this.#iri = iri;
     this.#contentType = contentType;
     this.#html = html;
-    this.#onCreate = onCreate;
     this.#id = id;
     this.#el = el;
   }
 
-  public render() {
+  get iri(): string {
+    return this.#iri;
+  }
+
+  get contentType(): string {
+    return this.#contentType;
+  }
+
+  public render(o: Octiron) {
     if (!isBrowserRender && !this.#rendered) {
       this.#rendered = true;
     }
 
-    return m(HTMLAlternativeComponent, {
+    return m(HTMLIntegrationComponent, {
+      o,
       html: this.#html,
       el: this.#el,
-      onCreate: this.#onCreate,
+      handler: this.#handler,
     });
   }
 
@@ -103,15 +114,18 @@ export class HTMLAlternative implements AlternativeState {
       return '';
     }
 
-    return `<template id="html:${this.#iri}|${this.#contentType}">${this.#html}</template>`;
+    return `<template id="html:${this.#iri}|${this.#contentType}">${this.#html}</template>\n`;
   }
 
-  static fromInitialState(
+  static fromInitialState(handler: HTMLHandler, {
+    iri,
+    contentType,
+    id,
+  }: {
     iri: string,
     contentType: string,
-    onCreate: HTMLAlternativeOnCreate,
     id?: string,
-  ): HTMLAlternative | null {
+  }): HTMLIntegration | null {
     let el: Element | null = null;
 
     if (id != null) {
@@ -119,11 +133,10 @@ export class HTMLAlternative implements AlternativeState {
     }
 
     if (el != null) {
-      return new HTMLAlternative({
+      return new HTMLIntegration(handler, {
         iri,
         contentType,
         html: el.outerHTML,
-        onCreate,
         id,
         el,
       });
@@ -132,13 +145,12 @@ export class HTMLAlternative implements AlternativeState {
     el = document.getElementById(`html:${iri}|${contentType}`);
 
     if (el instanceof HTMLTemplateElement) {
-      el = el.cloneNode(true) as HTMLElement;
+      el = el.cloneNode(true) as Element;
 
-      return new HTMLAlternative({
+      return new HTMLIntegration(handler, {
         iri,
         contentType,
         html: el.outerHTML,
-        onCreate,
         id,
         el,
       });

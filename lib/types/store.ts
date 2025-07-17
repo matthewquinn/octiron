@@ -1,66 +1,98 @@
 import type { Children, ComponentTypes } from 'mithril';
 import type { JSONObject, JSONValue } from './common.ts';
+import type { Octiron } from "types/octiron";
 
 
 export type Aliases = Record<string, string>;
-
 export type Headers = Record<string, string>;
-
 export type Origins = Record<string, Headers>;
 
-export type ContentTypeOutputs =
-  | 'jsonld'
-  | 'problem-details'
+export type IntegrationType =
+  // | 'jsonld'
+  // | 'problem-details'
   | 'html'
   | 'html-fragments'
 ;
 
-export type ContentTypeHandlerArgs = {
+export type HandlerArgs = {
   res: Response;
   store: OctironStore;
 };
 
-export type CleanupFn = () => void;
-
-export type HandlerCallback = (el: HTMLElement) => CleanupFn;
+export type Handler<T extends Record<string, JSONValue>> = (args: HandlerArgs) => Promise<T>;
 
 export type JSONLDContentTypeResult = {
-  outputType: 'jsonld';
   value: JSONObject;
 };
 
-export type ProblemDetailsContentTypeResult = {
-  outputType: 'problem-details';
-  value: JSONObject;
+export type JSONLDHandlerResult = {
+  jsonld: JSONObject;
 };
 
-export type HTMLContentTypeResult = {
-  outputType: 'html';
-  id: string;
+export type JSONLDHandler = {
+  integrationType: 'jsonld',
+  contentType: string;
+  handler: Handler<JSONLDHandlerResult>;
+};
+
+export type ProblemDetailsHandlerResult = {
+  problemDetails: JSONObject;
+};
+
+export type ProblemDetailsHandler = {
+  integrationType: 'problem-details',
+  contentType: string;
+  handler: Handler<ProblemDetailsHandlerResult>;
+};
+
+export type HTMLHandlerResult = {
+  id?: string;
   html: string;
-  callback?: HandlerCallback;
+};
+export type FragmentListener = (fragment: string) => void;
+export type AddFragmentListener = (listener: FragmentListener) => void;
+export type HTMLCleanupFn = () => void;
+export type HTMLOnCreateArgs = {
+  o: Octiron;
+  dom: Element;
+  fragment?: string;
+  addFragmentListener: AddFragmentListener;
+};
+export type HTMLOnCreate = (args: HTMLOnCreateArgs) => HTMLCleanupFn;
+export type HTMLHandler = {
+  integrationType: 'html';
+  contentType: string;
+  handler: Handler<HTMLHandlerResult>;
+  onCreate?: HTMLOnCreate;
 };
 
-export type HTMLFragmentsContentTypeResult = {
-  outputType: 'html-fragments';
-  rootId?: string;
+export type HTMLFragmentsHandlerResult = {
   root?: string;
   ided: Record<string, string>;
   anon: Record<string, string>;
-  callback?: HandlerCallback;
 };
 
-export type ContentTypeResult =
-  | JSONLDContentTypeResult
-  | ProblemDetailsContentTypeResult
-  | HTMLContentTypeResult
-  | HTMLFragmentsContentTypeResult
+export type HTMLFragmentsCleanupFn = () => void;
+export type HTMLFragmentsOnCreateArgs = {
+  o: Octiron;
+  dom: Element;
+  fragment?: string;
+};
+export type HTMLFragmentsOnCreate = (args: HTMLFragmentsOnCreateArgs) => HTMLFragmentsCleanupFn;
+
+export type HTMLFragmentsHandler = {
+  integrationType: 'html-fragments';
+  contentType: string;
+  handler: Handler<HTMLFragmentsHandlerResult>;
+  onCreate?: HTMLFragmentsOnCreate;
+}
+
+export type Handlers =
+  | JSONLDHandler
+  | ProblemDetailsHandler
+  | HTMLHandler
+  | HTMLFragmentsHandler
 ;
-
-export type ContentTypeHandler = (args: ContentTypeHandlerArgs) => Promise<ContentTypeResult>;
-
-
-export type Handlers = Record<string, ContentTypeHandler>;
 
 export type FetcherArgs = {
   method?: string;
@@ -387,55 +419,28 @@ export type EntityState =
   | LoadingEntityState
   | SuccessEntityState
   | FailureEntityState;
+  ;
 
-export type ProblemDetailsState = {
-  type: 'problem-details';
+export type IntegrationStateInfo = {
+  contentType: string;
+  [key: string]: JSONValue;
+};
+
+export interface IntegrationState {
   iri: string;
+  integrationType: IntegrationType;
   contentType: string;
-  value: JSONObject;
-};
-
-export type HTMLState = {
-  type: 'html';
-  iri: string;
-  contentType: string;
-  value: string;
-  rendered?: boolean;
-  callback?: HandlerCallback;
-};
-
-export type LooseFragementsState = {
-  contentType: string;
-  rendered: boolean;
-  html: string;
-};
-
-export type HTMLFragmentsState = {
-  type: 'html-fragments';
-  rootRendered: boolean;
-  root?: string;
-  ided: Record<string, LooseFragementsState>;
-  anon: Record<string, LooseFragementsState>;
-};
-
-export interface AlternativeState {
-  render(): Children;
-  getStateInfo(): JSONObject;
+  render(o: Octiron): Children;
+  getStateInfo(): IntegrationStateInfo;
   toInitialState(): string;
 };
 
-
-export type ContentTypeState =
-  | ProblemDetailsState
-  | HTMLState
-  | HTMLFragmentsState
-;
-
 export type EntitiesStateStore = Record<string, EntityState>;
 export type LoadingStateStore = Record<string, LoadingAlternativeAcceptState>;
-export type AlternativesStateStore = Record<string, Record<string, ContentTypeState>>;
+export type AlternativesStateStore = Record<string, Record<string, IntegrationState>>;
 
 export type Method =
+  | string
   | 'get'
   | 'query'
   | 'post'

@@ -1,12 +1,13 @@
-import { isBrowserRender } from "consts";
 import m from 'mithril';
-import { AlternativeState } from "../types/store.ts";
+import type { HTMLFragmentsHandler, IntegrationState, IntegrationType } from "../types/store.ts";
+import type { Octiron } from "types/octiron";
 
-export type AlternativeHandler<Alternative> = (res: Response) => Promise<Alternative>;
-export type HTMLFragmentsAlternativeOnRemove = () => void;
-export type HTMLFragmentsAlternativeOnCreate = (el: Element) => HTMLFragmentsAlternativeOnRemove;
+export type IntegrationHandler<Integration> = (res: Response) => Promise<Integration>;
+export type HTMLFragmentsIntegrationOnRemove = () => void;
+export type HTMLFragmentsIntegrationOnCreate = (el: Element) => HTMLFragmentsIntegrationOnRemove;
 
-export type HTMLFragmentsAlternativeComponentAttrs = {
+export type HTMLFragmentsIntegrationComponentAttrs = {
+  o: Octiron;
   fragment?: string;
   rootHTML?: string;
   fragmentsHTML: Record<string, string>;
@@ -14,9 +15,9 @@ export type HTMLFragmentsAlternativeComponentAttrs = {
   fragmentEls?: Record<string, Element>;
 };
 
-export type HTMLFragmentsAlternativeComponentType = m.ComponentTypes<HTMLFragmentsAlternativeComponentAttrs>;
+export type HTMLFragmentsIntegrationComponentType = m.ComponentTypes<HTMLFragmentsIntegrationComponentAttrs>;
 
-export const HTMLFragmentsAlternativeComponent: HTMLFragmentsAlternativeComponentType = () => {
+export const HTMLFragmentsIntegrationComponent: HTMLFragmentsIntegrationComponentType = () => {
   return {
     view({ attrs: { fragment, rootHTML, fragmentsHTML }}) {
       const html = fragment == null ? rootHTML : fragmentsHTML[fragment];
@@ -30,7 +31,7 @@ export const HTMLFragmentsAlternativeComponent: HTMLFragmentsAlternativeComponen
   }
 };
 
-export type HTMLFragmentsAlternativeArgs = {
+export type HTMLFragmentsIntegrationArgs = {
   iri: string;
   contentType: string;
   root?: string;
@@ -38,9 +39,19 @@ export type HTMLFragmentsAlternativeArgs = {
   anon?: Record<string, string>;
 };
 
-export class HTMLFragmentsAlternative implements AlternativeState {
-  static type = 'html-fragments';
+type HTMLFragmentsStateInfo = {
+  iri: string,
+  contentType: string,
+  hasRoot: boolean;
+  ided: string[];
+  anon: string[];
+};
 
+export class HTMLFragmentsIntegration implements IntegrationState {
+  static type = 'html-fragments' as const;
+
+  readonly integrationType = 'html-fragments' as const;
+  #handler: HTMLFragmentsHandler;
   #rendered: Set<string> = new Set();
   #iri: string;
   #fragment?: string;
@@ -50,13 +61,14 @@ export class HTMLFragmentsAlternative implements AlternativeState {
   #anonHTML: Record<string, string>;
   #fragmentsHTML: Record<string, string>;
 
-  constructor({
+  constructor(handler: HTMLFragmentsHandler, {
     iri,
     contentType,
     root,
     ided,
     anon,
-  }: HTMLFragmentsAlternativeArgs) {
+  }: HTMLFragmentsIntegrationArgs) {
+    this.#handler = handler;
     this.#iri = iri;
     this.#contentType = contentType;
     this.#rootHTML = root;
@@ -68,14 +80,23 @@ export class HTMLFragmentsAlternative implements AlternativeState {
     };
   }
 
-  public render() {
-    return m(HTMLFragmentsAlternativeComponent, {
+  get iri(): string {
+    return this.#iri;
+  }
+
+  get contentType(): string {
+    return this.#contentType;
+  }
+
+  public render(o: Octiron) {
+    return m(HTMLFragmentsIntegrationComponent, {
+      o,
       rootHTML: this.#rootHTML,
       fragmentsHTML: this.#fragmentsHTML,
     });
   }
 
-  public getStateInfo() {
+  public getStateInfo(): HTMLFragmentsStateInfo {
     return {
       iri: this.#iri,
       contentType: this.#contentType,
@@ -99,37 +120,37 @@ export class HTMLFragmentsAlternative implements AlternativeState {
     }
 
     for (const [fragment, fragmentHTML] of Object.entries(this.#anonHTML)) {
-      html += `<template id="htmlfrag:${this.#iri}|${this.#contentType}|${fragment}">${fragmentHTML}</template>\n`;
+      html += `<template id="htmlfrag:${this.#iri}#${fragment}|${this.#contentType}">${fragmentHTML}</template>\n`;
     }
 
     return html;
   }
 
-  static fromInitialState(
-    iri: string,
-    contentType: string,
-    hasRoot: boolean,
-    ided: string[],
-    anon: string[],
-  ): HTMLFragmentAlternative | null {
-    let el: Element | null;
+  static fromInitialState(handler: HTMLFragmentsHandler, {
+    iri,
+    contentType,
+    hasRoot,
+    ided,
+    anon,
+  }: HTMLFragmentsStateInfo): HTMLFragmentsIntegration | null {
     let rootHTML: string | undefined;
     const idedHTML: Record<string, string> = {};
     const anonHTML: Record<string, string> = {};
 
     if (hasRoot) {
-      el = document.getElementById(`htmlfrag:${iri}|${contentType}`);
+      const rootEl = document.getElementById(`htmlfrag:${iri}|${contentType}`);
 
-      if (el) {
-        rootHTML = el.outerHTML;
+      if (rootEl) {
+        rootHTML = rootEl.outerHTML;
       }
     }
 
     for (const fragment of ided) {
-      el = document.getElementById(fragment) as HTMLElement;
+      const el = document.getElementById(fragment) as HTMLElement | SVGElement;
 
       if (el instanceof HTMLTemplateElement) {
-        const dom = el.cloneNode(true) as HTMLElement;
+        const dom = el.cloneNode(true) as HTMLElement | SVGAElement;
+
         idedHTML[fragment] = dom.innerHTML;
       } else {
         idedHTML[fragment] = el.innerHTML;
@@ -137,10 +158,23 @@ export class HTMLFragmentsAlternative implements AlternativeState {
     }
 
     for (const fragment of anon) {
-      el = document.getElementById(`htmlfrag:${`)
+      const el = document.getElementById(`htmlfrag:${iri}#${fragment}|${contentType}`) as HTMLElement | SVGElement;
+
+      if (el instanceof HTMLTemplateElement) {
+        const dom = el.cloneNode(true) as HTMLElement | SVGAElement;
+
+        idedHTML[fragment] = dom.innerHTML;
+      } else {
+        idedHTML[fragment] = el.innerHTML;
+      }
     }
 
-    return null;
+    return new HTMLFragmentsIntegration(handler, {
+      contentType,
+      iri,
+      root: rootHTML,
+      ided: idedHTML,
+      anon: anonHTML,
+    });
   }
-
 }
