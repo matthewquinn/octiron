@@ -4,11 +4,11 @@ import { jsonLDHandler } from "./handlers/jsonLDHandler.ts";
 import type { JSONObject } from "./types/common.ts";
 import type {
   Aliases,
-  AlternativesStateStore,
-  EntitiesStateStore,
+  AlternativesState,
+  PrimaryState,
   FailureEntityState,
   Fetcher,
-  Handlers,
+  RequestHandler,
   Headers,
   LoadingStateStore,
   Method,
@@ -33,24 +33,24 @@ export function makeStore({
   aliases?: Aliases;
   headers?: Headers;
   origins?: Origins;
-  handlers?: Handlers;
-  entities?: EntitiesStateStore;
-  alternatives?: AlternativesStateStore;
+  handlers?: RequestHandler;
+  entities?: PrimaryState;
+  alternatives?: AlternativesState;
   fetcher?: Fetcher;
   responseHook?: ResponseHook;
 }): OctironStore {
   const context: Record<string, string> = {};
   const headers = args.headers ?? {};
-  const handlers: Handlers = args.handlers ?? {};
+  const handlers: RequestHandler = args.handlers ?? {};
   const origins = new Map([
     [rootIRI, headers],
     ...Object.entries(Object.assign({}, args.origins)),
   ]);
   const aliases: Aliases = args.aliases ?? {};
   const fetcher: Fetcher = args.fetcher ?? fetch;
-  const entities: EntitiesStateStore = args.entities ?? {};
+  const entities: PrimaryState = args.entities ?? {};
   const loading: LoadingStateStore = {};
-  const alternatives: AlternativesStateStore = args.alternatives ?? {};
+  const alternatives: AlternativesState = args.alternatives ?? {};
 
   if (typeof vocab === "string") {
     context["@vocab"] = vocab;
@@ -267,7 +267,7 @@ export function makeStore({
   store.fetch = async function (iri: string) {
     await callFetcher(iri);
 
-    return entities[iri] as SuccessEntityState | FailureEntityState;
+    return entities.get(iri) as SuccessEntityState | FailureEntityState;
   } satisfies OctironStore["fetch"];
 
   store.expand = function (term) {
@@ -328,7 +328,7 @@ export function makeStore({
   store.stateToHTML = function (): string {
     let html = `<script id="octiron-jsonld-entities" type="application/json">${JSON.stringify(entities)}</script>\n`;
 
-    for (const [iri, alternative] of Object.entries(alternatives)) {
+    for (const alternative of alternatives.values()) {
       for (const state of Object.values(alternative)) {
         switch (state.type) {
           case 'problem-details': {

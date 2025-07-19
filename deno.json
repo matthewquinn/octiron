@@ -28,6 +28,7 @@
   },
   "compilerOptions": {
     "lib": [
+      "deno.ns",
       "dom",
       "es2022"
     ]

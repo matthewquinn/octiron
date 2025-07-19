@@ -1,10 +1,6 @@
 import m from 'mithril';
-import type { HTMLFragmentsHandler, IntegrationState, IntegrationType } from "../types/store.ts";
+import type { HTMLFragmentsHandler, IntegrationState } from "../types/store.ts";
 import type { Octiron } from "types/octiron";
-
-export type IntegrationHandler<Integration> = (res: Response) => Promise<Integration>;
-export type HTMLFragmentsIntegrationOnRemove = () => void;
-export type HTMLFragmentsIntegrationOnCreate = (el: Element) => HTMLFragmentsIntegrationOnRemove;
 
 export type HTMLFragmentsIntegrationComponentAttrs = {
   o: Octiron;
