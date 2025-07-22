@@ -35,7 +35,7 @@ export type JSONLDHandlerResult = {
 };
 
 export type JSONLDHandler = {
-  integrationType: 'jsonld',
+  integrationType: 'jsonld';
   contentType: string;
   handler: RequestHandler<JSONLDHandlerResult>;
 };
@@ -45,7 +45,7 @@ export type ProblemDetailsHandlerResult = {
 };
 
 export type ProblemDetailsHandler = {
-  integrationType: 'problem-details',
+  integrationType: 'problem-details';
   contentType: string;
   handler: RequestHandler<ProblemDetailsHandlerResult>;
 };
@@ -251,13 +251,11 @@ export type AlternativeTypeResult = {
 export type ReadonlySelectionResult =
   | EntitySelectionResult
   | ValueSelectionResult
-  | AlternativeTypeResult
 ;
 
 export type SelectionResult =
   | EntitySelectionResult
   | ValueSelectionResult
-  | AlternativeTypeResult
 ;
 
 export type SelectionDetails<T = SelectionResult> = {

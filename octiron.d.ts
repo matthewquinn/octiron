@@ -26,10 +26,96 @@ declare module "types/common" {
     });
 }
 declare module "types/store" {
-    import type { Children } from 'mithril';
+    import type { Children, ComponentTypes } from 'mithril';
     import type { JSONObject, JSONValue } from "types/common";
+    import type { Store } from "store";
+    import type { Octiron } from "types/octiron";
+    export type Aliases = Record<string, string>;
+    export type Origins = Record<string, Headers>;
+    export type Context = {
+        '@vocab'?: string;
+    } & {
+        [vocab: string]: string;
+    };
+    export type IntegrationType = 'html' | 'html-fragments';
+    export type HandlerArgs = {
+        res: Response;
+        store: Store;
+    };
+    export type RequestHandler<T extends Record<string, JSONValue>> = (args: HandlerArgs) => Promise<T> | T;
+    export type JSONLDContentTypeResult = {
+        value: JSONObject;
+    };
+    export type JSONLDHandlerResult = {
+        jsonld: JSONObject;
+    };
+    export type JSONLDHandler = {
+        integrationType: 'jsonld';
+        contentType: string;
+        handler: RequestHandler<JSONLDHandlerResult>;
+    };
+    export type ProblemDetailsHandlerResult = {
+        problemDetails: JSONObject;
+    };
+    export type ProblemDetailsHandler = {
+        integrationType: 'problem-details';
+        contentType: string;
+        handler: RequestHandler<ProblemDetailsHandlerResult>;
+    };
+    export type HTMLHandlerResult = {
+        id?: string;
+        selector?: string;
+        html: string;
+    };
+    export type FragmentListener = (fragment: string) => void;
+    export type AddFragmentListener = (listener: FragmentListener) => void;
+    export type HTMLCleanupFn = () => void;
+    export type HTMLOnCreateArgs = {
+        o: Octiron;
+        dom: Element;
+        fragment?: string;
+        addFragmentListener: AddFragmentListener;
+    };
+    export type HTMLOnCreate = (args: HTMLOnCreateArgs) => HTMLCleanupFn;
+    export type HTMLHandler = {
+        integrationType: 'html';
+        contentType: string;
+        handler: RequestHandler<HTMLHandlerResult>;
+        onCreate?: HTMLOnCreate;
+    };
+    export type HTMLFragmentsHandlerResult = {
+        selector?: string;
+        html?: string;
+        ided: Record<string, string>;
+        anon: Record<string, string>;
+    };
+    export type HTMLFragmentsCleanupFn = () => void;
+    export type HTMLFragmentsOnCreateArgs = {
+        o: Octiron;
+        dom: Element;
+        fragment?: string;
+    };
+    export type HTMLFragmentsOnCreate = (args: HTMLFragmentsOnCreateArgs) => HTMLFragmentsCleanupFn;
+    export type HTMLFragmentsHandler = {
+        integrationType: 'html-fragments';
+        contentType: string;
+        handler: RequestHandler<HTMLFragmentsHandlerResult>;
+        onCreate?: HTMLFragmentsOnCreate;
+    };
+    export type Handler = JSONLDHandler | ProblemDetailsHandler | HTMLHandler | HTMLFragmentsHandler;
+    export type FetcherArgs = {
+        method?: string;
+        body?: string;
+        headers?: Headers;
+    };
+    export type Fetcher = (iri: string, args: FetcherArgs) => Promise<Response>;
+    export type ResponseHook = (res: Promise<Response>) => void;
     export type HTTPErrorView = (status: number) => Children;
     export type ContentParsingView = (error: Error) => Children;
+    export type AlternativeContentProps = {
+        fragment?: string;
+    };
+    export type AlternativeContentComponent = ComponentTypes<AlternativeContentProps>;
     export interface Failure {
         /**
          * Returns the given children if the error is
@@ -90,10 +176,6 @@ declare module "types/store" {
          */
         readonly value?: JSONObject;
         /**
-         * The content type of the response.
-         */
-        readonly contentType: string | null;
-        /**
          * The error type.
          */
         readonly reason?: Failure;
@@ -123,10 +205,15 @@ declare module "types/store" {
          * The selection value.
          */
         readonly value: JSONValue;
-        /**
-         * The content type of the response.
-         */
-        readonly contentType?: undefined;
+    };
+    export type AlternativeTypeResult = {
+        readonly key: symbol;
+        readonly pointer: string;
+        readonly type: 'alt';
+        readonly datatype?: undefined;
+        readonly value?: undefined;
+        readonly contentType: string;
+        readonly component: AlternativeContentComponent;
     };
     export type ReadonlySelectionResult = EntitySelectionResult | ValueSelectionResult;
     export type SelectionResult = EntitySelectionResult | ValueSelectionResult;
@@ -207,10 +294,6 @@ declare module "types/store" {
          * The response status. Only used for failure responses.
          */
         readonly status?: undefined;
-        /**
-         * The content type of the response.
-         */
-        readonly contentType: string;
     };
     export type FailureEntityState = {
         /**
@@ -234,16 +317,35 @@ declare module "types/store" {
          */
         readonly status: number;
         /**
-         * The content type of the response.
-         */
-        readonly contentType: string | null;
-        /**
          * An object describing the reason and source of the failure.
          */
         readonly reason: Failure;
+        /**
+         * Component to render if the returned content type is
+         * not jsonld or problem detail types.
+         */
+        readonly component?: AlternativeContentComponent;
+    };
+    export type AlternativeContentLoadingState = Record<string, Record<string, LoadingEntityState>>;
+    export type LoadingResult = {
+        contentType: string;
     };
     export type EntityState = LoadingEntityState | SuccessEntityState | FailureEntityState;
-    export type Method = 'get' | 'query' | 'post' | 'put' | 'patch' | 'delete';
+    export type IntegrationStateInfo = {
+        contentType: string;
+        [key: string]: JSONValue;
+    };
+    export interface IntegrationState {
+        iri: string;
+        integrationType: IntegrationType;
+        contentType: string;
+        render(o: Octiron): Children;
+        getStateInfo(): IntegrationStateInfo;
+        toInitialState(): string;
+    }
+    export type PrimaryState = Map<string, EntityState>;
+    export type AlternativesState = Map<string, Map<string, IntegrationState>>;
+    export type Method = string | 'get' | 'query' | 'post' | 'put' | 'patch' | 'delete';
     export type SubmitArgs = {
         /**
          * The http method of the request.
@@ -365,6 +467,91 @@ declare module "types/store" {
          * @param {symbol} key The unique sybmol used to identify the subscriber.
          */
         unsubscribe(key: symbol): void;
+        stateToHTML(): string;
+    }
+}
+declare module "alternatives/htmlFragments" {
+    import m from 'mithril';
+    import type { HTMLFragmentsHandler, IntegrationState } from "types/store";
+    import type { Octiron } from "types/octiron";
+    export type HTMLFragmentsIntegrationComponentAttrs = {
+        o: Octiron;
+        fragment?: string;
+        rootHTML?: string;
+        fragmentsHTML: Record<string, string>;
+        rootEl?: Element;
+        fragmentEls?: Record<string, Element>;
+    };
+    export type HTMLFragmentsIntegrationComponentType = m.ComponentTypes<HTMLFragmentsIntegrationComponentAttrs>;
+    export const HTMLFragmentsIntegrationComponent: HTMLFragmentsIntegrationComponentType;
+    export type HTMLFragmentsIntegrationArgs = {
+        iri: string;
+        contentType: string;
+        root?: string;
+        ided?: Record<string, string>;
+        anon?: Record<string, string>;
+    };
+    type HTMLFragmentsStateInfo = {
+        iri: string;
+        contentType: string;
+        hasRoot: boolean;
+        ided: string[];
+        anon: string[];
+    };
+    export class HTMLFragmentsIntegration implements IntegrationState {
+        #private;
+        static type: "html-fragments";
+        readonly integrationType: "html-fragments";
+        constructor(handler: HTMLFragmentsHandler, { iri, contentType, root, ided, anon, }: HTMLFragmentsIntegrationArgs);
+        get iri(): string;
+        get contentType(): string;
+        render(o: Octiron): any;
+        getStateInfo(): HTMLFragmentsStateInfo;
+        toInitialState(): string;
+        static fromInitialState(handler: HTMLFragmentsHandler, { iri, contentType, hasRoot, ided, anon, }: HTMLFragmentsStateInfo): HTMLFragmentsIntegration | null;
+    }
+}
+declare module "consts" {
+    export const isBrowserRender: boolean;
+}
+declare module "alternatives/html" {
+    import m from 'mithril';
+    import type { HTMLHandler, IntegrationState } from "types/store";
+    import type { Octiron } from "types/octiron";
+    export type HTMLIntegrationComponentAttrs = {
+        o: Octiron;
+        html: string;
+        el?: Element;
+        handler: HTMLHandler;
+    };
+    export type HTMLIntegrationComponentType = m.ComponentTypes<HTMLIntegrationComponentAttrs>;
+    export const HTMLIntegrationComponent: HTMLIntegrationComponentType;
+    export type HTMLIntegrationArgs = {
+        iri: string;
+        contentType: string;
+        html: string;
+        id?: string;
+        el?: Element;
+    };
+    export class HTMLIntegration implements IntegrationState {
+        #private;
+        static type: "html";
+        readonly integrationType: "html";
+        constructor(handler: HTMLHandler, { iri, contentType, html, id, el, }: HTMLIntegrationArgs);
+        get iri(): string;
+        get contentType(): string;
+        render(o: Octiron): any;
+        getStateInfo(): {
+            iri: string;
+            contentType: string;
+            id: string;
+        };
+        toInitialState(): string;
+        static fromInitialState(handler: HTMLHandler, { iri, contentType, id, }: {
+            iri: string;
+            contentType: string;
+            id?: string;
+        }): HTMLIntegration | null;
     }
 }
 declare module "failures" {
@@ -399,10 +586,267 @@ declare module "failures" {
         unparserable(view: ContentParsingView): Children;
     }
 }
+declare module "utils/getIterableValue" {
+    import type { IterableJSONLD, JSONArray } from "types/common";
+    /**
+     * @description
+     * Returns true if a json-ld value is an array or has an iterable value,
+     * i.e.: an object with an `@list` or `@set` array value.
+     *
+     * This function returns an empty array in the cases where a non-iterable value
+     * is given.
+     *
+     * @param {JSONValue} value - A json-ld value
+     */
+    export function getIterableValue(value: IterableJSONLD): JSONArray;
+}
+declare module "utils/isJSONObject" {
+    import type { JSONObject, JSONValue } from "types/common";
+    /**
+     * @description
+     * Returns true if the input value is an object.
+     *
+     * @param value Any value which should come from a JSON source.
+     */
+    export function isJSONObject(value: JSONValue): value is JSONObject;
+}
+declare module "utils/isIRIObject" {
+    import type { IRIObject, JSONObject, JSONValue } from "types/common";
+    /**
+     * @description
+     * Returns true if the given value is a JSON object with a JSON-ld @id value.
+     *
+     * @param value Any value which should come from a JSON source.
+     */
+    export function isIRIObject<Properties extends JSONObject = JSONObject>(value: JSONValue): value is IRIObject<Properties>;
+}
+declare module "utils/isIterable" {
+    import type { IterableJSONLD, JSONValue } from "types/common";
+    /**
+     * @description
+     * Returns true if a json-ld value is an array or has an iterable value,
+     * i.e.: an object with an `@list` or `@set` array value.
+     *
+     * @param {JSONValue} value - A json-ld value
+     */
+    export function isIterable(value: JSONValue): value is IterableJSONLD;
+}
+declare module "utils/isMetadataObject" {
+    import type { IRIObject, JSONObject } from "types/common";
+    /**
+     * @description
+     * Some JSON-ld objects contain special JSON-ld values, such as @type which
+     * can inform the software on what to expect when retrieving the object but
+     * otherwise require fetching an entity from an endpoint to get the values
+     * they relate to. For Octiron's purposes these are considered metadata objects.
+     *
+     * Objects containing `@value`, `@list`, `@set` are not considered metadata
+     * objects as these properties references concrete values.
+     *
+     * @param value - The JSON object to check for non special properties in.
+     */
+    export function isMetadataObject(value: JSONObject): value is IRIObject;
+}
+declare module "utils/isValueObject" {
+    import type { JSONObject, ValueObject } from "types/common";
+    /**
+     * @description
+     * A value object contains a `@value` value. Often this is used to provide
+     * further information about the value like what `@type` it holds, allowing
+     * filters to be applied to the referenced value.
+     *
+     * @param value - A JSON value.
+     */
+    export function isValueObject(value: JSONObject): value is ValueObject;
+}
+declare module "utils/flattenIRIObjects" {
+    import type { IRIObject, JSONValue } from "types/common";
+    /**
+     * @description
+     * Locates all IRI objects in a potentially deeply nested JSON-ld structure and
+     * returns an array of the located IRI objects.
+     *
+     * Objects identified as IRI objects are not modified beyond being placed in
+     * an array together.
+     *
+     * @param value - The value to flatten.
+     * @param agg - An array to fill with the flattened IRI objects.
+     *              This is required for the internal recursing performed by this
+     *              function and isn't required by upstream callers.
+     */
+    export function flattenIRIObjects(value: JSONValue, agg?: IRIObject[]): IRIObject[];
+}
+declare module "utils/escapeJSONPointerParts" {
+    /**
+     * @description
+     * Espects a list of json pointer parts and returns a json pointer.
+     */
+    export function escapeJSONPointerParts(...parts: string[]): string;
+}
+declare module "utils/parseSelectorString" {
+    export type SelectorObject = {
+        subject: string;
+        filter?: string;
+    };
+    /**
+     * @description
+     * Parses a selector string producing a selector list
+     * The subject value of a selector could be an iri or a type depending on the
+     * outer context.
+     *
+     * @param selector - The selector string to parse.
+     */
+    export function parseSelectorString(selector: string): SelectorObject[];
+}
+declare module "utils/getSelection" {
+    import type { JSONObject } from "types/common";
+    import type { EntitySelectionResult, SelectionDetails, SelectionResult, ValueSelectionResult } from "types/store";
+    import type { Store } from "store";
+    /**
+     * A circular selection error occurs when two or more
+     * entities contain no concrete values and their '@id'
+     * values point to each other in a way that creates a
+     * loop. The `getSelection` function will throw when
+     * this scenario is detected to prevent an infinite
+     * loop.
+     */
+    export class CircularSelectionError extends Error {
+    }
+    export type SelectorObject = {
+        subject: string;
+        filter?: string;
+    };
+    type ProcessingEntitySelectionResult = {
+        keySource: string;
+    } & Omit<EntitySelectionResult, 'key'>;
+    type ProcessingValueSelectionResult = {
+        keySource: string;
+    } & Omit<ValueSelectionResult, 'key'>;
+    type ProcessingSelectionDetails = SelectionDetails<ProcessingEntitySelectionResult | ProcessingValueSelectionResult>;
+    export function transformProcessedDetails<T extends SelectionResult>(processing: ProcessingSelectionDetails): SelectionDetails<T>;
+    /**
+     * @description
+     * Selects from the given context value and store state.
+     *
+     * If no `value` is provided the `selector` is assumed to begin with an iri
+     * instead of a type. An entity will be selected from the store using the iri,
+     * if it exists, to begin the selection.
+     *
+     * A type selector selects values from the context of a provided value
+     * and will pull from the store if any iri objects are selected in the process.
+     *
+     * @param {string} args.selector          Selector string begining with a type.
+     * @param {JSONObject} [args.value]       Context object to begin the selection from.
+     * @param {JSONObject} [args.actionValue] The action, or point in the action definition which describes this value.
+     * @param {Store} args.store       Octiron store to search using.
+     * @returns {SelectionDetails}            Selection contained in a details object.
+     */
+    export function getSelection<T extends SelectionResult>({ selector: selectorStr, value, actionValue, store, }: {
+        selector: string;
+        value?: JSONObject;
+        actionValue?: JSONObject;
+        store: Store;
+    }): SelectionDetails<T>;
+}
+declare module "utils/mithrilRedraw" {
+    /**
+     * @description
+     * Calls Mithril's redraw function if the window object exists.
+     */
+    export function mithrilRedraw(): void;
+}
+declare module "store" {
+    import type { AlternativesState, Context, Fetcher, Handler, ResponseHook, SelectionDetails, SelectionListener, EntityState } from "types/store";
+    import type { JSONObject } from "types/common";
+    import type { FailureEntityState, SuccessEntityState } from "types/store";
+    export type StoreArgs = {
+        /**
+         * Root endpoint of the API.
+         */
+        rootIRI: string;
+        /**
+         * Headers to send when making requests to endpoints
+         * sharing origins with the `rootIRI`.
+         */
+        headers?: Record<string, string>;
+        /**
+         * A map of origins and the headers to use when sending
+         * requests to them. Octiron will only send requests
+         * to endpoints which share origins with the `rootIRI`
+         * or are configured in the origins object. Appart
+         * from the accept header which has a common default
+         * value, headers are not shared between origins.
+         */
+        origins?: Record<string, Record<string, string>>;
+        /**
+         * The JSON-ld @vocab to use for octiron selectors.
+         */
+        vocab?: string;
+        /**
+         * Map of JSON-ld aliases to their values.
+         */
+        aliases?: Record<string, string>;
+        /**
+         * Primary initial state.
+         */
+        primary?: Record<string, EntityState>;
+        /**
+         * Alternatives initial state.
+         */
+        alternatives?: AlternativesState;
+        /**
+         * Handler objects.
+         */
+        handlers: Handler[];
+        /**
+         * Function which performs fetch.
+         */
+        fetcher?: Fetcher;
+        /**
+         * Hook used by SSR for awaiting response promises.
+         */
+        responseHook?: ResponseHook;
+    };
+    export class Store {
+        #private;
+        constructor(args: StoreArgs);
+        get rootIRI(): string;
+        entity(iri: string): EntityState;
+        get context(): Context;
+        /**
+         * Expands a term to a type.
+         *
+         * If an already expanded JSON-ld type is given it will
+         * return the input value.
+         */
+        expand(termOrType: string): string;
+        select(selector: string, value?: JSONObject): SelectionDetails;
+        /**
+         * Generates a unique key for server rendering only.
+         */
+        key(): string;
+        isLoading(iri: string): boolean;
+        handleResponse(res: Response): Promise<void>;
+        subscribe({ key, selector, value, listener, }: {
+            key: symbol;
+            selector: string;
+            value?: JSONObject;
+            listener: SelectionListener;
+        }): SelectionDetails<import("types/store").SelectionResult>;
+        unsubscribe(key: symbol): void;
+        fetch(iri: string): Promise<SuccessEntityState | FailureEntityState>;
+        static fromInitialState({ headers, origins, handlers, }: {
+            headers?: Record<string, string>;
+            origins?: Record<string, Record<string, string>>;
+            handlers?: Handler[];
+        }): Store;
+        toInitialState(): string;
+    }
+}
 declare module "types/octiron" {
     import type { Attributes, Children, ComponentTypes } from 'mithril';
     import type { JSONValue } from "types/common";
-    import type { OctironStore } from "types/store";
+    import type { Store } from "store";
     import type { ContentHandlingFailure, HTTPFailure, UndefinedFailure } from "failures";
     /**
      * An iri (see url) to an entity.
@@ -455,6 +899,11 @@ declare module "types/octiron" {
      * Arguments for all methods which afford fetching entities.
      */
     export type FetchableArgs = {
+        accept?: string;
+        /**
+         * Optional URL fragment which can be accessed by the content-type handler function.
+         */
+        fragment?: string;
         /**
          * Forces the retrieval of the latest representation even if the entity is in
          * the Octiron store.
@@ -474,7 +923,7 @@ declare module "types/octiron" {
         component?: PresentComponent<Value, Attrs>;
         fallbackComponent?: PresentComponent<Value, Attrs>;
         typeDefs?: TypeDefs;
-        store?: OctironStore;
+        store?: Store;
     };
     export type IterablePeridcate = (octiron: Octiron) => boolean;
     export type IterableArgs = {
@@ -567,7 +1016,7 @@ declare module "types/octiron" {
         /**
          * The octiron store used for this value.
          */
-        readonly store: OctironStore;
+        readonly store: Store;
     }
     export interface OctironSelection extends Origin, EntryPoint, Selectable, Filterable, Presentable {
         /**
@@ -593,7 +1042,7 @@ declare module "types/octiron" {
         /**
          * The octiron store used for this value.
          */
-        readonly store: OctironStore;
+        readonly store: Store;
     }
     export type Octiron = OctironRoot | OctironSelection;
 }
@@ -656,16 +1105,6 @@ declare module "utils/unravelArgs" {
      */
     export function unravelArgs(arg1?: Selector | OctironPresentArgs, arg2?: OctironPresentArgs): [Selector, OctironSelectArgs];
 }
-declare module "utils/isJSONObject" {
-    import type { JSONObject, JSONValue } from "types/common";
-    /**
-     * @description
-     * Returns true if the input value is an object.
-     *
-     * @param value Any value which should come from a JSON source.
-     */
-    export function isJSONObject(value: JSONValue): value is JSONObject;
-}
 declare module "utils/isTypedObject" {
     import type { JSONObject, JSONValue, TypeObject } from "types/common";
     /**
@@ -688,10 +1127,10 @@ declare module "utils/getValueType" {
 }
 declare module "factories/selectionFactory" {
     import type { JSONValue } from "types/common";
-    import type { OctironStore } from "types/store";
     import type { BaseAttrs, OctironSelectArgs, OctironSelection, TypeDefs } from "types/octiron";
+    import type { Store } from "store";
     export type SelectionFactoryInternals = {
-        store: OctironStore;
+        store: Store;
         typeDefs?: TypeDefs;
         parent?: OctironSelection;
         value?: JSONValue;
@@ -710,23 +1149,13 @@ declare module "factories/selectionFactory" {
      */
     export function selectionFactory<Attrs extends BaseAttrs = {}>(internals: SelectionFactoryInternals, args?: OctironSelectArgs<JSONValue, Attrs>): OctironSelection & OctironHooks;
 }
-declare module "consts" {
-    export const isBrowserRender: boolean;
-}
-declare module "utils/mithrilRedraw" {
-    /**
-     * @description
-     * Calls Mithril's redraw function if the window object exists.
-     */
-    export function mithrilRedraw(): void;
-}
 declare module "renderers/SelectionRenderer" {
     import type { JSONValue } from "types/common";
     import type { OctironSelectArgs, OctironSelection, Selector, SelectView, TypeDefs } from "types/octiron";
-    import type { OctironStore } from "types/store";
     import m from "mithril";
+    import type { Store } from "store";
     export type SelectionRendererInternals = {
-        store: OctironStore;
+        store: Store;
         typeDefs?: TypeDefs;
         parent?: OctironSelection;
         value?: JSONValue;
@@ -751,10 +1180,10 @@ declare module "renderers/SelectionRenderer" {
     export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs>;
 }
 declare module "factories/rootFactory" {
-    import type { OctironStore } from "types/store";
     import type { OctironRoot, TypeDefs } from "types/octiron";
+    import type { Store } from "store";
     export type RootFactoryInternals = {
-        store: OctironStore;
+        store: Store;
         typeDefs?: TypeDefs;
     };
     /**
@@ -764,195 +1193,6 @@ declare module "factories/rootFactory" {
      * @param internals Internally held values from upstream.
      */
     export function rootFactory(internals: RootFactoryInternals): OctironRoot;
-}
-declare module "utils/getIterableValue" {
-    import type { IterableJSONLD, JSONArray } from "types/common";
-    /**
-     * @description
-     * Returns true if a json-ld value is an array or has an iterable value,
-     * i.e.: an object with an `@list` or `@set` array value.
-     *
-     * This function returns an empty array in the cases where a non-iterable value
-     * is given.
-     *
-     * @param {JSONValue} value - A json-ld value
-     */
-    export function getIterableValue(value: IterableJSONLD): JSONArray;
-}
-declare module "utils/isIRIObject" {
-    import type { IRIObject, JSONObject, JSONValue } from "types/common";
-    /**
-     * @description
-     * Returns true if the given value is a JSON object with a JSON-ld @id value.
-     *
-     * @param value Any value which should come from a JSON source.
-     */
-    export function isIRIObject<Properties extends JSONObject = JSONObject>(value: JSONValue): value is IRIObject<Properties>;
-}
-declare module "utils/isIterable" {
-    import type { IterableJSONLD, JSONValue } from "types/common";
-    /**
-     * @description
-     * Returns true if a json-ld value is an array or has an iterable value,
-     * i.e.: an object with an `@list` or `@set` array value.
-     *
-     * @param {JSONValue} value - A json-ld value
-     */
-    export function isIterable(value: JSONValue): value is IterableJSONLD;
-}
-declare module "utils/isMetadataObject" {
-    import type { IRIObject, JSONObject } from "types/common";
-    /**
-     * @description
-     * Some JSON-ld objects contain special JSON-ld values, such as @type which
-     * can inform the software on what to expect when retrieving the object but
-     * otherwise require fetching an entity from an endpoint to get the values
-     * they relate to. For Octiron's purposes these are considered metadata objects.
-     *
-     * Objects containing `@value`, `@list`, `@set` are not considered metadata
-     * objects as these properties references concrete values.
-     *
-     * @param value - The JSON object to check for non special properties in.
-     */
-    export function isMetadataObject(value: JSONObject): value is IRIObject;
-}
-declare module "utils/isValueObject" {
-    import type { JSONObject, ValueObject } from "types/common";
-    /**
-     * @description
-     * A value object contains a `@value` value. Often this is used to provide
-     * further information about the value like what `@type` it holds, allowing
-     * filters to be applied to the referenced value.
-     *
-     * @param value - A JSON value.
-     */
-    export function isValueObject(value: JSONObject): value is ValueObject;
-}
-declare module "utils/flattenIRIObjects" {
-    import type { IRIObject, JSONValue } from "types/common";
-    /**
-     * @description
-     * Locates all IRI objects in a potentially deeply nested JSON-ld structure and
-     * returns an array of the located IRI objects.
-     *
-     * Objects identified as IRI objects are not modified beyond being placed in
-     * an array together.
-     *
-     * @param value - The value to flatten.
-     * @param agg - An array to fill with the flattened IRI objects.
-     *              This is required for the internal recursing performed by this
-     *              function and isn't required by upstream callers.
-     */
-    export function flattenIRIObjects(value: JSONValue, agg?: IRIObject[]): IRIObject[];
-}
-declare module "utils/escapeJSONPointerParts" {
-    /**
-     * @description
-     * Espects a list of json pointer parts and returns a json pointer.
-     */
-    export function escapeJSONPointerParts(...parts: string[]): string;
-}
-declare module "utils/parseSelectorString" {
-    export type SelectorObject = {
-        subject: string;
-        filter?: string;
-    };
-    /**
-     * @description
-     * Parses a selector string producing a selector list
-     * The subject value of a selector could be an iri or a type depending on the
-     * outer context.
-     *
-     * @param selector - The selector string to parse.
-     */
-    export function parseSelectorString(selector: string): SelectorObject[];
-}
-declare module "utils/getSelection" {
-    import type { JSONObject } from "types/common";
-    import type { EntitySelectionResult, OctironStore, SelectionDetails, SelectionResult, ValueSelectionResult } from "types/store";
-    /**
-     * A circular selection error occurs when two or more
-     * entities contain no concrete values and their '@id'
-     * values point to each other in a way that creates a
-     * loop. The `getSelection` function will throw when
-     * this scenario is detected to prevent an infinite
-     * loop.
-     */
-    export class CircularSelectionError extends Error {
-    }
-    export type SelectorObject = {
-        subject: string;
-        filter?: string;
-    };
-    type ProcessingEntitySelectionResult = {
-        keySource: string;
-    } & Omit<EntitySelectionResult, 'key'>;
-    type ProcessingValueSelectionResult = {
-        keySource: string;
-    } & Omit<ValueSelectionResult, 'key'>;
-    type ProcessingSelectionDetails = SelectionDetails<ProcessingEntitySelectionResult | ProcessingValueSelectionResult>;
-    export function transformProcessedDetails<T extends SelectionResult>(processing: ProcessingSelectionDetails): SelectionDetails<T>;
-    /**
-     * @description
-     * Selects from the given context value and store state.
-     *
-     * If no `value` is provided the `selector` is assumed to begin with an iri
-     * instead of a type. An entity will be selected from the store using the iri,
-     * if it exists, to begin the selection.
-     *
-     * A type selector selects values from the context of a provided value
-     * and will pull from the store if any iri objects are selected in the process.
-     *
-     * @param {string} args.selector          Selector string begining with a type.
-     * @param {JSONObject} [args.value]       Context object to begin the selection from.
-     * @param {JSONObject} [args.actionValue] The action, or point in the action definition which describes this value.
-     * @param {OctironStore} args.store       Octiron store to search using.
-     * @returns {SelectionDetails}            Selection contained in a details object.
-     */
-    export function getSelection<T extends SelectionResult>({ selector: selectorStr, value, actionValue, store, }: {
-        selector: string;
-        value?: JSONObject;
-        actionValue?: JSONObject;
-        store: OctironStore;
-    }): SelectionDetails<T>;
-}
-declare module "handlers/jsonLDHandler" {
-    import type { ContentTypeHandler } from "store";
-    export const jsonLDHandler: ContentTypeHandler;
-}
-declare module "store" {
-    import type { JSONObject } from "types/common";
-    import type { EntityState, OctironStore } from "types/store";
-    export type Aliases = Record<string, string>;
-    export type Headers = Record<string, string>;
-    export type Origins = Record<string, Headers>;
-    export type OutputTypes = 'jsonld' | 'problem-details';
-    export type ContentTypeHandler = (args: {
-        res: Response;
-        store: OctironStore;
-    }) => Promise<{
-        value: JSONObject;
-        outputType: OutputTypes;
-    }>;
-    export type Handlers = Record<string, ContentTypeHandler>;
-    export type FetcherArgs = {
-        method?: string;
-        body?: string;
-        headers?: Record<string, string>;
-    };
-    export type Fetcher = (iri: string, args: FetcherArgs) => Promise<Response>;
-    export type ResponseHook = (res: Promise<Response>) => void;
-    export function makeStore({ rootIRI, vocab, responseHook, ...args }: {
-        rootIRI: string;
-        vocab?: string;
-        aliases?: Aliases;
-        headers?: Headers;
-        origins?: Origins;
-        handlers?: Handlers;
-        entities?: Record<string, EntityState>;
-        fetcher?: Fetcher;
-        responseHook?: ResponseHook;
-    }): OctironStore;
 }
 declare module "utils/makeTypeDefs" {
     import type { TypeDef, TypeDefs } from "types/octiron";
@@ -978,7 +1218,7 @@ declare module "utils/makeTypeDef" {
 }
 declare module "octiron" {
     import type { OctironRoot, TypeDef } from "types/octiron";
-    import { makeStore } from "store";
+    import { Store } from "store";
     export * from "types/common";
     export * from "types/store";
     export * from "types/octiron";
@@ -988,7 +1228,13 @@ declare module "octiron" {
     /**
      * Creates a root octiron instance.
      */
-    export default function octiron({ typeDefs, ...storeArgs }: Parameters<typeof makeStore>[0] & {
+    declare function octiron({ typeDefs, ...storeArgs }: ConstructorParameters<typeof Store>[0] & {
         typeDefs?: TypeDef<any>[];
     }): OctironRoot;
+    declare namespace octiron {
+        var fromInitialState: ({ typeDefs, ...storeArgs }: Parameters<typeof Store.fromInitialState>[0] & {
+            typeDefs?: TypeDef<any>[];
+        }) => OctironRoot;
+    }
+    export default octiron;
 }

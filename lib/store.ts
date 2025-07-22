@@ -2,12 +2,12 @@ import type { AlternativesState, Context, PrimaryState, Fetcher, Handler, Integr
 import { HTMLFragmentsIntegration } from "./alternatives/htmlFragments.ts";
 import { HTMLIntegration } from "./alternatives/html.ts";
 import { isBrowserRender } from "./consts.ts";
-import { setImmediate } from "node:timers";
 import type { JSONObject } from "./types/common.ts";
 import { HTTPFailure } from "./failures.ts";
 import { flattenIRIObjects } from "./utils/flattenIRIObjects.ts";
 import { getSelection } from './utils/getSelection.ts';
 import type { FailureEntityState, SuccessEntityState } from "./types/store.ts";
+import { mithrilRedraw } from "./utils/mithrilRedraw.ts";
 
 const defaultAccept = 'application/problem+json, application/ld+json, text/lf';
 const integrationClasses = {
@@ -486,20 +486,25 @@ export class Store {
 
       this.#loading.add(loadingKey);
 
+      mithrilRedraw();
+
       // This promise wrapping is so SSR can hook in and await the promise.
       const promise = new Promise<Response>((resolve) => {
-        setImmediate(async () => {
+        (async () => {
           const res = await this.#fetcher(iri, {
             method,
             headers,
             body: args.body,
           });
 
-          await this.handleResponse(res)
+          await this.handleResponse(res);
+
           this.#loading.delete(loadingKey);
 
+          mithrilRedraw();
+
           resolve(res);
-        });
+        })();
       });
 
       if (this.#responseHook != null) {

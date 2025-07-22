@@ -5,15 +5,14 @@ import m from "mithril";
 import render from "mithril-node-render";
 import { rootFactory } from "../../lib/factories/rootFactory.ts";
 import { selectionFactory } from "../../lib/factories/selectionFactory.ts";
-import { makeStore } from "../../lib/store.ts";
 import type { IRIObject, JSONObject } from "../../lib/types/common.ts";
-import type { PresentComponent } from "../../lib/types/octiron.ts";
+import type { Octiron, PresentComponent } from "../../lib/types/octiron.ts";
 import type { OctironStore } from "../../lib/types/store.ts";
 import { isJSONObject } from "../../lib/utils/isJSONObject.ts";
 import { mocks, todosRootIRI } from "../mocks.ts";
 
 
-function scenario() {
+function makeScenario() {
   const users = [
     mocks.createUser({ username: 'jane' }),
     mocks.createUser({ username: 'teddy' }),
@@ -57,17 +56,12 @@ function scenario() {
     api,
   });
 
-  const entities: OctironStore["entities"] = {};
-  const store = makeStore({
-    vocab: mocks.todosVocab,
-    aliases: {
-      scm: mocks.scmVocab,
-    },
+  const primary: OctironStore["entities"] = {};
+  const store = mocks.makeStore({
     fetcher,
-    entities,
-    rootIRI: todosRootIRI,
     responseHook,
-  });
+    primary,
+  })
   const root = rootFactory({
     store,
     typeDefs: {},
@@ -78,8 +72,8 @@ function scenario() {
   });
 
   function reset() {
-    for (const key of Object.keys(entities)) {
-      delete entities[key];
+    for (const key of Object.keys(primary)) {
+      delete primary[key];
     }
   }
 
@@ -180,7 +174,7 @@ Deno.test("o.root()", async (t) => {
       fetcherHook,
       root,
       renderChild,
-    } = scenario();
+    } = makeScenario();
 
     const fetchedIRIs: string[] = [];
     fetcherHook((iri) => fetchedIRIs.push(iri));
@@ -198,7 +192,7 @@ Deno.test("o.root()", async (t) => {
         fetcherHook,
         select,
         renderChild,
-      } = scenario();
+      } = makeScenario();
 
       const fetchedIRIs: string[] = [];
       fetcherHook((iri) => fetchedIRIs.push(iri));
@@ -212,21 +206,24 @@ Deno.test("o.root()", async (t) => {
 });
 
 Deno.test("o.root(selector)", async (t) => {
-  const {
-    users,
-    fetcherHook,
-    root,
-    select,
-    reset,
-    renderChild,
-  } = await scenario();
+
 
   for (
-    const o of [
-      root,
-      select,
-    ]
+    const octironType of [
+      'root',
+      'select',
+    ] as const
   ) {
+    const {
+      users,
+      fetcherHook,
+      reset,
+      renderChild,
+      ...scenario
+    } = await makeScenario();
+
+    const o = scenario[octironType];
+
     await t.step(
       `It can perform deep selections from a "${o.octironType}" instance`,
       async () => {
@@ -247,7 +244,7 @@ Deno.test("o.root(selector)", async (t) => {
         );
 
         const usernames = html.split(',');
-
+        console.log(fetchedIRIs, [todosRootIRI])
         assertEquals(usernames[0], users[0]['https://todos.example.com/username']);
         assertEquals(usernames[1], users[1]['https://todos.example.com/username']);
         assertEquals(usernames[2], users[2]['https://todos.example.com/username']);
@@ -261,20 +258,20 @@ Deno.test("o.root(selector)", async (t) => {
 });
 
 Deno.test("o.root({ pre })", async (t) => {
-  const {
-    users,
-    root,
-    select,
-    reset,
-    renderChild,
-  } = await scenario();
-
   for (
-    const o of [
-      root,
-      select,
-    ]
+    const octironType of [
+      'root',
+      'select',
+    ] as const
   ) {
+    const {
+      users,
+      reset,
+      renderChild,
+      ...scenario
+    } = await makeScenario();
+    const o = scenario[octironType];
+
     await t.step(
       `Prefixes a selection list using a  "${o.octironType}" instance`,
       async () => {
@@ -313,7 +310,7 @@ Deno.test("o.root({ sep })", async (t) => {
     select,
     reset,
     renderChild,
-  } = await scenario();
+  } = await makeScenario();
 
   for (
     const o of [
@@ -353,7 +350,7 @@ Deno.test("o.root({ post })", async (t) => {
     select,
     reset,
     renderChild,
-  } = await scenario();
+  } = await makeScenario();
 
   for (
     const o of [
@@ -377,7 +374,7 @@ Deno.test("o.root({ post })", async (t) => {
           }),
         );
 
-        assertEquals(html, 
+        assertEquals(html,
             users[0]['https://todos.example.com/username']
           + users[1]['https://todos.example.com/username']
           + users[2]['https://todos.example.com/username']
@@ -403,7 +400,7 @@ Deno.test("o.root({ start })", async (t) => {
     select,
     reset,
     renderChild,
-  } = await scenario();
+  } = await makeScenario();
 
   for (
     const o of [
@@ -427,7 +424,7 @@ Deno.test("o.root({ start })", async (t) => {
           }),
         );
 
-        assertEquals(html, 
+        assertEquals(html,
             users[4]['https://todos.example.com/username']
           + users[5]['https://todos.example.com/username']
           + users[6]['https://todos.example.com/username']
@@ -448,7 +445,7 @@ Deno.test("o.root({ end })", async (t) => {
     select,
     reset,
     renderChild,
-  } = await scenario();
+  } = await makeScenario();
 
   for (
     const o of [
@@ -472,7 +469,7 @@ Deno.test("o.root({ end })", async (t) => {
           }),
         );
 
-        assertEquals(html, 
+        assertEquals(html,
             users[0]['https://todos.example.com/username']
           + users[1]['https://todos.example.com/username']
           + users[2]['https://todos.example.com/username']
@@ -491,7 +488,7 @@ Deno.test("o.root({ predicate })", async (t) => {
     select,
     reset,
     renderChild,
-  } = await scenario();
+  } = await makeScenario();
 
   for (
     const o of [
@@ -519,7 +516,7 @@ Deno.test("o.root({ predicate })", async (t) => {
           }),
         );
 
-        assertEquals(html, 
+        assertEquals(html,
             users[1]['https://todos.example.com/username']
           + users[3]['https://todos.example.com/username']
         );
@@ -536,7 +533,7 @@ Deno.test("o.root({ pre, sep, post, start, end, predicate })", async (t) => {
     select,
     reset,
     renderChild,
-  } = await scenario();
+  } = await makeScenario();
 
   for (
     const o of [
@@ -589,7 +586,7 @@ Deno.test("o.root({ loading })", async (t) => {
     select,
     reset,
     renderChild,
-  } = await scenario();
+  } = await makeScenario();
 
   for (
     const o of [
@@ -627,7 +624,7 @@ Deno.test("o.root({ fallback })", async (t) => {
     select,
     reset,
     renderChild,
-  } = await scenario();
+  } = await makeScenario();
 
   for (
     const o of [

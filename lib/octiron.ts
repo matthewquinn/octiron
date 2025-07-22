@@ -1,7 +1,7 @@
 import type { OctironRoot, TypeDef } from "./types/octiron.ts";
 import { rootFactory } from "./factories/rootFactory.ts";
-import { makeStore } from "./store.ts";
 import { makeTypeDefs } from "./utils/makeTypeDefs.ts";
+import { Store } from "./store.ts";
 
 export * from './types/common.ts';
 export * from './types/store.ts';
@@ -16,7 +16,7 @@ export * from './utils/makeTypeDefs.ts';
 export default function octiron({
   typeDefs,
   ...storeArgs
-}: Parameters<typeof makeStore>[0] & {
+}: ConstructorParameters<typeof Store>[0] & {
   // deno-lint-ignore no-explicit-any
   typeDefs?: TypeDef<any>[];
 }): OctironRoot {
@@ -24,7 +24,28 @@ export default function octiron({
     ? makeTypeDefs(...typeDefs)
     : {};
 
-  const store = makeStore(storeArgs);
+  const store = new Store(storeArgs);
+
+  return rootFactory({
+    store,
+    typeDefs: config,
+  });
+}
+
+octiron.fromInitialState = ({
+  typeDefs,
+  ...storeArgs
+}: Parameters<typeof Store.fromInitialState>[0] & {
+  // deno-lint-ignore no-explicit-any
+  typeDefs?: TypeDef<any>[];
+}) => {
+  const config = typeDefs != null
+    ? makeTypeDefs(...typeDefs)
+    : {};
+
+  const store = Store.fromInitialState({
+    ...storeArgs,
+  });
 
   return rootFactory({
     store,

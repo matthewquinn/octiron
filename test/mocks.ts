@@ -1,10 +1,12 @@
-import type { Children } from "mithril";
-import type { Aliases, Fetcher, FetcherArgs, OctironStore } from "../lib/types/store.ts";
-import type { IRIObject, JSONObject } from "../lib/types/common.ts";
-import { flattenIRIObjects } from "../lib/utils/flattenIRIObjects.ts";
-import jsonld from 'jsonld';
 import { DOMParser } from '@b-fuze/deno-dom';
 import { faker } from '@faker-js/faker';
+import jsonld from 'jsonld';
+import type { Children } from "mithril";
+import { jsonLDHandler } from "../lib/handlers/jsonLDHandler.ts";
+import { Store } from "../lib/store.ts";
+import type { IRIObject, JSONObject } from "../lib/types/common.ts";
+import type { Aliases, AlternativesState, EntityState, Fetcher, FetcherArgs, Handler, OctironStore, ResponseHook } from "../lib/types/store.ts";
+import { flattenIRIObjects } from "../lib/utils/flattenIRIObjects.ts";
 
 export type TodoStatus =
   | "todo"
@@ -299,6 +301,47 @@ function component(children: Children) {
   };
 }
 
+function makeStore({
+  rootIRI = todosRootIRI,
+  vocab = todosVocab,
+  aliases = {
+    scm: scmVocab,
+  },
+  primary,
+  headers,
+  origins,
+  alternatives,
+  fetcher,
+  responseHook,
+  handlers = [
+    jsonLDHandler,
+  ],
+}: {
+  rootIRI?: string;
+  vocab?: string;
+  aliases?: Record<string, string>;
+  primary?: Record<string, EntityState>;
+  headers?: Record<string, string>;
+  origins?: Record<string, Record<string, string>>;
+  alternatives?: AlternativesState;
+  fetcher?: Fetcher;
+  responseHook?: ResponseHook;
+  handlers?: Handler[],
+}) {
+  return new Store({
+    rootIRI,
+    vocab,
+    aliases, 
+    headers,
+    origins,
+    primary,
+    alternatives,
+    responseHook,
+    handlers,
+    fetcher,
+  });
+}
+
 export const mocks = {
   todosRootIRI,
   todosVocab,
@@ -316,4 +359,5 @@ export const mocks = {
   makeDom,
   delay,
   component,
+  makeStore,
 } as const;

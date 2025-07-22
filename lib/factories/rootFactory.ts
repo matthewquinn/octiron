@@ -1,11 +1,11 @@
-import type { OctironStore } from '../types/store.ts';
 import type { OctironRoot, OctironSelection, Predicate, SelectView, OctironSelectArgs, Selector, TypeDefs } from '../types/octiron.ts';
 import m from "mithril";
 import { SelectionRenderer } from "../renderers/SelectionRenderer.ts";
 import { unravelArgs } from "../utils/unravelArgs.ts";
+import type { Store } from "../store.ts";
 
 export type RootFactoryInternals = {
-  store: OctironStore;
+  store: Store;
   typeDefs?: TypeDefs;
 };
 

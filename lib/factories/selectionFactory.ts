@@ -1,5 +1,4 @@
 import type { JSONValue } from '../types/common.ts';
-import type { OctironStore } from "../types/store.ts";
 import type { BaseAttrs, OctironPresentArgs, OctironSelectArgs, OctironSelection, Predicate, PresentComponent, Selector, SelectView, TypeDefs } from '../types/octiron.ts';
 import m from "mithril";
 import { SelectionRenderer } from "../renderers/SelectionRenderer.ts";
@@ -7,9 +6,10 @@ import { getComponent } from '../utils/getComponent.ts';
 import { unravelArgs } from "../utils/unravelArgs.ts";
 import { getValueType } from "../utils/getValueType.ts";
 import { isJSONObject } from "../utils/isJSONObject.ts";
+import type { Store } from "../store.ts";
 
 export type SelectionFactoryInternals = {
-  store: OctironStore;
+  store: Store;
   typeDefs?: TypeDefs;
   parent?: OctironSelection;
   value?: JSONValue;
