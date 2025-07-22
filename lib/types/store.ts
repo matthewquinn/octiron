@@ -1,11 +1,16 @@
 import type { Children, ComponentTypes } from 'mithril';
 import type { JSONObject, JSONValue } from './common.ts';
-import type { Octiron } from "types/octiron";
+import type { Store } from '../store.ts';
+import type { Octiron } from "./octiron.ts";
 
 
 export type Aliases = Record<string, string>;
-export type Headers = Record<string, string>;
 export type Origins = Record<string, Headers>;
+export type Context = {
+  '@vocab'?: string;
+} & {
+  [vocab: string]: string;
+};
 
 export type IntegrationType =
   // | 'jsonld'
@@ -16,10 +21,10 @@ export type IntegrationType =
 
 export type HandlerArgs = {
   res: Response;
-  store: OctironStore;
+  store: Store;
 };
 
-export type Handler<T extends Record<string, JSONValue>> = (args: HandlerArgs) => Promise<T>;
+export type RequestHandler<T extends Record<string, JSONValue>> = (args: HandlerArgs) => Promise<T> | T;
 
 export type JSONLDContentTypeResult = {
   value: JSONObject;
@@ -32,7 +37,7 @@ export type JSONLDHandlerResult = {
 export type JSONLDHandler = {
   integrationType: 'jsonld',
   contentType: string;
-  handler: Handler<JSONLDHandlerResult>;
+  handler: RequestHandler<JSONLDHandlerResult>;
 };
 
 export type ProblemDetailsHandlerResult = {
@@ -42,11 +47,12 @@ export type ProblemDetailsHandlerResult = {
 export type ProblemDetailsHandler = {
   integrationType: 'problem-details',
   contentType: string;
-  handler: Handler<ProblemDetailsHandlerResult>;
+  handler: RequestHandler<ProblemDetailsHandlerResult>;
 };
 
 export type HTMLHandlerResult = {
   id?: string;
+  selector?: string;
   html: string;
 };
 export type FragmentListener = (fragment: string) => void;
@@ -62,12 +68,13 @@ export type HTMLOnCreate = (args: HTMLOnCreateArgs) => HTMLCleanupFn;
 export type HTMLHandler = {
   integrationType: 'html';
   contentType: string;
-  handler: Handler<HTMLHandlerResult>;
+  handler: RequestHandler<HTMLHandlerResult>;
   onCreate?: HTMLOnCreate;
 };
 
 export type HTMLFragmentsHandlerResult = {
-  root?: string;
+  selector?: string;
+  html?: string;
   ided: Record<string, string>;
   anon: Record<string, string>;
 };
@@ -83,11 +90,11 @@ export type HTMLFragmentsOnCreate = (args: HTMLFragmentsOnCreateArgs) => HTMLFra
 export type HTMLFragmentsHandler = {
   integrationType: 'html-fragments';
   contentType: string;
-  handler: Handler<HTMLFragmentsHandlerResult>;
+  handler: RequestHandler<HTMLFragmentsHandlerResult>;
   onCreate?: HTMLFragmentsOnCreate;
 }
 
-export type Handlers =
+export type Handler =
   | JSONLDHandler
   | ProblemDetailsHandler
   | HTMLHandler
@@ -97,7 +104,7 @@ export type Handlers =
 export type FetcherArgs = {
   method?: string;
   body?: string;
-  headers?: Record<string, string>;
+  headers?: Headers;
 };
 
 export type Fetcher = (iri: string, args: FetcherArgs) => Promise<Response>;
@@ -189,11 +196,6 @@ export type EntitySelectionResult = {
   readonly value?: JSONObject;
 
   /**
-   * The content type of the response.
-   */
-  readonly contentType: string | null;
-
-  /**
    * The error type.
    */
   readonly reason?: Failure;
@@ -228,11 +230,6 @@ export type ValueSelectionResult = {
    * The selection value.
    */
   readonly value: JSONValue;
-
-  /**
-   * The content type of the response.
-   */
-  readonly contentType?: undefined;
 };
 
 export type AlternativeTypeResult = {
@@ -357,11 +354,6 @@ export type SuccessEntityState = {
    * The response status. Only used for failure responses.
    */
   readonly status?: undefined;
-
-  /**
-   * The content type of the response.
-   */
-  readonly contentType: string;
 };
 
 export type FailureEntityState = {
@@ -391,11 +383,6 @@ export type FailureEntityState = {
   readonly status: number;
 
   /**
-   * The content type of the response.
-   */
-  readonly contentType?: string;
-
-  /**
    * An object describing the reason and source of the failure.
    */
   readonly reason: Failure;
@@ -412,8 +399,6 @@ export type AlternativeContentLoadingState = Record<string, Record<string, Loadi
 export type LoadingResult = {
   contentType: string;
 }
-
-export type LoadingAlternativeAcceptState = Record<string, true | LoadingResult>;
 
 export type EntityState =
   | LoadingEntityState
@@ -435,9 +420,8 @@ export interface IntegrationState {
   toInitialState(): string;
 };
 
-export type EntitiesStateStore = Record<string, EntityState>;
-export type LoadingStateStore = Record<string, LoadingAlternativeAcceptState>;
-export type AlternativesStateStore = Record<string, Record<string, IntegrationState>>;
+export type PrimaryState = Map<string, EntityState>;
+export type AlternativesState = Map<string, Map<string, IntegrationState>>;
 
 export type Method =
   | string

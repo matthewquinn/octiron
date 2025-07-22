@@ -1,6 +1,5 @@
 import type { Children } from "mithril";
-import type { Aliases, Fetcher, FetcherArgs } from "../lib/store.ts";
-import type { OctironStore } from "../lib/types/store.ts";
+import type { Aliases, Fetcher, FetcherArgs, OctironStore } from "../lib/types/store.ts";
 import type { IRIObject, JSONObject } from "../lib/types/common.ts";
 import { flattenIRIObjects } from "../lib/utils/flattenIRIObjects.ts";
 import jsonld from 'jsonld';
@@ -175,7 +174,7 @@ function createTodoListing<
  * objects. The given entities should be in their
  * expanded form. The first argument provides JSON-LD
  * context values if required.
- * 
+ *
  * @param args.vocab - The JSON-LD `@vocab` value
  * @param args.aliases - Object of alias: vocab mappings for the
  *                       JSON-LD context
@@ -202,14 +201,13 @@ async function toEntityState({
   ) as Array<IRIObject>;
 
   const result: OctironStore['entities'] = {};
-  
+
   for (const entity of flattenIRIObjects(compacted)) {
     result[entity["@id"]] = {
       iri: entity["@id"],
       ok: true,
       loading: false,
       value: entity,
-      contentType: 'application/ld+json',
     };
   }
 
@@ -223,7 +221,6 @@ function createEntityState(url: string, value: IRIObject): OctironStore['entitie
       ok: true,
       loading: false,
       value,
-      contentType: 'application/ld+json',
     },
   };
 }
@@ -252,7 +249,7 @@ function makeFetcherHook({
 } = {}): [Fetcher, ListenHook] {
   let runner: Listener | undefined;
 
-  const fetcher: Fetcher = (iri, args) => {
+  const fetcher: Fetcher = (iri: string, args: FetcherArgs) => {
     if (typeof runner === 'function') {
       runner(iri, args);
     }
@@ -267,7 +264,7 @@ function makeFetcherHook({
             'content-type': 'application/ld+json',
           },
         });
-        
+
         return Promise.resolve(res);
       }
     }

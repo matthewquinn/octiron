@@ -1,7 +1,7 @@
-import { isBrowserRender } from "consts";
+import { isBrowserRender } from "../consts.ts";
 import m from 'mithril';
-import type { HTMLCleanupFn, HTMLHandler, IntegrationState, IntegrationType } from "../types/store.ts";
-import { Octiron } from "types/octiron";
+import type { HTMLCleanupFn, HTMLHandler, IntegrationState } from "../types/store.ts";
+import type { Octiron } from "../types/octiron.ts";
 
 export type HTMLIntegrationComponentAttrs = {
   o: Octiron,

@@ -1,6 +1,6 @@
 import type { Attributes, Children, ComponentTypes } from 'mithril';
 import type { JSONValue } from './common.ts'
-import type { OctironStore } from './store.ts';
+import type { Store } from '../store.ts';
 import type {
   ContentHandlingFailure,
   HTTPFailure,
@@ -120,7 +120,7 @@ export type PresentableArgs<
   component?: PresentComponent<Value, Attrs>;
   fallbackComponent?: PresentComponent<Value, Attrs>;
   typeDefs?: TypeDefs;
-  store?: OctironStore;
+  store?: Store;
 };
 
 export type IterablePeridcate = (octiron: Octiron) => boolean;
@@ -263,7 +263,7 @@ export interface OctironRoot
   /**
    * The octiron store used for this value.
    */
-  readonly store: OctironStore;
+  readonly store: Store;
 }
 
 export interface OctironSelection
@@ -301,7 +301,7 @@ export interface OctironSelection
   /**
    * The octiron store used for this value.
    */
-  readonly store: OctironStore;
+  readonly store: Store;
 }
 
 export type Octiron =

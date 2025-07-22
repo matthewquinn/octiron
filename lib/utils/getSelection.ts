@@ -1,6 +1,6 @@
 
 import type { JSONArray, JSONObject, JSONValue, Mutable } from '../types/common.ts';
-import type { EntitySelectionResult, OctironStore, SelectionDetails, SelectionResult, ValueSelectionResult } from '../types/store.ts';
+import type { EntitySelectionResult, SelectionDetails, SelectionResult, ValueSelectionResult } from '../types/store.ts';
 import { escapeJSONPointerParts } from './escapeJSONPointerParts.ts';
 import { getIterableValue } from "./getIterableValue.ts";
 import { isIRIObject } from "./isIRIObject.ts";
@@ -9,7 +9,7 @@ import { isJSONObject } from './isJSONObject.ts';
 import { isMetadataObject } from "./isMetadataObject.ts";
 import { isValueObject } from "./isValueObject.ts";
 import { parseSelectorString } from './parseSelectorString.ts';
-
+import type { Store } from '../store.ts';
 
 /**
  * A circular selection error occurs when two or more
@@ -52,7 +52,7 @@ export function transformProcessedDetails<T extends SelectionResult>(
 ): SelectionDetails<T> {
   for (let index = 0; index < processing.result.length; index++) {
     const element = processing.result[index];
-    
+
     (element as unknown as Mutable<SourceSelectionResults>).key = Symbol.for(element.keySource);
 
     // deno-lint-ignore no-explicit-any
@@ -76,7 +76,7 @@ export function transformProcessedDetails<T extends SelectionResult>(
  * @param {string} args.selector          Selector string begining with a type.
  * @param {JSONObject} [args.value]       Context object to begin the selection from.
  * @param {JSONObject} [args.actionValue] The action, or point in the action definition which describes this value.
- * @param {OctironStore} args.store       Octiron store to search using.
+ * @param {Store} args.store       Octiron store to search using.
  * @returns {SelectionDetails}            Selection contained in a details object.
  */
 export function getSelection<T extends SelectionResult>({
@@ -88,7 +88,7 @@ export function getSelection<T extends SelectionResult>({
   selector: string;
   value?: JSONObject;
   actionValue?: JSONObject;
-  store: OctironStore;
+  store: Store;
 }): SelectionDetails<T> {
   const details: ProcessingSelectionDetails = {
     complete: false,
@@ -134,7 +134,7 @@ export function getSelection<T extends SelectionResult>({
 
   for (let index = 0; index < details.result.length; index++) {
     const element = details.result[index];
-    
+
     (element as unknown as Mutable<SourceSelectionResults>).key = Symbol.for(element.keySource);
   }
 
@@ -209,12 +209,12 @@ function resolveValue({
   actionValue?: JSONValue;
   datatype: string;
   filter?: string;
-  store: OctironStore;
+  store: Store;
   details: ProcessingSelectionDetails;
 }) {
   if (value == null) {
     details.hasMissing = true;
-    
+
     return;
   }
 
@@ -304,7 +304,6 @@ function resolveValue({
 
   if (isIRIObject(value)) {
     const iri = value['@id'];
-    const contentType = store.entities[iri].contentType as string;
 
     details.result.push({
       keySource,
@@ -313,7 +312,6 @@ function resolveValue({
       iri,
       ok: true,
       value,
-      contentType,
     });
 
     return;
@@ -347,7 +345,7 @@ function selectTypedValue({
   value: JSONValue;
   actionValue?: JSONObject;
   filter?: string;
-  store: OctironStore;
+  store: Store;
   details: ProcessingSelectionDetails;
 }): void {
   pointer = makePointer(pointer, type);
@@ -436,7 +434,7 @@ function traverseSelector({
   selector: SelectorObject[];
   value: JSONValue;
   actionValue?: JSONObject;
-  store: OctironStore;
+  store: Store;
   details: ProcessingSelectionDetails;
 }): void {
 
@@ -570,14 +568,14 @@ function selectEntity({
   iri: string;
   filter?: string;
   selector?: SelectorObject[];
-  store: OctironStore;
+  store: Store;
   details: ProcessingSelectionDetails;
   handledIRIs?: Set<string>;
 }): void {
   keySource = makePointer(keySource, iri);
   pointer = makePointer(pointer, iri);
 
-  const cache = store.entities[iri];
+  const cache = store.entity(iri)
 
   details.dependencies.push(iri);
 
@@ -605,7 +603,6 @@ function selectEntity({
       ok: false,
       status: cache.status,
       value: cache.value,
-      contentType: cache.contentType,
       reason: cache.reason,
     });
 
@@ -624,7 +621,7 @@ function selectEntity({
     } else {
       throw new CircularSelectionError(`Circular selection loop detected`);
     }
-    
+
     // select the entity this entity is referencing
     return selectEntity({
       keySource,
@@ -651,7 +648,6 @@ function selectEntity({
       iri: cache.iri,
       ok: true,
       value: cache.value as JSONObject,
-      contentType: cache.contentType,
     });
 
     return;

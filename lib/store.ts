@@ -1,364 +1,650 @@
+import type { AlternativesState, Context, PrimaryState, Fetcher, Handler, IntegrationStateInfo, IntegrationType, JSONLDHandlerResult, ReadonlySelectionResult, ResponseHook, SelectionDetails, SelectionListener, EntityState } from "./types/store.ts";
+import { HTMLFragmentsIntegration } from "./alternatives/htmlFragments.ts";
+import { HTMLIntegration } from "./alternatives/html.ts";
 import { isBrowserRender } from "./consts.ts";
-import { ContentHandlingFailure, HTTPFailure } from "./failures.ts";
-import { jsonLDHandler } from "./handlers/jsonLDHandler.ts";
+import { setImmediate } from "node:timers";
 import type { JSONObject } from "./types/common.ts";
-import type {
-  Aliases,
-  AlternativesState,
-  PrimaryState,
-  FailureEntityState,
-  Fetcher,
-  RequestHandler,
-  Headers,
-  LoadingStateStore,
-  Method,
-  OctironStore,
-  Origins,
-  ReadonlySelectionResult,
-  ResponseHook,
-  SelectionDetails,
-  SuccessEntityState,
-} from "./types/store.ts";
+import { HTTPFailure } from "./failures.ts";
 import { flattenIRIObjects } from "./utils/flattenIRIObjects.ts";
-import { getSelection } from "./utils/getSelection.ts";
+import { getSelection } from './utils/getSelection.ts';
+import type { FailureEntityState, SuccessEntityState } from "./types/store.ts";
 
-export function makeStore({
-  rootIRI,
-  vocab,
-  responseHook,
-  ...args
-}: {
+const defaultAccept = 'application/problem+json, application/ld+json, text/lf';
+const integrationClasses = {
+  [HTMLIntegration.type]: HTMLIntegration,
+  [HTMLFragmentsIntegration.type]: HTMLFragmentsIntegration,
+};
+
+type StateInfo = {
   rootIRI: string;
   vocab?: string;
-  aliases?: Aliases;
-  headers?: Headers;
-  origins?: Origins;
-  handlers?: RequestHandler;
-  entities?: PrimaryState;
-  alternatives?: AlternativesState;
-  fetcher?: Fetcher;
-  responseHook?: ResponseHook;
-}): OctironStore {
-  const context: Record<string, string> = {};
-  const headers = args.headers ?? {};
-  const handlers: RequestHandler = args.handlers ?? {};
-  const origins = new Map([
-    [rootIRI, headers],
-    ...Object.entries(Object.assign({}, args.origins)),
-  ]);
-  const aliases: Aliases = args.aliases ?? {};
-  const fetcher: Fetcher = args.fetcher ?? fetch;
-  const entities: PrimaryState = args.entities ?? {};
-  const loading: LoadingStateStore = {};
-  const alternatives: AlternativesState = args.alternatives ?? {};
+  aliases?: Record<string, string>;
+  primary: Record<string, EntityState>;
+  alternatives: Record<string, IntegrationStateInfo[]>;
+};
 
-  if (typeof vocab === "string") {
-    context["@vocab"] = vocab;
+type Dependencies = Map<string, Set<symbol>>;
+type Listener = (details: SelectionDetails<ReadonlySelectionResult>) => void;
+type ListenerDetails = {
+  key: symbol;
+  selector?: string;
+  value?: JSONObject;
+  required: string[];
+  dependencies: string[];
+  listener: Listener;
+  cleanup: () => void;
+};
+type Listeners = Map<symbol, ListenerDetails>;
+
+function getJSONLdValues(vocab?: string, aliases?: Record<string, string>): [Map<string, string>, Context] {
+  const aliasMap: Map<string, string> = new Map<string, string>();
+  const context: Context = {};
+
+  if (vocab != null) {
+    context['@vocab'] = vocab;
   }
 
-  if (typeof args.aliases !== "undefined") {
-    for (const [key, value] of Object.entries(args.aliases)) {
-      context[key] = value;
-    }
-  }
-
-  const store = {
-    rootIRI,
-    vocab,
-    aliases,
-    entities,
-    context,
-  } as OctironStore;
-
-  if (handlers["application/ld+json"] == null) {
-    handlers["application/ld+json"] = jsonLDHandler;
-  }
-
-  const dependentsMapper: Record<string, symbol[]> = {};
-  const listenersMapper: Record<
-    symbol,
-    {
-      key: symbol;
-      selector?: string;
-      value?: JSONObject;
-      required: string[];
-      dependencies: string[];
-      listener: (details: SelectionDetails<ReadonlySelectionResult>) => void;
-      cleanup: () => void;
-    }
-  > = {};
-
-  function makeCleanupFn({
-    key,
-    details,
-  }: {
-    key: symbol;
-    details: SelectionDetails;
-  }) {
-    return function cleanup() {
-      delete listenersMapper[key];
-
-      for (const dependency of details.dependencies) {
-        if (typeof dependentsMapper[dependency] === "undefined") {
-          continue;
-        }
-        const index = dependentsMapper[dependency].indexOf(key);
-
-        dependentsMapper[dependency].splice(index, 1);
-
-        if (isBrowserRender && dependentsMapper[dependency].length === 0) {
-          delete entities[dependency];
-        }
-      }
-    };
-  }
-
-  function publish(iri: string) {
-    const keys = [...(dependentsMapper[iri] || [])];
-
-    for (const key of keys) {
-      const { selector, value, listener } = listenersMapper[key];
-
-      const details = getSelection<ReadonlySelectionResult>(
-        {
-          selector,
-          value,
-          store,
-        } as Parameters<typeof getSelection>[0],
-      );
-      const cleanup = makeCleanupFn({ key, details });
-
-      // track each dependency using the key so updates can easliy be published
-      for (const dependency of details.dependencies) {
-        if (!Array.isArray(dependentsMapper[dependency])) {
-          dependentsMapper[dependency] = [key];
-        } else {
-          dependentsMapper[dependency].push(key);
-        }
-      }
-
-      listenersMapper[key].cleanup = cleanup;
-
-      listener(details);
-    }
-  }
-
-  async function callFetcher(iri: string, args: {
-    method?: Method;
-    headers?: Headers;
-    body?: string;
-  } = {}): Promise<void> {
-    const url = new URL(iri);
-
-    if (!origins.has(url.origin)) {
-      // don't allow requests to un-configured servers
-      throw new Error(`Unconfigured origin`);
-    }
-
-    if (entities[iri]) {
-      return;
-    }
-
-    entities[iri] = {
-      iri,
-      loading: true,
-    };
-
-    const promise = new Promise<Response>((resolve) => {
-      setTimeout(async () => {
-        const res = await fetcher(iri, {
-          method: args.method ?? "get",
-          headers: Object.assign({}, origins.get(iri), args.headers),
-          body: args.body,
-        });
-
-        const contentType = res.headers.get("content-type")?.split(";")[0];
-
-        if (contentType == null) {
-          throw new Error("No content type");
-        }
-
-        if (
-          contentType === null || handlers[contentType] === null
-        ) {
-          const error = new Error(`Unsupported content type ${contentType}`);
-          const reason = new ContentHandlingFailure(error);
-
-          entities[iri] = {
-            iri,
-            loading: false,
-            ok: false,
-            value: {},
-            status: res.status,
-            contentType,
-            reason,
-          };
-
-          return;
-        }
-
-        const output = await handlers[contentType]({
-          res,
-          store,
-        });
-
-        if (output.outputType === "jsonld") {
-          try {
-            const iris = [iri];
-
-            if (res.ok) {
-              entities[iri] = {
-                iri,
-                loading: false,
-                ok: true,
-                value: output.value,
-                contentType,
-              };
-            } else {
-              const reason = new HTTPFailure(res.status, res);
-
-              entities[iri] = {
-                iri,
-                loading: false,
-                ok: false,
-                value: output.value,
-                status: res.status,
-                contentType,
-                reason,
-              };
-            }
-
-            for (const entity of flattenIRIObjects(value)) {
-              if (iris.includes(entity["@id"])) {
-                continue;
-              }
-
-              entities[entity["@id"]] = {
-                iri: entity["@id"],
-                loading: false,
-                ok: true,
-                value: entity,
-                contentType,
-              };
-            }
-
-            for (const iri of iris) {
-              publish(iri);
-            }
-          } catch (err) {
-            console.error(err);
-          }
-        } else if (output.outputType === 'html') {
-
-        }
-
-
-        resolve(res);
-      });
-    });
-
-    if (typeof responseHook === "function") {
-      responseHook(promise);
-    }
-
-    await promise;
-  }
-
-  store.fetch = async function (iri: string) {
-    await callFetcher(iri);
-
-    return entities.get(iri) as SuccessEntityState | FailureEntityState;
-  } satisfies OctironStore["fetch"];
-
-  store.expand = function (term) {
-    if (term.includes(":")) {
-      const [alias, rest] = term.split(":");
-
-      return `${aliases[alias]}${rest}`;
-    } else if (typeof vocab !== "string") {
-      return term;
-    }
-
-    return `${vocab}${term}`;
-  } satisfies OctironStore["expand"];
-
-  store.select = (selector, value) => {
-    return getSelection({
-      selector,
-      value,
-      store,
-    });
-  };
-
-  store.subscribe = function ({ key, selector, value, listener }) {
-    const details = getSelection<ReadonlySelectionResult>({
-      selector,
-      value,
-      store,
-    });
-
-    const cleanup = makeCleanupFn({ key, details });
-
-    // track each dependency using the key so updates can easliy be published
-    for (const dependency of details.dependencies) {
-      if (!Array.isArray(dependentsMapper[dependency])) {
-        dependentsMapper[dependency] = [key];
-      } else {
-        dependentsMapper[dependency].push(key);
-      }
-    }
-
-    listenersMapper[key] = {
-      key,
-      selector,
-      value,
-      required: details.required,
-      dependencies: details.dependencies,
-      listener,
-      cleanup,
-    };
-
-    return details;
-  } satisfies OctironStore["subscribe"];
-
-  store.unsubscribe = function (key: symbol) {
-    listenersMapper[key]?.cleanup();
-  } satisfies OctironStore["unsubscribe"];
-
-  store.stateToHTML = function (): string {
-    let html = `<script id="octiron-jsonld-entities" type="application/json">${JSON.stringify(entities)}</script>\n`;
-
-    for (const alternative of alternatives.values()) {
-      for (const state of Object.values(alternative)) {
-        switch (state.type) {
-          case 'problem-details': {
-            html += `<script class="octiron-problem-details" data-iri="${state.iri}" type="application/json>${JSON.stringify(state)}</script>\n`;
-            break;
-          }
-        }
-      }
-    }
-
-    return html;
-  };
-
-  if (typeof vocab === "string") {
-    context["@vocab"] = vocab;
+  if (aliases == null) {
+    return [aliasMap, context];
   }
 
   for (const [key, value] of Object.entries(aliases)) {
     context[key] = value;
+    aliasMap.set(`^${key}:`, value);
   }
 
-  if (headers.accept == null) {
-    headers["accept"] = "application/ld+json";
-  }
-
-  return store;
+  return [aliasMap, context];
 }
 
-export function collectInitialState() {
-  const entities = JSON.parse(
-    document.getElementById("octiron-jsonld-entities")?.innerText as string,
-  );
+function getInternalHeaderValues(
+  headers?: Record<string, string>,
+  origins?: Record<string, Record<string, string>>,
+): [Headers, Map<string, Headers>] {
+  const internalHeaders = new Headers([['accept', defaultAccept ]]);
+  const internalOrigins = new Map<string, Headers>();
+
+  if (headers != null) {
+    for (const [key, value] of Object.entries(headers)) {
+      internalHeaders.set(key, value);
+    }
+  }
+
+  if (origins != null) {
+    for (const [origin, headers] of Object.entries(origins)) {
+      const internalHeaders = new Headers([['accept', defaultAccept]]);
+
+      for (const [key, value] of Object.entries(headers)) {
+        internalHeaders.set(key, value);
+      }
+
+      internalOrigins.set(origin, internalHeaders);
+    }
+  }
+
+  return [internalHeaders, internalOrigins];
+}
+
+export type StoreArgs = {
+  /**
+   * Root endpoint of the API.
+   */
+  rootIRI: string;
+
+  /**
+   * Headers to send when making requests to endpoints
+   * sharing origins with the `rootIRI`.
+   */
+  headers?: Record<string, string>;
+
+  /**
+   * A map of origins and the headers to use when sending
+   * requests to them. Octiron will only send requests
+   * to endpoints which share origins with the `rootIRI`
+   * or are configured in the origins object. Appart
+   * from the accept header which has a common default
+   * value, headers are not shared between origins.
+   */
+  origins?: Record<string, Record<string, string>>;
+
+  /**
+   * The JSON-ld @vocab to use for octiron selectors.
+   */
+  vocab?: string;
+
+  /**
+   * Map of JSON-ld aliases to their values.
+   */
+  aliases?: Record<string, string>;
+
+  /**
+   * Primary initial state.
+   */
+  primary?: Record<string, EntityState>;
+
+  /**
+   * Alternatives initial state.
+   */
+  alternatives?: AlternativesState;
+
+  /**
+   * Handler objects.
+   */
+  handlers: Handler[];
+
+  /**
+   * Function which performs fetch.
+   */
+  fetcher?: Fetcher;
+
+  /**
+   * Hook used by SSR for awaiting response promises.
+   */
+  responseHook?: ResponseHook;
+};
+
+export class Store {
+
+    #rootIRI: string;
+    #rootOrigin: string;
+    #headers: Headers;
+    #origins: Map<string, Headers>;
+    #vocab?: string | undefined;
+    #aliases: Map<string, string>;
+    #primary: PrimaryState = new Map();
+    #loading: Set<string> = new Set();
+    #alternatives: AlternativesState = new Map();
+    #handlers: Map<string, Handler>;
+    #keys: Set<string> = new Set();
+    #context: Context;
+    #termExpansions: Map<symbol, string | null> = new Map();
+    #fetcher: Fetcher;
+    #responseHook?: ResponseHook;
+    #dependencies: Dependencies = new Map();
+    #listeners: Listeners = new Map();
+
+    constructor(args: StoreArgs) {
+      this.#rootIRI = args.rootIRI;
+      this.#rootOrigin = new URL(args.rootIRI).origin;
+      this.#vocab = args.vocab;
+      this.#fetcher = args.fetcher ?? fetch;
+      this.#responseHook = args.responseHook;
+
+      [this.#headers, this.#origins] = getInternalHeaderValues(args.headers, args.origins);
+      [this.#aliases, this.#context] = getJSONLdValues(args.vocab, args.aliases);
+
+      this.#handlers = new Map(args.handlers.map((handler) => [handler.contentType, handler]));
+
+      if (args.primary != null) {
+        this.#primary = new Map(Object.entries(args.primary));
+      }
+
+      if (!this.#headers.has('accept')) {
+        this.#headers.set('accept', defaultAccept);
+      }
+
+      for (const origin of Object.values(this.#origins)) {
+        if (!origin.has('accept')) {
+          origin.set('accept', defaultAccept);
+        }
+      }
+    }
+
+    public get rootIRI() {
+      return this.#rootIRI;
+    }
+
+    public entity(iri: string) {
+      return this.#primary.get(iri);
+    }
+
+    public get context(): Context {
+      return this.#context;
+    }
+
+    /**
+     * Expands a term to a type.
+     *
+     * If an already expanded JSON-ld type is given it will
+     * return the input value.
+     */
+    public expand(termOrType: string): string {
+      const sym = Symbol.for(termOrType);
+      const cached = this.#termExpansions.get(sym);
+
+      if (cached != null) {
+        return cached;
+      }
+
+      let expanded: string | undefined;
+
+      if (this.#vocab != null && termOrType.startsWith(this.#vocab)) {
+        expanded = termOrType.replace(this.#vocab, '');
+      } else if (/https?:\/\//.test(termOrType)) {
+        // is a type
+        expanded = termOrType;
+      } else {
+        for (const [key, value] of this.#aliases) {
+          const reg = new RegExp(key);
+          if (reg.test(termOrType)) {
+            expanded = termOrType.replace(reg, value);
+            break;
+          }
+        }
+      }
+
+      this.#termExpansions.set(sym, expanded ?? termOrType);
+
+      return expanded ?? termOrType;
+    }
+
+    public select(selector: string, value?: JSONObject): SelectionDetails {
+      return getSelection({
+        selector,
+        value,
+        store: this,
+      });
+    }
+    /**
+     * Generates a unique key for server rendering only.
+     */
+    public key(): string {
+      if (isBrowserRender) {
+        return '';
+      }
+
+      while (true) {
+        const key = Math.random().toString(36).slice(2, 7);
+
+        if (!this.#keys.has(key)) {
+          this.#keys.add(key);
+
+          return key;
+        }
+      }
+    }
+
+    /**
+     * Creates a cleanup function which should be called
+     * when a subscriber unlistens.
+     */
+    #makeCleanupFn(key: symbol, details: SelectionDetails) {
+      return () => {
+        this.#listeners.delete(key);
+
+        for (const dependency of details.dependencies) {
+          this.#dependencies.delete(dependency);
+
+          if (isBrowserRender) {
+            setTimeout(() => {
+              if (this.#dependencies.get(dependency)?.size === 0) {
+                this.#primary.delete(dependency);
+              }
+            }, 5000);
+          }
+        }
+      }
+    }
+
+    /**
+     * Creates a unique key for the ir, method and accept headers
+     * to be used to mark the request's loading status.
+     */
+    #getLoadingKey(iri: string, method: string, accept?: string): string {
+      accept = accept || this.#headers.get('accept') || defaultAccept;
+
+      return `${method?.toLowerCase()}|${iri}|${accept.toLowerCase()}`;
+    }
+
+    public isLoading(iri: string): boolean {
+      const loadingKey = this.#getLoadingKey(iri, 'get');
+
+      return this.#loading.has(loadingKey);
+    }
+
+    /**
+     * Called on change to an entity. All listeners with dependencies in their
+     * selection for this entity have the latest selection result pushed to
+     * their listener functions.
+     */
+    #publish(iri: string, _contentType?: string): void {
+      const keys = this.#dependencies.get(iri);
+
+      if (keys == null) {
+        return;
+      }
+
+      for (const key of keys) {
+        const listenerDetails = this.#listeners.get(key);
+
+        if (listenerDetails == null) {
+          continue;
+        }
+
+        const details = getSelection({
+          selector: listenerDetails.selector,
+          value: listenerDetails.value,
+          store: this,
+        } as Parameters<typeof getSelection>[0]);
+        const cleanup = this.#makeCleanupFn(key, details);
+
+        for (const dependency of details.dependencies) {
+          let depSet = this.#dependencies.get(dependency);
+
+          if (depSet == null) {
+            depSet = new Set([key]);
+
+            this.#dependencies.set(dependency, depSet);
+          } else {
+            depSet.add(key);
+          }
+        }
+
+        listenerDetails.cleanup = cleanup;
+        listenerDetails.listener(details);
+      }
+    }
+
+    #handleJSONLD({
+      iri,
+      res,
+      output,
+    }: {
+      iri: string;
+      res: Response;
+      output: JSONLDHandlerResult,
+    }): void {
+      const iris = [iri];
+
+      if (res.ok) {
+        this.#primary.set(iri, {
+          iri,
+          loading: false,
+          ok: true,
+          value: output.jsonld,
+        })
+      } else {
+        const reason = new HTTPFailure(res.status, res);
+
+        this.#primary.set(iri, {
+          iri,
+          loading: false,
+          ok: false,
+          value: output.jsonld,
+          status: res.status,
+          reason,
+        });
+      }
+
+      for (const entity of flattenIRIObjects(output.jsonld)) {
+        if (iris.includes(entity['@id'])) {
+          continue;
+        }
+
+        this.#primary.set(entity['@id'], {
+          iri: entity['@id'],
+          loading: false,
+          ok: true,
+          value: entity,
+        });
+      }
+
+      for (const iri in iris) {
+        this.#publish(iri);
+      }
+    }
+
+    async handleResponse(res: Response) {
+      const iri = res.url.toString();
+      const contentType = res.headers.get('content-type')?.split?.(';')?.[0];
+
+      if (contentType == null) {
+        throw new Error('Content type not specified in response');
+      }
+
+      const handler = this.#handlers.get(contentType);
+
+      if (handler == null) {
+        throw new Error(`No handler configured for content type "${contentType}"`);
+      }
+
+      if (handler.integrationType === 'jsonld') {
+        const output = await handler.handler({
+          res,
+          store: this,
+        });
+
+        this.#handleJSONLD({
+          iri,
+          res,
+          output,
+        });
+      } else if (handler.integrationType === 'problem-details') {
+        throw new Error('Problem details response types not supported yet');
+      } else if (handler.integrationType === 'html') {
+        const output = await handler.handler({
+          res,
+          store: this,
+        });
+        let integrations = this.#alternatives.get(contentType);
+
+        if (integrations == null) {
+          integrations = new Map();
+
+          this.#alternatives.set(contentType, integrations);
+        }
+
+        integrations.set(iri, new HTMLIntegration(handler, {
+          iri,
+          contentType,
+          html: output.html,
+          id: output.id,
+        }));
+      } else if (handler.integrationType === 'html-fragments') {
+        const output = await handler.handler({
+          res,
+          store: this,
+        });
+        let integrations = this.#alternatives.get(contentType);
+
+        if (integrations == null) {
+          integrations = new Map();
+
+          this.#alternatives.set(contentType, integrations);
+        }
+
+        integrations.set(iri, new HTMLFragmentsIntegration(handler, {
+          iri,
+          contentType,
+          root: output.html,
+          ided: output.ided,
+          anon: output.anon,
+        }));
+      }
+
+      if (handler.integrationType !== 'jsonld') {
+        this.#publish(iri, contentType);
+      }
+    }
+
+    async #callFetcher(iri: string, args: {
+      method?: string;
+      accept?: string;
+      body?: string;
+    } = {}): Promise<void> {
+      const url = new URL(iri);
+      const method = args.method || 'get';
+      const accept = args.accept || this.#headers.get('accept') || defaultAccept;
+      const loadingKey = this.#getLoadingKey(iri, method, args.accept);
+
+      const headers = new Headers(this.#headers);
+
+      headers.set('accept', accept);
+
+      if (url.origin !== this.#rootOrigin && !this.#origins.has(url.origin)) {
+        throw new Error('Unconfigured origin');
+      }
+
+      this.#loading.add(loadingKey);
+
+      // This promise wrapping is so SSR can hook in and await the promise.
+      const promise = new Promise<Response>((resolve) => {
+        setImmediate(async () => {
+          const res = await this.#fetcher(iri, {
+            method,
+            headers,
+            body: args.body,
+          });
+
+          await this.handleResponse(res)
+          this.#loading.delete(loadingKey);
+
+          resolve(res);
+        });
+      });
+
+      if (this.#responseHook != null) {
+        this.#responseHook(promise);
+      }
+
+      await promise;
+    }
+
+    public subscribe({
+      key,
+      selector,
+      value,
+      listener,
+    }: {
+      key: symbol;
+      selector: string;
+      value?: JSONObject;
+      listener: SelectionListener;
+    }) {
+      const details = getSelection({
+        selector,
+        value,
+        store: this,
+      });
+
+      const cleanup = this.#makeCleanupFn(key, details);
+
+      for (const dependency of details.dependencies) {
+        const depSet = this.#dependencies.get(dependency);
+
+        if (depSet == null) {
+          this.#dependencies.set(dependency, new Set([key]));
+        } else {
+          depSet.add(key);
+        }
+      }
+
+      this.#listeners.set(key, {
+        key,
+        selector,
+        value,
+        required: details.required,
+        dependencies: details.dependencies,
+        listener,
+        cleanup,
+      });
+
+      return details;
+    }
+
+    public unsubscribe(key: symbol) {
+      this.#listeners.get(key)?.cleanup();
+    }
+
+    public async fetch(iri: string): Promise<SuccessEntityState | FailureEntityState> {
+      await this.#callFetcher(iri);
+
+      return this.#primary.get(iri) as SuccessEntityState | FailureEntityState;
+    }
+
+    static fromInitialState({
+      headers,
+      origins,
+      handlers = [],
+    }: {
+      headers?: Record<string, string>;
+      origins?: Record<string, Record<string, string>>;
+      handlers?: Handler[];
+    }): Store {
+      const el = document.getElementById('oct-state-info') as HTMLScriptElement;
+      const stateInfo = JSON.parse(el.innerText) as StateInfo;
+      const alternatives: AlternativesState = new Map();
+      const handlersMap: Record<string, Handler> = handlers.reduce((acc, handler) => ({
+        ...acc,
+        [handler.contentType]: handler,
+      }), {});
+
+      for (const [integrationType, entities] of Object.entries(stateInfo.alternatives)) {
+        for (const stateInfo of entities) {
+          const handler = handlersMap[stateInfo.contentType];
+          const cls = integrationClasses[integrationType as IntegrationType];
+
+          if (cls.type !== handler.integrationType) {
+            continue;
+          }
+
+          // deno-lint-ignore no-explicit-any
+          const state = cls.fromInitialState(handler as any, stateInfo as any);
+
+          if (state == null) {
+            continue;
+          }
+
+          let integrations = alternatives.get(state.contentType);
+
+          if (integrations == null) {
+            integrations = new Map();
+
+            alternatives.set(state.contentType, integrations);
+          }
+
+          integrations.set(state.iri, state);
+        }
+      }
+
+      return new Store({
+        handlers,
+        alternatives,
+        headers,
+        origins,
+        rootIRI: stateInfo.rootIRI,
+        vocab: stateInfo.vocab,
+        aliases: stateInfo.aliases,
+        primary: stateInfo.primary,
+      });
+    }
+
+    public toInitialState(): string {
+      let html = '';
+      const stateInfo: StateInfo = {
+        rootIRI: this.#rootIRI,
+        vocab: this.#vocab,
+        aliases: Object.fromEntries(this.#aliases),
+        primary: Object.fromEntries(this.#primary),
+        alternatives: {},
+      };
+
+      for (const alternative of this.#alternatives.values()) {
+        for (const integration of alternative.values()) {
+          if (stateInfo.alternatives[integration.integrationType] == null) {
+            stateInfo.alternatives[integration.integrationType] = [
+              integration.getStateInfo(),
+            ];
+          } else {
+            stateInfo.alternatives[integration.integrationType].push(integration.getStateInfo());
+          }
+
+          html += integration.toInitialState();
+        }
+      }
+
+      html += `<script id="oct-state-info" type="application/json">${JSON.stringify(stateInfo)}</script>`
+
+      return html;
+    }
+
 }

@@ -7,8 +7,8 @@ import {
   TodoTypes,
 } from "../mocks.ts";
 import { getSelection, CircularSelectionError } from "../../lib/utils/getSelection.ts";
-import { makeStore } from "../../lib/store.ts";
 import { isJSONObject } from "../../lib/utils/isJSONObject.ts";
+import { Store } from "../../lib/store.ts";
 
 const user1 = mocks.createUser({
   username: "jane",
@@ -53,14 +53,15 @@ Deno.test("getSelection()", async (t) => {
       scm: scmVocab,
     },
   };
-  const entities = await mocks.toEntityState(ctx, user1, user2, user3, epic2);
-  const store = makeStore({
+  const primary = await mocks.toEntityState(ctx, user1, user2, user3, epic2);
+  const store = new Store({
     rootIRI: todosRootIRI,
-    entities,
+    primary,
     vocab: todosVocab,
     aliases: {
       scm: scmVocab,
     },
+    handlers: [],
   });
 
   await t.step("Selects values in a deep object", () => {
@@ -103,7 +104,7 @@ Deno.test("getSelection()", async (t) => {
     assert(/^http/.test(iri));
     assert.equal(
       selection.result[0].value,
-      entities[iri as string].value,
+      primary[iri as string].value,
     );
   });
 
@@ -136,10 +137,11 @@ Deno.test("getSelection()", async (t) => {
   });
 
   await t.step("Selects children of an entity in expanded JSON-LD form", async () => {
-    const entities = await mocks.toEntityState({}, user1, user2, user3, epic2);
-    const store = makeStore({
+    const primary = await mocks.toEntityState({}, user1, user2, user3, epic2);
+    const store = new Store({
       rootIRI: todosRootIRI,
-      entities,
+      primary,
+      handlers: [],
     });
     const iri = epic2["@id"];
     const selection = getSelection({
@@ -207,19 +209,20 @@ Deno.test("getSelection()", async (t) => {
     // pointers until it finds an object containing concrete values.
     // In this case there are no concrete values and the references
     // are circular.
-    const entities = {
+    const primary = {
       ...mocks.createEntityState(iri1, { '@id': iri2 }),
       ...mocks.createEntityState(iri2, { '@id': iri3 }),
       ...mocks.createEntityState(iri3, { '@id': iri1 }),
     };
 
-    const store = makeStore({
+    const store = new Store({
       rootIRI: todosRootIRI,
-      entities,
+      primary,
       vocab: todosVocab,
       aliases: {
         scm: scmVocab,
       },
+      handlers: [],
     });
 
     // will cause maximum call stack if fails
