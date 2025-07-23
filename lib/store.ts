@@ -172,7 +172,7 @@ export class Store {
       [this.#headers, this.#origins] = getInternalHeaderValues(args.headers, args.origins);
       [this.#aliases, this.#context] = getJSONLdValues(args.vocab, args.aliases);
 
-      this.#handlers = new Map(args.handlers.map((handler) => [handler.contentType, handler]));
+      this.#handlers = new Map(args.handlers?.map?.((handler) => [handler.contentType, handler]));
 
       if (args.primary != null) {
         this.#primary = new Map(Object.entries(args.primary));
@@ -470,17 +470,24 @@ export class Store {
       accept?: string;
       body?: string;
     } = {}): Promise<void> {
+      let headers: Headers;
       const url = new URL(iri);
       const method = args.method || 'get';
       const accept = args.accept || this.#headers.get('accept') || defaultAccept;
       const loadingKey = this.#getLoadingKey(iri, method, args.accept);
 
-      const headers = new Headers(this.#headers);
-
-      headers.set('accept', accept);
-
-      if (url.origin !== this.#rootOrigin && !this.#origins.has(url.origin)) {
+      if (url.origin === this.#rootOrigin) {
+        headers = new Headers(this.#headers);
+      } else if (this.#origins.has(url.origin)) {
+        headers = new Headers(this.#origins.get(url.origin));
+      } else {
         throw new Error('Unconfigured origin');
+      }
+
+      if (accept != null) {
+        headers.set('accept', accept);
+      } else if (headers.get('accept') == null) {
+        headers.set('accept', defaultAccept);
       }
 
       this.#loading.add(loadingKey);
@@ -496,7 +503,7 @@ export class Store {
             body: args.body,
           });
 
-          await this.handleResponse(res);
+          await this.handleResponse(res, iri);
 
           this.#loading.delete(loadingKey);
 
