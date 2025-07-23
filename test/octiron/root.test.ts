@@ -244,7 +244,6 @@ Deno.test("o.root(selector)", async (t) => {
         );
 
         const usernames = html.split(',');
-        console.log(fetchedIRIs, [todosRootIRI])
         assertEquals(usernames[0], users[0]['https://todos.example.com/username']);
         assertEquals(usernames[1], users[1]['https://todos.example.com/username']);
         assertEquals(usernames[2], users[2]['https://todos.example.com/username']);

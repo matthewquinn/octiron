@@ -21,13 +21,11 @@ const findKeys = Array.from({ length: 100 }).map(() => keys[randomNumber(0, 1000
 
 
 Deno.bench("Str obj", { n: 100 }, () => {
-  const start = performance.now();
   for (const key of findKeys) {
     strObj[key];
     strObj[key];
     strObj[key];
   }
-  console.log('STR OBJ', performance.now() - start);
 });
 
 Deno.bench("Sym obj", { n: 100 }, () => {

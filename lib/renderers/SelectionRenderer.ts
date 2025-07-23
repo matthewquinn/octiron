@@ -93,11 +93,13 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
     }
 
     for (const selectionResult of details.result) {
-      nextKeys.push(selectionResult.key);
+      const key = Symbol.for(selectionResult.pointer);
+      
+      nextKeys.push(key);
 
-      if (Object.hasOwn(instances, selectionResult.key)) {
+      if (Object.hasOwn(instances, key)) {
         const next = selectionResult;
-        const prev = instances[selectionResult.key].selectionResult;
+        const prev = instances[key].selectionResult;
 
         if (
           prev.type === 'value' &&
@@ -137,7 +139,7 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
         });
       }
 
-      instances[selectionResult.key] = {
+      instances[key] = {
         octiron,
         selectionResult,
       };
@@ -278,7 +280,7 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
       if (pre != null) {
         children.push(m.fragment({ key: preKey }, [pre]));
       }
-
+      
       for (let index = 0; index < list.length; index++) {
         const { selectionResult, octiron } = list[index];
         const { key } = selectionResult;
