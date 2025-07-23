@@ -393,8 +393,7 @@ export class Store {
       }
     }
 
-    async handleResponse(res: Response) {
-      const iri = res.url.toString();
+    async handleResponse(res: Response, iri: string = res.url.toString()) {
       const contentType = res.headers.get('content-type')?.split?.(';')?.[0];
 
       if (contentType == null) {
