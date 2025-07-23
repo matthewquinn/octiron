@@ -21,7 +21,7 @@ import type { Store } from "../store.ts";
 export type SelectionRendererInternals = {
   store: Store;
   typeDefs?: TypeDefs;
-  parent?: OctironSelection;
+  parent: OctironSelection;
   value?: JSONValue;
 };
 
@@ -31,6 +31,9 @@ export type SelectionRendererAttrs = {
   view: SelectView;
   internals: SelectionRendererInternals;
 };
+
+const preKey = Symbol.for('@pre');
+const postKey = Symbol.for('@post');
 
 function shouldReselect(
   next: SelectionRendererAttrs,
@@ -70,6 +73,7 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
     const {
       store,
       typeDefs,
+      parent,
     } = currentAttrs.internals;
 
     const nextKeys: Array<symbol> = [];
@@ -129,6 +133,7 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
           store,
           typeDefs,
           value: selectionResult.value,
+          parent,
         });
       } else {
         octiron = selectionFactory({
@@ -136,6 +141,7 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
           typeDefs,
           value: selectionResult.value,
           datatype: selectionResult.datatype,
+          parent,
         });
       }
 
@@ -310,6 +316,3 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
     },
   };
 };
-
-const preKey = Symbol.for('@pre');
-const postKey = Symbol.for('@post');

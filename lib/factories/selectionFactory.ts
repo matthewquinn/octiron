@@ -11,7 +11,7 @@ import type { Store } from "../store.ts";
 export type SelectionFactoryInternals = {
   store: Store;
   typeDefs?: TypeDefs;
-  parent?: OctironSelection;
+  parent: OctironSelection;
   value?: JSONValue;
   datatype?: string;
 };
@@ -44,11 +44,7 @@ export function selectionFactory<Attrs extends BaseAttrs = {}>(
 
   const self: OctironSelection & OctironHooks = Object.assign(
     (predicate: Predicate, children?: m.Children) => {
-      if (internals.parent == null) {
-        return null;
-      }
-
-      const passes = predicate(internals.parent);
+      const passes = predicate(self);
 
       if (passes) {
         return children;
@@ -70,11 +66,7 @@ export function selectionFactory<Attrs extends BaseAttrs = {}>(
       },
 
       not: (predicate: Predicate, children: m.Children) => {
-        if (internals.parent == null) {
-          return null;
-        }
-
-        const passes = predicate(internals.parent);
+        const passes = predicate(self);
 
         if (!passes) {
           return children;
@@ -102,7 +94,8 @@ export function selectionFactory<Attrs extends BaseAttrs = {}>(
           view,
           internals: {
             store: internals.store,
-            typeDefs: internals.typeDefs,
+            typeDefs: args?.typeDefs || internals.typeDefs,
+            parent: self,
           },
         });
       },
@@ -120,7 +113,8 @@ export function selectionFactory<Attrs extends BaseAttrs = {}>(
           view,
           internals: {
             store: internals.store,
-            typeDefs: internals.typeDefs,
+            typeDefs: args?.typeDefs || internals.typeDefs,
+            parent: self,
           },
         });
       },
@@ -144,8 +138,9 @@ export function selectionFactory<Attrs extends BaseAttrs = {}>(
             view,
             internals: {
               store: internals.store,
-              typeDefs: internals.typeDefs,
+              typeDefs: args?.typeDefs || internals.typeDefs,
               value: internals.value,
+              parent: self,
             },
           },
         );
@@ -184,7 +179,7 @@ export function selectionFactory<Attrs extends BaseAttrs = {}>(
           type,
           firstPickComponent: firstPickComponent as unknown as PresentComponent,
           fallbackComponent: fallbackComponent as unknown as PresentComponent,
-          typeDefs: internals.typeDefs ?? {},
+          typeDefs: args?.typeDefs || internals.typeDefs || {},
         });
 
         if (component == null) {

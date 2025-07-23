@@ -56,7 +56,7 @@ export function rootFactory(
           view,
           internals: {
             store: internals.store,
-            typeDefs: internals.typeDefs,
+            typeDefs: args?.typeDefs || internals.typeDefs,
           },
         });
       },
