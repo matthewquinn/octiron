@@ -1,16 +1,17 @@
 import { longform } from '@occultist/longform';
-import type { ContentTypeHandler } from "../types/store.ts";
+import type { Handler } from "../types/store.ts";
 
-export const longformHandler: ContentTypeHandler = async ({
-  res,
-}) => {
-  const text = await res.text();
-  const result = longform(text);
+export const longformHandler: Handler = {
+  integrationType: 'html-fragments',
+  contentType: 'text/lf',
+  handler: async ({ res }) => {
+    const text = await res.text();
+    const result = longform(text);
 
-  return {
-    outputType: 'html-fragments',
-    root: result.root,
-    ided: result.ided,
-    fragments: result.fragments,
-  };
+    return {
+      root: result.root,
+      ided: result.ident,
+      anon: result.anon,
+    };
+  },
 };
