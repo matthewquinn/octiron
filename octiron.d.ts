@@ -826,7 +826,7 @@ declare module "store" {
          */
         key(): string;
         isLoading(iri: string): boolean;
-        handleResponse(res: Response): Promise<void>;
+        handleResponse(res: Response, iri?: string): Promise<void>;
         subscribe({ key, selector, value, listener, }: {
             key: symbol;
             selector: string;
@@ -1132,7 +1132,7 @@ declare module "factories/selectionFactory" {
     export type SelectionFactoryInternals = {
         store: Store;
         typeDefs?: TypeDefs;
-        parent?: OctironSelection;
+        parent: OctironSelection;
         value?: JSONValue;
         datatype?: string;
     };
@@ -1157,7 +1157,7 @@ declare module "renderers/SelectionRenderer" {
     export type SelectionRendererInternals = {
         store: Store;
         typeDefs?: TypeDefs;
-        parent?: OctironSelection;
+        parent: OctironSelection;
         value?: JSONValue;
     };
     export type SelectionRendererAttrs = {
@@ -1216,6 +1216,10 @@ declare module "utils/makeTypeDef" {
      */
     export function makeTypeDef<const Model extends JSONValue = JSONValue, const Type extends string = string>(typeDef: TypeDef<Model, Type>): TypeDef<Model, Type>;
 }
+declare module "handlers/jsonLDHandler" {
+    import type { Handler } from "types/store";
+    export const jsonLDHandler: Handler;
+}
 declare module "octiron" {
     import type { OctironRoot, TypeDef } from "types/octiron";
     import { Store } from "store";
@@ -1225,6 +1229,7 @@ declare module "octiron" {
     export * from "store";
     export * from "utils/makeTypeDef";
     export * from "utils/makeTypeDefs";
+    export * from "handlers/jsonLDHandler";
     /**
      * Creates a root octiron instance.
      */

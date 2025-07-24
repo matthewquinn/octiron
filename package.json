@@ -1,6 +1,6 @@
 {
   "name": "@octiron/octiron",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "WIP framework for mithril.js and json-ld APIs.",
   "main": "octiron.js",
   "directories": {

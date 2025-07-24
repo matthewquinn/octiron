@@ -177,10 +177,7 @@ function selectionFactory(internals, args) {
   };
   const self = Object.assign(
     (predicate, children) => {
-      if (internals.parent == null) {
-        return null;
-      }
-      const passes = predicate(internals.parent);
+      const passes = predicate(self);
       if (passes) {
         return children;
       }
@@ -198,10 +195,7 @@ function selectionFactory(internals, args) {
         return internals.store;
       },
       not: (predicate, children) => {
-        if (internals.parent == null) {
-          return null;
-        }
-        const passes = predicate(internals.parent);
+        const passes = predicate(self);
         if (!passes) {
           return children;
         }
@@ -221,7 +215,8 @@ function selectionFactory(internals, args) {
           view,
           internals: {
             store: internals.store,
-            typeDefs: internals.typeDefs
+            typeDefs: (args2 == null ? void 0 : args2.typeDefs) || internals.typeDefs,
+            parent: self
           }
         });
       },
@@ -233,7 +228,8 @@ function selectionFactory(internals, args) {
           view,
           internals: {
             store: internals.store,
-            typeDefs: internals.typeDefs
+            typeDefs: (args2 == null ? void 0 : args2.typeDefs) || internals.typeDefs,
+            parent: self
           }
         });
       },
@@ -250,15 +246,15 @@ function selectionFactory(internals, args) {
             view,
             internals: {
               store: internals.store,
-              typeDefs: internals.typeDefs,
-              value: internals.value
+              typeDefs: (args2 == null ? void 0 : args2.typeDefs) || internals.typeDefs,
+              value: internals.value,
+              parent: self
             }
           }
         );
       },
       // deno-lint-ignore no-explicit-any
       present(args2) {
-        var _a;
         let attrs = {};
         let firstPickComponent;
         let fallbackComponent;
@@ -283,7 +279,7 @@ function selectionFactory(internals, args) {
           type,
           firstPickComponent,
           fallbackComponent,
-          typeDefs: (_a = internals.typeDefs) != null ? _a : {}
+          typeDefs: (args2 == null ? void 0 : args2.typeDefs) || internals.typeDefs || {}
         });
         if (component == null) {
           return null;
@@ -333,6 +329,8 @@ function mithrilRedraw() {
 }
 
 // lib/renderers/SelectionRenderer.ts
+var preKey = Symbol.for("@pre");
+var postKey = Symbol.for("@post");
 function shouldReselect(next, prev) {
   return next.internals.store !== prev.internals.store || next.selector !== prev.selector || next.internals.value !== prev.internals.value;
 }
@@ -345,7 +343,8 @@ var SelectionRenderer = (vnode) => {
     let hasChanges = false;
     const {
       store,
-      typeDefs
+      typeDefs,
+      parent
     } = currentAttrs.internals;
     const nextKeys = [];
     if (details == null) {
@@ -362,10 +361,11 @@ var SelectionRenderer = (vnode) => {
       return;
     }
     for (const selectionResult of details.result) {
-      nextKeys.push(selectionResult.key);
-      if (Object.hasOwn(instances, selectionResult.key)) {
+      const key2 = Symbol.for(selectionResult.pointer);
+      nextKeys.push(key2);
+      if (Object.hasOwn(instances, key2)) {
         const next = selectionResult;
-        const prev = instances[selectionResult.key].selectionResult;
+        const prev = instances[key2].selectionResult;
         if (prev.type === "value" && next.type === "value" && next.value === prev.value) {
           continue;
         } else if (prev.type === "entity" && next.type === "entity" && (next.ok !== prev.ok || next.status !== prev.status || next.value !== prev.value)) {
@@ -378,17 +378,19 @@ var SelectionRenderer = (vnode) => {
         octiron2 = selectionFactory({
           store,
           typeDefs,
-          value: selectionResult.value
+          value: selectionResult.value,
+          parent
         });
       } else {
         octiron2 = selectionFactory({
           store,
           typeDefs,
           value: selectionResult.value,
-          datatype: selectionResult.datatype
+          datatype: selectionResult.datatype,
+          parent
         });
       }
-      instances[selectionResult.key] = {
+      instances[key2] = {
         octiron: octiron2,
         selectionResult
       };
@@ -523,8 +525,6 @@ var SelectionRenderer = (vnode) => {
     }
   };
 };
-var preKey = Symbol.for("@pre");
-var postKey = Symbol.for("@post");
 
 // lib/factories/rootFactory.ts
 function rootFactory(internals) {
@@ -555,7 +555,7 @@ function rootFactory(internals) {
           view,
           internals: {
             store: internals.store,
-            typeDefs: internals.typeDefs
+            typeDefs: (args == null ? void 0 : args.typeDefs) || internals.typeDefs
           }
         });
       },
@@ -1452,7 +1452,7 @@ var _Store = class _Store {
     __privateAdd(this, _responseHook);
     __privateAdd(this, _dependencies, /* @__PURE__ */ new Map());
     __privateAdd(this, _listeners, /* @__PURE__ */ new Map());
-    var _a;
+    var _a, _b, _c;
     __privateSet(this, _rootIRI, args.rootIRI);
     __privateSet(this, _rootOrigin, new URL(args.rootIRI).origin);
     __privateSet(this, _vocab, args.vocab);
@@ -1460,7 +1460,7 @@ var _Store = class _Store {
     __privateSet(this, _responseHook, args.responseHook);
     [__privateWrapper(this, _headers)._, __privateWrapper(this, _origins)._] = getInternalHeaderValues(args.headers, args.origins);
     [__privateWrapper(this, _aliases)._, __privateWrapper(this, _context)._] = getJSONLdValues(args.vocab, args.aliases);
-    __privateSet(this, _handlers, new Map(args.handlers.map((handler) => [handler.contentType, handler])));
+    __privateSet(this, _handlers, new Map((_c = (_b = args.handlers) == null ? void 0 : _b.map) == null ? void 0 : _c.call(_b, (handler) => [handler.contentType, handler])));
     if (args.primary != null) {
       __privateSet(this, _primary, new Map(Object.entries(args.primary)));
     }
@@ -1537,10 +1537,9 @@ var _Store = class _Store {
     const loadingKey = __privateMethod(this, _Store_instances, getLoadingKey_fn).call(this, iri, "get");
     return __privateGet(this, _loading).has(loadingKey);
   }
-  handleResponse(res) {
-    return __async(this, null, function* () {
+  handleResponse(_0) {
+    return __async(this, arguments, function* (res, iri = res.url.toString()) {
       var _a, _b, _c;
-      const iri = res.url.toString();
       const contentType = (_c = (_b = (_a = res.headers.get("content-type")) == null ? void 0 : _a.split) == null ? void 0 : _b.call(_a, ";")) == null ? void 0 : _c[0];
       if (contentType == null) {
         throw new Error("Content type not specified in response");
@@ -1828,14 +1827,22 @@ handleJSONLD_fn = function({
 };
 callFetcher_fn = function(_0) {
   return __async(this, arguments, function* (iri, args = {}) {
+    let headers;
     const url = new URL(iri);
     const method = args.method || "get";
     const accept = args.accept || __privateGet(this, _headers).get("accept") || defaultAccept;
     const loadingKey = __privateMethod(this, _Store_instances, getLoadingKey_fn).call(this, iri, method, args.accept);
-    const headers = new Headers(__privateGet(this, _headers));
-    headers.set("accept", accept);
-    if (url.origin !== __privateGet(this, _rootOrigin) && !__privateGet(this, _origins).has(url.origin)) {
+    if (url.origin === __privateGet(this, _rootOrigin)) {
+      headers = new Headers(__privateGet(this, _headers));
+    } else if (__privateGet(this, _origins).has(url.origin)) {
+      headers = new Headers(__privateGet(this, _origins).get(url.origin));
+    } else {
       throw new Error("Unconfigured origin");
+    }
+    if (accept != null) {
+      headers.set("accept", accept);
+    } else if (headers.get("accept") == null) {
+      headers.set("accept", defaultAccept);
     }
     __privateGet(this, _loading).add(loadingKey);
     mithrilRedraw();
@@ -1846,7 +1853,7 @@ callFetcher_fn = function(_0) {
           headers,
           body: args.body
         });
-        yield this.handleResponse(res);
+        yield this.handleResponse(res, iri);
         __privateGet(this, _loading).delete(loadingKey);
         mithrilRedraw();
         resolve(res);
@@ -1864,6 +1871,37 @@ var Store = _Store;
 function makeTypeDef(typeDef) {
   return typeDef;
 }
+
+// lib/handlers/jsonLDHandler.ts
+import jsonld from "jsonld";
+var jsonLDHandler = {
+  integrationType: "jsonld",
+  contentType: "application/ld+json",
+  handler: (_0) => __async(null, [_0], function* ({ res, store }) {
+    const json = yield res.json();
+    if (!isJSONObject(json) && !Array.isArray(json)) {
+      throw new Error("JSON-LD Document should be an object");
+    }
+    const expanded = yield jsonld.expand(json, {
+      documentLoader: (url) => __async(null, null, function* () {
+        const res2 = yield fetch(url, {
+          headers: {
+            "accept": "application/ld+json"
+          }
+        });
+        const document2 = yield res2.json();
+        return {
+          documentUrl: url,
+          document: document2
+        };
+      })
+    });
+    const value = yield jsonld.compact(expanded, store.context);
+    return {
+      jsonld: value
+    };
+  })
+};
 
 // lib/octiron.ts
 function octiron(_a) {
@@ -1895,6 +1933,7 @@ octiron.fromInitialState = (_a) => {
 export {
   Store,
   octiron as default,
+  jsonLDHandler,
   makeTypeDef,
   makeTypeDefs
 };

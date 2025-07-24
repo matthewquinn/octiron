@@ -1,6 +1,5 @@
 {
   "name": "@octiron/octiron",
-  "version": "0.0.1",
   "nodeModulesDir": "auto",
   "exports": "./lib/octiron.ts",
   "tasks": {

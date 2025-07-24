@@ -10,7 +10,6 @@ export * from './store.ts';
 export * from './utils/makeTypeDef.ts';
 export * from './utils/makeTypeDefs.ts';
 export * from './handlers/jsonLDHandler.ts';
-export * from './handlers/longformHandler.ts';
 
 /**
  * Creates a root octiron instance.
