@@ -7,9 +7,9 @@ import { rootFactory } from "../../lib/factories/rootFactory.ts";
 import { selectionFactory } from "../../lib/factories/selectionFactory.ts";
 import type { IRIObject, JSONObject } from "../../lib/types/common.ts";
 import type { Octiron, PresentComponent } from "../../lib/types/octiron.ts";
-import type { OctironStore } from "../../lib/types/store.ts";
 import { isJSONObject } from "../../lib/utils/isJSONObject.ts";
 import { mocks, todosRootIRI } from "../mocks.ts";
+import { StoreArgs } from "store";
 
 
 function makeScenario() {
@@ -56,7 +56,7 @@ function makeScenario() {
     api,
   });
 
-  const primary: OctironStore["entities"] = {};
+  const primary: NonNullable<StoreArgs["primary"]> = {};
   const store = mocks.makeStore({
     fetcher,
     responseHook,

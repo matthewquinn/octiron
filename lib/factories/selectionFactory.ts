@@ -1,5 +1,5 @@
 import type { JSONValue } from '../types/common.ts';
-import type { BaseAttrs, OctironPresentArgs, OctironSelectArgs, OctironSelection, Predicate, PresentComponent, Selector, SelectView, TypeDefs } from '../types/octiron.ts';
+import type { BaseAttrs, Octiron, OctironPerformArgs, OctironPresentArgs, OctironSelectArgs, OctironSelection, PerformView, Predicate, PresentComponent, Selector, SelectView, TypeDefs } from '../types/octiron.ts';
 import m from "mithril";
 import { SelectionRenderer } from "../renderers/SelectionRenderer.ts";
 import { getComponent } from '../utils/getComponent.ts';
@@ -7,11 +7,12 @@ import { unravelArgs } from "../utils/unravelArgs.ts";
 import { getValueType } from "../utils/getValueType.ts";
 import { isJSONObject } from "../utils/isJSONObject.ts";
 import type { Store } from "../store.ts";
+import { PerformRenderer } from "../renderers/PerformRenderer.ts";
 
 export type SelectionFactoryInternals = {
   store: Store;
-  typeDefs?: TypeDefs;
-  parent?: OctironSelection;
+  typeDefs: TypeDefs;
+  parent?: Octiron;
   value?: JSONValue;
   datatype?: string;
 };
@@ -204,6 +205,31 @@ export function selectionFactory<Attrs extends BaseAttrs = {}>(
           start,
           end,
           predicate,
+        });
+      },
+
+      default(
+        arg1?: OctironSelectArgs,
+      ) {
+        return self.present(arg1 as OctironSelectArgs)
+      },
+
+      perform: (
+        arg1?: Selector | OctironPerformArgs | PerformView,
+        arg2?: OctironPerformArgs | PerformView,
+        arg3?: PerformView,
+      ) => {
+        const [selector, args, view] = unravelArgs(arg1, arg2, arg3);
+
+        return m(PerformRenderer, {
+          selector,
+          args,
+          view,
+          internals: {
+            octiron: self,
+            store: internals.store,
+            typeDefs: args.typeDefs || internals.typeDefs,
+          },
         });
       },
 

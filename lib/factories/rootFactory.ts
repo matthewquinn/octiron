@@ -1,12 +1,12 @@
-import type { OctironRoot, OctironSelection, Predicate, SelectView, OctironSelectArgs, Selector, TypeDefs } from '../types/octiron.ts';
 import m from "mithril";
+import type { OctironRoot, OctironSelection, Predicate, SelectView, OctironSelectArgs, Selector, TypeDefs, OctironPerformArgs, PerformView } from '../types/octiron.ts';
 import { SelectionRenderer } from "../renderers/SelectionRenderer.ts";
 import { unravelArgs } from "../utils/unravelArgs.ts";
 import type { Store } from "../store.ts";
 
 export type RootFactoryInternals = {
   store: Store;
-  typeDefs?: TypeDefs;
+  typeDefs: TypeDefs;
 };
 
 /**
@@ -74,6 +74,31 @@ export function rootFactory(
         arg2?: SelectView,
       ) {
         return self.root(arg1 as OctironSelectArgs, arg2 as SelectView);
+      },
+
+      default(
+        arg1?: OctironSelectArgs | SelectView,
+        arg2?: SelectView
+      ) {
+        return self.root(arg1 as OctironSelectArgs, arg2 as SelectView)
+      },
+
+      perform(
+        arg1?: Selector | OctironPerformArgs | PerformView,
+        arg2?: OctironPerformArgs | PerformView,
+        arg3?: PerformView,
+      ) {
+        if (typeof arg1 === 'string') {
+          return self.root(arg1, (o) => o.perform(
+            arg2 as OctironPerformArgs,
+            arg3 as PerformView,
+          ));
+        }
+
+        return self.root((o) => o.perform(
+          arg2 as OctironPerformArgs,
+          arg3 as PerformView,
+        ));
       },
 
     } as const,

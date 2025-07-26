@@ -1,4 +1,4 @@
-import type { PresentComponent, TypeDefs } from "../types/octiron.ts";
+import type { AnyComponent, EditComponent, PresentComponent, TypeDefs } from "../types/octiron.ts";
 
 /**
  * @description
@@ -27,7 +27,7 @@ export function getComponent({
   typeDefs,
   fallbackComponent,
 }: {
-  style: "present";
+  style: "present" | "edit";
   datatype?: string;
   type?: string | string[];
   typeDefs: TypeDefs;
@@ -37,13 +37,13 @@ export function getComponent({
   fallbackComponent?: PresentComponent<any>;
   // deno-lint-ignore no-explicit-any
 }): PresentComponent<any> | undefined {
-  if (typeof firstPickComponent !== "undefined") {
+  if (firstPickComponent != null) {
     return firstPickComponent;
   }
 
   if (
-    typeof datatype !== "undefined" &&
-    typeof typeDefs[datatype]?.[style] !== "undefined"
+    datatype != null &&
+    typeDefs[datatype]?.[style] != null
   ) {
     // deno-lint-ignore no-explicit-any
     return typeDefs[datatype][style] as PresentComponent<any>;
@@ -51,7 +51,7 @@ export function getComponent({
 
   if (
     typeof type === "string" &&
-    typeof typeDefs[type]?.[style] !== "undefined"
+    typeDefs[type]?.[style] != null
   ) {
     // deno-lint-ignore no-explicit-any
     return typeDefs[type][style] as PresentComponent<any>;
@@ -60,7 +60,7 @@ export function getComponent({
   if (Array.isArray(type)) {
     for (const item of type) {
       if (
-        typeof typeDefs[item]?.[style] !== "undefined"
+        typeDefs[item]?.[style] != null
       ) {
         // deno-lint-ignore no-explicit-any
         return typeDefs[item][style] as PresentComponent<any>;

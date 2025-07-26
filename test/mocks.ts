@@ -3,9 +3,9 @@ import { faker } from '@faker-js/faker';
 import jsonld from 'jsonld';
 import type { Children } from "mithril";
 import { jsonLDHandler } from "../lib/handlers/jsonLDHandler.ts";
-import { Store } from "../lib/store.ts";
+import { Store, type StoreArgs } from "../lib/store.ts";
 import type { IRIObject, JSONObject } from "../lib/types/common.ts";
-import type { Aliases, AlternativesState, EntityState, Fetcher, FetcherArgs, Handler, OctironStore, ResponseHook } from "../lib/types/store.ts";
+import type { Aliases, AlternativesState, EntityState, Fetcher, FetcherArgs, Handler, ResponseHook } from "../lib/types/store.ts";
 import { flattenIRIObjects } from "../lib/utils/flattenIRIObjects.ts";
 
 export type TodoStatus =
@@ -188,7 +188,7 @@ async function toEntityState({
 }: {
   vocab?: string;
   aliases?: Aliases;
-}, ...entities: JSONObject[]): Promise<OctironStore['entities']> {
+}, ...entities: JSONObject[]): Promise<StoreArgs['primary']> {
   let ctx: JSONObject = aliases;
 
   if (vocab != null) {
@@ -202,7 +202,7 @@ async function toEntityState({
     }),
   ) as Array<IRIObject>;
 
-  const result: OctironStore['entities'] = {};
+  const result: StoreArgs['primary'] = {};
 
   for (const entity of flattenIRIObjects(compacted)) {
     result[entity["@id"]] = {
@@ -216,7 +216,7 @@ async function toEntityState({
   return result;
 }
 
-function createEntityState(url: string, value: IRIObject): OctironStore['entities'] {
+function createEntityState(url: string, value: IRIObject): StoreArgs['primary'] {
   return {
     [url]: {
       iri: value['@id'],

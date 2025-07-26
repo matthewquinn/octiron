@@ -1,4 +1,4 @@
-import type { AlternativesState, Context, PrimaryState, Fetcher, Handler, IntegrationStateInfo, IntegrationType, JSONLDHandlerResult, ReadonlySelectionResult, ResponseHook, SelectionDetails, SelectionListener, EntityState } from "./types/store.ts";
+import type { AlternativesState, Context, PrimaryState, Fetcher, Handler, IntegrationStateInfo, IntegrationType, JSONLDHandlerResult, ReadonlySelectionResult, ResponseHook, SelectionDetails, SelectionListener, EntityState, SubmitArgs } from "./types/store.ts";
 import { HTMLFragmentsIntegration } from "./alternatives/htmlFragments.ts";
 import { HTMLIntegration } from "./alternatives/html.ts";
 import { isBrowserRender } from "./consts.ts";
@@ -570,6 +570,23 @@ export class Store {
       await this.#callFetcher(iri);
 
       return this.#primary.get(iri) as SuccessEntityState | FailureEntityState;
+    }
+
+    /**
+     * Submits an action. Like fetch this will overwrite
+     * entities in the store with any entities returned
+     * in the reponse.
+     *
+     * @param {string} iri                The iri of the request.
+     * @param {SubmitArgs} [args]         Arguments to pass to the fetch call.
+     * @param {string} [args.method]      The http submit method.
+     * @param {string} [args.contentType] The content type header value.
+     * @param {string} [args.body]        The body of the request.
+     */
+    public async submit(iri: string, args: SubmitArgs): Promise<SuccessEntityState | FailureEntityState> {
+      await this.#callFetcher(iri, args);
+
+      return this.entity(iri) as SuccessEntityState | FailureEntityState;
     }
 
     static fromInitialState({

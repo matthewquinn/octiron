@@ -20,8 +20,8 @@ import type { Store } from "../store.ts";
 
 export type SelectionRendererInternals = {
   store: Store;
-  typeDefs?: TypeDefs;
-  parent?: OctironSelection;
+  typeDefs: TypeDefs;
+  parent?: Octiron;
   value?: JSONValue;
 };
 

@@ -34,3 +34,29 @@ export type IterableJSONLD<Properties extends JSONObject = JSONObject> =
   | JSONArray
   | (Properties & { '@list': JSONArray })
   | (Properties & { '@set': JSONArray });
+
+export type EntryPoint = {
+  contentType: string;
+  encodingType?: string;
+  httpMethod: string;
+  urlTemplate: string;
+};
+
+export type SchemaAction = JSONObject & {
+  target: string | EntryPoint;
+};
+
+export type PropertyValueSpecification = {
+  readonlyValue: boolean;
+  valueName?: string;
+  valueRequired: boolean;
+  defaultValue?: JSONValue;
+  minValue?: JSONPrimitive;
+  maxValue?: JSONPrimitive;
+  stepValue?: number;
+  valuePattern?: string;
+  multipleValues?: boolean;
+  valueMinLength?: number;
+  valueMaxLength?: number;
+};
+

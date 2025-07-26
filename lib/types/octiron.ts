@@ -47,6 +47,7 @@ export type UpdateArgs = {
   submit?: boolean;
   throttle?: number;
   debounce?: number;
+  submitOnChange?: boolean;
 };
 
 export type OnChange<Value extends JSONValue = JSONValue> = (
@@ -102,7 +103,8 @@ export type TypeDef<
   Type extends string = string,
 > = {
   type: Type;
-  present?: PresentComponent<Value>;
+  present?: PresentComponent<Value> | AnyComponent<Value>;
+  edit?: EditComponent<Value> | AnyComponent<Value>;
 };
 
 export type TypeDefs<
@@ -487,15 +489,15 @@ export interface Submitable<
   ): Children;
 }
 
-export interface ActionSelectable {
-  select(selector: Selector): Children;
-  select(selector: Selector, args: OctironActionSelectionArgs): Children;
-  select(selector: Selector, view: ActionSelectView): Children;
-  select(
-    selector: Selector,
-    args: OctironActionSelectionArgs,
-    view: ActionSelectView,
-  ): Children;
+export interface ActionSelectable extends Selectable {
+  // select(selector: Selector): Children;
+  // select(selector: Selector, args: OctironActionSelectionArgs): Children;
+  // select(selector: Selector, view: ActionSelectView): Children;
+  // select(
+  //   selector: Selector,
+  //   args: OctironActionSelectionArgs,
+  //   view: ActionSelectView,
+  // ): Children;
 }
 
 export interface Default {
@@ -542,6 +544,7 @@ export interface Filterable {
 
 export interface OctironRoot
   extends
+    Default,
     Origin,
     // EntryPoint,
     Selectable,
@@ -581,6 +584,7 @@ export interface OctironRoot
 
 export interface OctironSelection
   extends
+    Default,
     Origin,
     EntryPoint,
     Selectable,
