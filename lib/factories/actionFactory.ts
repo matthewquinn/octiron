@@ -1,17 +1,16 @@
 import m from 'mithril';
-import type { Store } from "../store.ts";
-import type { JSONObject, JSONValue, Mutable, SchemaAction } from "../types/common.ts";
-import type { ActionSelectView, BaseAttrs, Octiron, OctironAction, OctironActionSelectionArgs, OctironPerformArgs, OctironPresentArgs, OctironSelectArgs, PayloadValueMapper, PerformView, Predicate, PresentComponent, Selector, SelectView, TypeDefs, UpdateArgs } from "../types/octiron.ts";
-import type { EntityState } from "../types/store.ts";
-import { getSubmitDetails } from "../utils/getSubmitDetails.ts";
-import { mithrilRedraw } from "utils/mithrilRedraw";
-import { JsonPointer } from 'json-ptr'
-import { unravelArgs } from "../utils/unravelArgs.ts";
-import { SelectionRenderer } from "../renderers/SelectionRenderer.ts";
-import { getComponent } from "../utils/getComponent.ts";
 import { ActionStateRenderer } from "../renderers/ActionStateRenderer.ts";
 import { PerformRenderer } from "../renderers/PerformRenderer.ts";
+import { SelectionRenderer } from "../renderers/SelectionRenderer.ts";
+import type { Store } from "../store.ts";
+import type { JSONObject, Mutable, SchemaAction } from "../types/common.ts";
+import type { BaseAttrs, Octiron, OctironAction, OctironPerformArgs, OctironPresentArgs, OctironSelectArgs, PayloadValueMapper, PerformView, Predicate, PresentComponent, Selector, SelectView, TypeDefs, UpdateArgs } from "../types/octiron.ts";
+import type { EntityState } from "../types/store.ts";
+import { getComponent } from "../utils/getComponent.ts";
+import { getSubmitDetails } from "../utils/getSubmitDetails.ts";
 import { getValueType } from "../utils/getValueType.ts";
+import { unravelArgs } from "../utils/unravelArgs.ts";
+import { mithrilRedraw } from "../utils/mithrilRedraw.ts";
 
 export interface OctironActionHooks {
   _updateArgs(args: OctironPerformArgs): void;
@@ -43,7 +42,6 @@ export function actionFactory<
   const factoryArgs = Object.assign({}, args);
   let payload: JSONObject = args.initialPayload || {};
   let submitResult: EntityState | undefined;
-  const uniqueId = Math.random().toString(16).slice(7);
 
   const { url, method, body } = getSubmitDetails({
     payload,
@@ -117,22 +115,22 @@ export function actionFactory<
     mithrilRedraw();
   }
 
-  function onPointerUpdate(
-    pointer: string,
-    value: JSONValue,
-    args: UpdateArgs,
-  ) {
-    const next: Partial<JSONObject> = Object.assign({}, payload);
-    const ptr = JsonPointer.create(pointer);
+  // function onPointerUpdate(
+  //   pointer: string,
+  //   value: JSONValue,
+  //   args: UpdateArgs,
+  // ) {
+  //   const next: Partial<JSONObject> = Object.assign({}, payload);
+  //   const ptr = JsonPointer.create(pointer);
 
-    if (typeof value === 'undefined' || value === null) {
-      ptr.unset(next) as Partial<JSONObject>;
-    } else {
-      ptr.set(next, value, true) as Partial<JSONObject>;
-    }
+  //   if (typeof value === 'undefined' || value === null) {
+  //     ptr.unset(next) as Partial<JSONObject>;
+  //   } else {
+  //     ptr.set(next, value, true) as Partial<JSONObject>;
+  //   }
 
-    onUpdate(next);
-  }
+  //   onUpdate(next);
+  // }
 
   const self: Mutable<OctironAction & OctironActionHooks> = function self(
     predicate: Predicate,

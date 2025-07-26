@@ -9,6 +9,7 @@ import {
 import { getSelection, CircularSelectionError } from "../../lib/utils/getSelection.ts";
 import { isJSONObject } from "../../lib/utils/isJSONObject.ts";
 import { Store } from "../../lib/store.ts";
+import { EntityState } from "../../lib/types/store.ts";
 
 const user1 = mocks.createUser({
   username: "jane",

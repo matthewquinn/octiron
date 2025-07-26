@@ -188,8 +188,8 @@ async function toEntityState({
 }: {
   vocab?: string;
   aliases?: Aliases;
-}, ...entities: JSONObject[]): Promise<StoreArgs['primary']> {
-  let ctx: JSONObject = aliases;
+}, ...entities: JSONObject[]): Promise<NonNullable<StoreArgs['primary']>> {
+  const ctx: JSONObject = aliases;
 
   if (vocab != null) {
     ctx['@vocab'] = vocab;
