@@ -11,7 +11,7 @@ import type { Store } from "../store.ts";
 export type SelectionFactoryInternals = {
   store: Store;
   typeDefs?: TypeDefs;
-  parent: OctironSelection;
+  parent?: OctironSelection;
   value?: JSONValue;
   datatype?: string;
 };
