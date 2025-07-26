@@ -1,5 +1,5 @@
 import type { Attributes, Children, ComponentTypes } from 'mithril';
-import type { JSONValue } from './common.ts'
+import type { JSONObject, JSONPrimitive, JSONValue } from './common.ts'
 import type { Store } from '../store.ts';
 import type {
   ContentHandlingFailure,
@@ -43,10 +43,59 @@ export type PresentAttrs<
   value: Value;
 };
 
+export type UpdateArgs = {
+  submit?: boolean;
+  throttle?: number;
+  debounce?: number;
+};
+
+export type OnChange<Value extends JSONValue = JSONValue> = (
+  value: Value | null,
+  args?: UpdateArgs,
+) => Promise<void>;
+
+export type EditAttrs<
+  Value extends JSONValue = JSONValue,
+  Attrs extends BaseAttrs = BaseAttrs,
+> = {
+  renderType: 'edit';
+  o: OctironActionSelection;
+  attrs: Attrs;
+  value: Value;
+  name: string;
+  required: boolean;
+  readonly: boolean;
+  min?: JSONPrimitive;
+  max?: JSONPrimitive;
+  step?: number;
+  pattern?: string;
+  multiple?: boolean;
+  minLength?: number;
+  maxLength?: number;
+  onChange: OnChange;
+};
+
+export type AnyAttrs<
+  Value extends JSONValue = JSONValue,
+  Attrs extends BaseAttrs = BaseAttrs,
+> =
+  | PresentAttrs<Value, Attrs>
+  | EditAttrs<Value, Attrs>;
+
 export type PresentComponent<
   Value extends JSONValue = JSONValue,
   Attrs extends BaseAttrs = BaseAttrs,
 > = ComponentTypes<PresentAttrs<Value, Attrs>>;
+
+export type EditComponent<
+  Value extends JSONValue = JSONValue,
+  Attrs extends BaseAttrs = BaseAttrs,
+> = ComponentTypes<EditAttrs<Value, Attrs>>;
+
+export type AnyComponent<
+  Value extends JSONValue = JSONValue,
+  Attrs extends BaseAttrs = BaseAttrs,
+> = ComponentTypes<AnyAttrs<Value, Attrs>>;
 
 export type TypeDef<
   Value extends JSONValue = JSONValue,
@@ -134,6 +183,20 @@ export type IterableArgs = {
   predicate?: IterablePeridcate;
 };
 
+export type EditableArgs = {
+  readonly?: boolean;
+  required?: boolean;
+  min?: JSONPrimitive;
+  max?: JSONPrimitive;
+  step?: JSONPrimitive;
+  pattern?: string;
+  multiple?: boolean;
+  minLength?: number;
+  maxLength?: number;
+  typeDefs?: TypeDefs;
+  store?: Store;
+};
+
 export type OctironSelectArgs<
   Value extends JSONValue = JSONValue,
   Attrs extends BaseAttrs = BaseAttrs,
@@ -147,6 +210,111 @@ export type OctironPresentArgs<
   Attrs extends BaseAttrs = BaseAttrs,
 > = PresentableArgs<Value, Attrs>;
 
+export type OctironPerformArgs<
+  Attrs extends BaseAttrs = BaseAttrs,
+> =
+  & FetchableArgs
+  & IterableArgs
+  & SubmittableArgs
+  & InterceptableArgs
+  & UpdateableArgs<JSONObject, Attrs>
+  & PresentableArgs<JSONObject, Attrs>;
+
+export type OctironActionSelectionArgs<
+  Value extends JSONValue = JSONValue,
+  Attrs extends BaseAttrs = BaseAttrs,
+> =
+  & FetchableArgs
+  & IterableArgs
+  & InterceptableArgs
+  & UpdateableArgs<Value, Attrs>;
+
+export type OctironEditArgs<
+  Value extends JSONValue = JSONValue,
+  Attrs extends BaseAttrs = BaseAttrs,
+> =
+  & UpdateableArgs<Value, Attrs>
+  & EditableArgs;
+
+export type OctironDefaultArgs<
+  Value extends JSONValue = JSONValue,
+  Attrs extends BaseAttrs = BaseAttrs,
+> =
+  | (
+    & {
+      [K in keyof OctironEditArgs]?: K extends keyof OctironPresentArgs ? never
+        : undefined;
+    }
+    & OctironPresentArgs<Value, Attrs>
+  )
+  | (
+    & {
+      [K in keyof OctironPresentArgs]?: K extends keyof OctironEditArgs ? never
+        : undefined;
+    }
+    & OctironEditArgs<Value, Attrs>
+  );
+
+/**
+ * A function that intercepts changes to an action
+ * payload value and allows the intercepter to transform
+ * the value before the payload is updated.
+ * 
+ * Action selectors can have intercepters specified on them.
+ * Note that they intercept the value at the root of the selection
+ * and not the final value of the selection.
+ * 
+ * @param next The changed value.
+ * @param prev The previous value.
+ * @param actionValue The action, or point in the action, which
+ *                    relates to the edited value.
+ */
+export type Interceptor = (
+  /**
+   * The incoming intercepted value
+   */
+  next: JSONObject,
+
+  /**
+   * The value held before the intercepted change.
+   */
+  prev: JSONObject,
+
+  /**
+   * The action or value which specifies the root of the selection.
+   */
+  actionValue: JSONObject,
+) => JSONObject;
+
+export type InterceptableArgs = {
+  interceptor?: Interceptor;
+};
+
+export type OnSubmit = () => void;
+export type OnSubmitSuccess = () => void;
+export type OnSubmitFailure = () => void;
+
+export type SubmittableArgs = {
+  submitOnInit?: boolean;
+  submitOnChange?: boolean;
+  initialPayload?: JSONObject;
+  onSubmit?: OnSubmit;
+  onSubmitSuccess?: OnSubmitSuccess;
+  onSubmitFailure?: OnSubmitFailure;
+};
+
+export type UpdateableArgs<
+  Value extends JSONValue = JSONValue,
+  Attrs extends BaseAttrs = BaseAttrs,
+> = {
+  initialValue?: Value,
+  throttle?: number;
+  debounce?: number;
+  submitOnChange?: boolean;
+  attrs?: Attrs;
+  component?: EditComponent<Value, Attrs> | AnyComponent<Value, Attrs>;
+  fallbackComponent?: AnyComponent<Value, Attrs>;
+};
 export interface OctironView {
   (octiron: Octiron): Children;
 }
@@ -204,6 +372,150 @@ export interface Presentable {
   present(args: OctironPresentArgs): Children;
 }
 
+export interface PerformView {
+  (octiron: OctironAction): Children;
+}
+
+export interface Performable {
+  perform(): Children;
+  perform(selector: Selector): Children;
+  perform(args: OctironPerformArgs): Children;
+  perform(view: PerformView): Children;
+  perform(selector: Selector, view: PerformView): Children;
+  perform(selector: Selector, args: OctironPerformArgs): Children;
+  perform(args: OctironPerformArgs, view: PerformView): Children;
+  perform(
+    selector: Selector,
+    args: OctironPerformArgs,
+    view: PerformView,
+  ): Children;
+};
+
+export interface ActionSelectView {
+  (octiron: OctironActionSelection): Children;
+}
+
+export type PayloadValueMapper<
+  Value extends JSONValue = JSONValue
+> = (payloadValue: Value) => Value;
+
+export interface Performable {
+  perform(): Children;
+  perform(selector: Selector): Children;
+  perform(args: OctironPerformArgs): Children;
+  perform(view: PerformView): Children;
+  perform(selector: Selector, view: PerformView): Children;
+  perform(selector: Selector, args: OctironPerformArgs): Children;
+  perform(args: OctironPerformArgs, view: PerformView): Children;
+  perform(
+    selector: Selector,
+    args: OctironPerformArgs,
+    view: PerformView,
+  ): Children;
+};
+
+export interface Appendable {
+  remove(args?: UpdateArgs): void;
+  replace(type: string, index: number, value: JSONValue, args?: UpdateArgs): void;
+  append(type: string, value?: JSONValue, args?: UpdateArgs): void;
+}
+
+export interface Editable {
+  edit(): Children;
+  edit(args: OctironEditArgs): Children;
+}
+
+
+export interface Submitable<
+  Value extends JSONValue = JSONValue
+> {
+  /**
+   * True if the action is currently being submitted.
+   */
+  readonly submitting: boolean;
+
+  /**
+   * Overrides the current payload value.
+   */
+  update(payloadValue: Value, args?: UpdateArgs): Promise<void>;
+
+  /**
+   * Overrides the current payload value using the result of the action.
+   */
+  update(mapper: PayloadValueMapper<Value>, args?: UpdateArgs): Promise<void>;
+
+  /**
+   * Submits the action.
+   */
+  submit(): Promise<void>;
+
+  /**
+   * Overrides any current payload value and submits the action.
+   */
+  submit(payload: Value): Promise<void>;
+
+  /**
+   * Overrides any current payload value with the result of the mapper and
+   * submits the action.
+   */
+  submit(mapper: PayloadValueMapper): Promise<void>;
+
+  initial(children: Children): Children;
+
+  success(args: OctironSelectArgs): Children;
+  success(): Children;
+  success(selector: Selector): Children;
+  success(view: SelectView): Children;
+  success(selector: Selector, args: OctironSelectArgs): Children;
+  success(selector: Selector, view: SelectView): Children;
+  success(
+    selector: Selector,
+    args: OctironSelectArgs,
+    view: SelectView,
+  ): Children;
+
+  failure(): Children;
+  failure(selector: Selector): Children;
+  failure(args: OctironSelectArgs): Children;
+  failure(view: SelectView): Children;
+  failure(selector: Selector, args: OctironSelectArgs): Children;
+  failure(selector: Selector, view: SelectView): Children;
+  failure(
+    selector: Selector,
+    args: OctironSelectArgs,
+    view: SelectView,
+  ): Children;
+}
+
+export interface ActionSelectable {
+  select(selector: Selector): Children;
+  select(selector: Selector, args: OctironActionSelectionArgs): Children;
+  select(selector: Selector, view: ActionSelectView): Children;
+  select(
+    selector: Selector,
+    args: OctironActionSelectionArgs,
+    view: ActionSelectView,
+  ): Children;
+}
+
+export interface Default {
+  /**
+   * For readonly instances calls `o.present()`.
+   *
+   * For non-readonly instances calls `o.edit()`.
+   */
+  default(): Children;
+
+  /**
+   * For readonly instances calls `o.present()`.
+   *
+   * For non-readonly instances calls `o.edit()`.
+   *
+   * @param {OctironDefaultArgs} args - Arguments to pass to called method.
+   */
+  default(args: OctironDefaultArgs): Children;
+}
+
 export type Predicate = (octiron: Octiron) => boolean;
 
 export interface Filterable {
@@ -234,7 +546,8 @@ export interface OctironRoot
     // EntryPoint,
     Selectable,
     Filterable,
-    Presentable {
+    Presentable,
+    Performable {
   /**
    * The Octiron instance type.
    */
@@ -272,7 +585,8 @@ export interface OctironSelection
     EntryPoint,
     Selectable,
     Filterable,
-    Presentable {
+    Presentable,
+    Performable {
   /**
    * The Octiron instance type.
    */
@@ -304,6 +618,117 @@ export interface OctironSelection
   readonly store: Store;
 }
 
+export interface OctironAction
+  extends
+    Default,
+    Origin,
+    EntryPoint,
+    ActionSelectable,
+    Presentable,
+    Submitable<JSONObject>,
+    Filterable,
+    Performable,
+    Appendable {
+  /**
+   * The Octiron instance type.
+   */
+  readonly octironType: 'action';
+
+  /**
+   * Octiron predicate flag.
+   */
+  readonly isOctiron: true;
+
+  /**
+   * Unique instance id.
+   */
+  readonly id?: string;
+
+  /**
+   * Only action-selection and edit instances can be editable.
+   */
+  readonly readonly: false;
+
+  /**
+   * The value held by this instance
+   */
+  readonly value: JSONObject;
+
+  /**
+   * The http method of the action.
+   */
+  readonly method: string;
+
+  /**
+   * The URL of the action.
+   *
+   * This can only be set if the initial parameters + uri template
+   * allow a valid url to be set.
+   */
+  readonly url?: URL;
+
+  /**
+   * The octiron store used for this value.
+   */
+  readonly store: Store;
+}
+
+
+export interface OctironActionSelection
+  extends
+    Default,
+    Origin,
+    EntryPoint,
+    ActionSelectable,
+    Presentable,
+    Submitable<JSONObject>,
+    Editable,
+    Filterable,
+    Performable,
+    Appendable {
+  /**
+   * The Octiron instance type.
+   */
+  readonly octironType: 'action-selection';
+
+  /** 
+   * Octiron predicate flag.
+   */
+  readonly isOctiron: true;
+
+  /**
+   * Unique instance id that can optionally be used
+   * to set ids in HTML elements.
+   */
+  readonly id: string;
+
+  /**
+   * The HTML input elements name. Mostly useful if
+   * making form submissions compatible with multi-part
+   * requests.
+   */
+  readonly inputName: string;
+
+  /**
+   * Only action-selection and edit instances can be editable.
+   */
+  readonly readonly: false;
+
+  /**
+   * The value held by this instance
+   */
+  readonly value: JSONValue;
+
+  /**
+   * The octiron store used for this value.
+   */
+  readonly store: Store;
+}
+
+
 export type Octiron =
   | OctironRoot
-  | OctironSelection;
+  | OctironSelection
+  | OctironAction
+  | OctironActionSelection
+;
