@@ -36,7 +36,7 @@ export function getComponent({
   // deno-lint-ignore no-explicit-any
   fallbackComponent?: PresentComponent<any>;
   // deno-lint-ignore no-explicit-any
-}): PresentComponent<any> | undefined {
+}): PresentComponent<any> | EditComponent<any> | AnyComponent<any> | undefined {
   if (firstPickComponent != null) {
     return firstPickComponent;
   }

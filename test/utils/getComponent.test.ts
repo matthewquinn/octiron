@@ -1,4 +1,4 @@
-import type { PresentComponent } from "../../lib/types/octiron.ts";
+import type { EditComponent, PresentComponent } from "../../lib/types/octiron.ts";
 import { makeTypeDefs } from "../../lib/utils/makeTypeDefs.ts";
 import { getComponent } from "../../lib/utils/getComponent.ts";
 import { assertNotEquals } from "@std/assert/not-equals";
@@ -31,8 +31,17 @@ Deno.test('getComponent()', async (t) => {
       view() { return null },
     };
   };
-
+  const EditFoe: EditComponent<string> = () => {
+    return {
+      view() { return null },
+    };
+  };
   const PresentFum: PresentComponent<string> = () => {
+    return {
+      view() { return null },
+    };
+  };
+  const EditFum: EditComponent<string> = () => {
     return {
       view() { return null },
     };
@@ -50,10 +59,12 @@ Deno.test('getComponent()', async (t) => {
     {
       type: 'foe',
       present: PresentFoe,
+      edit: EditFoe,
     },
     {
       type: 'fum',
       present: PresentFum,
+      edit: EditFum,
     },
   );
 
@@ -82,6 +93,18 @@ Deno.test('getComponent()', async (t) => {
     assertEquals(component, PresentFoe);
   });
 
+  await t.step('It returns the edit component for the datatype on match when no first pick', () => {
+    const component = getComponent({
+      style: 'edit',
+      type: ['fee', 'fum'],
+      typeDefs,
+      datatype: 'foe',
+      fallbackComponent: PresentBaz,
+    });
+
+    assertEquals(component, EditFoe);
+  });
+
   await t.step('It returns the first type on match when no better match', () => {
     const component = getComponent({
       style: 'present',
@@ -104,6 +127,30 @@ Deno.test('getComponent()', async (t) => {
     });
 
     assertEquals(component, PresentFum);
+  });
+
+  await t.step('It returns the second type on match when no better match', () => {
+    const component = getComponent({
+      style: 'present',
+      type: ['baz', 'fum'],
+      typeDefs,
+      datatype: 'bar',
+      fallbackComponent: PresentBaz,
+    });
+
+    assertEquals(component, PresentFum);
+  });
+
+  await t.step('It returns the edit component for the second type on match when no better match', () => {
+    const component = getComponent({
+      style: 'edit',
+      type: ['baz', 'fum'],
+      typeDefs,
+      datatype: 'bar',
+      fallbackComponent: PresentBaz,
+    });
+
+    assertEquals(component, EditFum);
   });
 
   await t.step('It returns the fallback pick component when no other match', () => {
