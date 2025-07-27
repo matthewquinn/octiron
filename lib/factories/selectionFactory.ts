@@ -1,5 +1,5 @@
 import type { JSONValue } from '../types/common.ts';
-import type { BaseAttrs, Octiron, OctironPerformArgs, OctironPresentArgs, OctironSelectArgs, OctironSelection, PerformView, Predicate, PresentComponent, Selector, SelectView, TypeDefs } from '../types/octiron.ts';
+import type { BaseAttrs, Octiron, OctironDefaultArgs, OctironPerformArgs, OctironPresentArgs, OctironSelectArgs, OctironSelection, PerformView, Predicate, PresentComponent, Selector, SelectView, TypeDefs } from '../types/octiron.ts';
 import m from "mithril";
 import { SelectionRenderer } from "../renderers/SelectionRenderer.ts";
 import { getComponent } from '../utils/getComponent.ts';
@@ -209,7 +209,7 @@ export function selectionFactory<Attrs extends BaseAttrs = {}>(
       },
 
       default(
-        arg1?: OctironSelectArgs,
+        arg1?: OctironDefaultArgs,
       ) {
         return self.present(arg1 as OctironSelectArgs)
       },

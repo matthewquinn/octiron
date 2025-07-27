@@ -1,6 +1,6 @@
 import uriTemplates from 'uri-templates';
 import type { Store } from "../store.ts";
-import type { JSONObject, JSONValue, SchemaAction } from '../types/common.ts';
+import type { JSONObject, JSONValue, SCMAction } from '../types/common.ts';
 import { isJSONObject } from './isJSONObject.ts';
 
 
@@ -26,7 +26,7 @@ export function getSubmitDetails({
   store,
 }: {
   payload: JSONObject;
-  action: SchemaAction;
+  action: SCMAction;
   store: Store;
 }): SubmitDetails {
   let urlTemplate: string | undefined;

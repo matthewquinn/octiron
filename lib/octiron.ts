@@ -10,6 +10,11 @@ export * from './store.ts';
 export * from './utils/makeTypeDef.ts';
 export * from './utils/makeTypeDefs.ts';
 export * from './handlers/jsonLDHandler.ts';
+export * from './components/OctironJSON.ts';
+export * from './components/OctironDebug.ts';
+export * from './components/OctironExplorer.ts';
+export * from './components/OctironForm.ts';
+export * from './components/OctironSubmitButton.ts';
 
 /**
  * Creates a root octiron instance.

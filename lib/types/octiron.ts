@@ -242,20 +242,9 @@ export type OctironDefaultArgs<
   Value extends JSONValue = JSONValue,
   Attrs extends BaseAttrs = BaseAttrs,
 > =
-  | (
-    & {
-      [K in keyof OctironEditArgs]?: K extends keyof OctironPresentArgs ? never
-        : undefined;
-    }
-    & OctironPresentArgs<Value, Attrs>
-  )
-  | (
-    & {
-      [K in keyof OctironPresentArgs]?: K extends keyof OctironEditArgs ? never
-        : undefined;
-    }
-    & OctironEditArgs<Value, Attrs>
-  );
+  | OctironPresentArgs<Value, Attrs>
+  | OctironEditArgs<Value, Attrs>
+;
 
 /**
  * A function that intercepts changes to an action

@@ -1,7 +1,7 @@
 import type m from 'mithril';
 import { actionFactory, type OctironActionHooks, type ActionInternals } from '../factories/actionFactory.ts';
 import { selectionFactory } from '../factories/selectionFactory.ts';
-import type { JSONObject, SchemaAction } from '../types/common.ts';
+import type { JSONObject, SCMAction } from '../types/common.ts';
 import type { OctironAction, OctironPerformArgs, OctironSelection, PerformView, Selector } from '../types/octiron.ts';
 import type { Failure, ReadonlySelectionResult, SelectionDetails } from '../types/store.ts';
 import { isIRIObject } from '../utils/isIRIObject.ts';
@@ -61,7 +61,7 @@ export const PerformRenderer: m.FactoryComponent<PerformRendererAttrs> = ({ attr
       const octiron = selectionFactory({
         store: currentAttrs.internals.store,
         typeDefs: currentAttrs.internals.typeDefs,
-        value: selectionResult.value as SchemaAction,
+        value: selectionResult.value as SCMAction,
       });
       const action = actionFactory(currentAttrs.internals, currentAttrs.args);
 

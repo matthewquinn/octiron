@@ -35,18 +35,18 @@ export type IterableJSONLD<Properties extends JSONObject = JSONObject> =
   | (Properties & { '@list': JSONArray })
   | (Properties & { '@set': JSONArray });
 
-export type EntryPoint = {
+export type SCMEntryPoint = {
   contentType: string;
   encodingType?: string;
   httpMethod: string;
   urlTemplate: string;
 };
 
-export type SchemaAction = JSONObject & {
-  target: string | EntryPoint;
+export type SCMAction = JSONObject & {
+  target: string | SCMEntryPoint;
 };
 
-export type PropertyValueSpecification = {
+export type SCMPropertyValueSpecification = {
   readonlyValue: boolean;
   valueName?: string;
   valueRequired: boolean;

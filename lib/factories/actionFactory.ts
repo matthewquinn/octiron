@@ -3,8 +3,8 @@ import { ActionStateRenderer } from "../renderers/ActionStateRenderer.ts";
 import { PerformRenderer } from "../renderers/PerformRenderer.ts";
 import { SelectionRenderer } from "../renderers/SelectionRenderer.ts";
 import type { Store } from "../store.ts";
-import type { JSONObject, Mutable, SchemaAction } from "../types/common.ts";
-import type { BaseAttrs, Octiron, OctironAction, OctironPerformArgs, OctironPresentArgs, OctironSelectArgs, PayloadValueMapper, PerformView, Predicate, PresentComponent, Selector, SelectView, TypeDefs, UpdateArgs } from "../types/octiron.ts";
+import type { JSONObject, Mutable, SCMAction } from "../types/common.ts";
+import type { BaseAttrs, Octiron, OctironAction, OctironDefaultArgs, OctironPerformArgs, OctironPresentArgs, OctironSelectArgs, PayloadValueMapper, PerformView, Predicate, PresentComponent, Selector, SelectView, TypeDefs, UpdateArgs } from "../types/octiron.ts";
 import type { EntityState } from "../types/store.ts";
 import { getComponent } from "../utils/getComponent.ts";
 import { getSubmitDetails } from "../utils/getSubmitDetails.ts";
@@ -45,7 +45,7 @@ export function actionFactory<
 
   const { url, method, body } = getSubmitDetails({
     payload,
-    action: internals.octiron.value as SchemaAction,
+    action: internals.octiron.value as SCMAction,
     store: internals.store,
   });
 
@@ -69,7 +69,7 @@ export function actionFactory<
   async function onSubmit() {
     const { url, method, body, contentType, encodingType } = getSubmitDetails({
       payload,
-      action: internals.octiron.value as SchemaAction,
+      action: internals.octiron.value as SCMAction,
       store: internals.store,
     });
 
@@ -104,7 +104,7 @@ export function actionFactory<
       payload = args.interceptor(
         next,
         prev,
-        internals.octiron.value as SchemaAction,
+        internals.octiron.value as SCMAction,
       );
     } else {
       payload = next;
@@ -304,7 +304,7 @@ export function actionFactory<
   };
 
   self.default = function (
-    args?: OctironPresentArgs,
+    args?: OctironDefaultArgs,
   ): m.Children {
     return self.present(args as OctironPresentArgs);
   };
