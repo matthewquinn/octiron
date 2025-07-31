@@ -7,6 +7,7 @@ export * from './types/common.ts';
 export * from './types/store.ts';
 export * from './types/octiron.ts';
 export * from './store.ts';
+export * from './utils/classes.ts';
 export * from './utils/makeTypeDef.ts';
 export * from './utils/makeTypeDefs.ts';
 export * from './handlers/jsonLDHandler.ts';

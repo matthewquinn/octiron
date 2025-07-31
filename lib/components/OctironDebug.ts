@@ -1,10 +1,10 @@
 import m from 'mithril';
 import * as jsonld from 'jsonld';
-import { flattenIRIObjects } from "utils/flattenIRIObjects";
-import { mithrilRedraw } from "utils/mithrilRedraw";
+import { mithrilRedraw } from "../utils/mithrilRedraw.ts";
 import type { JSONObject, JSONValue } from "../types/common.ts";
 import type { Octiron } from "../types/octiron.ts";
 import { OctironJSON } from "./OctironJSON.ts";
+import { flattenIRIObjects } from "../utils/flattenIRIObjects.ts";
 
 export type OctironDebugAttrs = {
   o: Octiron;

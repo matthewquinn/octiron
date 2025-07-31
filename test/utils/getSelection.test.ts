@@ -9,7 +9,6 @@ import {
 import { getSelection, CircularSelectionError } from "../../lib/utils/getSelection.ts";
 import { isJSONObject } from "../../lib/utils/isJSONObject.ts";
 import { Store } from "../../lib/store.ts";
-import { EntityState } from "../../lib/types/store.ts";
 
 const user1 = mocks.createUser({
   username: "jane",
@@ -70,16 +69,16 @@ Deno.test("getSelection()", async (t) => {
       store,
       selector: "foo baa baz",
       value: {
-        "foo": [
+        [`${todosVocab}foo`]: [
           {
-            "baa": {
-              "baz": 123,
+            [`${todosVocab}baa`]: {
+              [`${todosVocab}baz`]: 123,
             },
           },
           {
             "@value": {
-              "baa": {
-                "baz": 456,
+              [`${todosVocab}baa`]: {
+                [`${todosVocab}baz`]: 456,
               },
             },
           },

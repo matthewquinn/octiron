@@ -18,11 +18,10 @@ export type OctironExplorerAttrs = {
 export const OctironExplorer: m.ClosureComponent<OctironExplorerAttrs> = ({
   attrs,
 }) => {
-  let value: string = (attrs.selector ??= '');
+  let value: string = attrs.selector || '';
   let previousSelector: string = value;
   let selector: string = value;
-  let presentationStyle: 'debug' | 'components' =
-    (attrs.presentationStyle ??= 'debug');
+  let presentationStyle: 'debug' | 'components' = attrs.presentationStyle || 'debug';
   let onChange = attrs.onChange;
   const fallbackComponent: AnyComponent = {
     view: ({ attrs: { o } }) => {

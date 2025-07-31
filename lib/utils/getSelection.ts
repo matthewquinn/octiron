@@ -101,7 +101,7 @@ export function getSelection<T extends SelectionResult>({
 
   if (typeof value === 'undefined') {
     const [{ subject: iri, filter }, ...selector] =
-      parseSelectorString(selectorStr);
+      parseSelectorString(selectorStr, store);
 
     selectEntity({
       keySource: '',
@@ -118,7 +118,7 @@ export function getSelection<T extends SelectionResult>({
     return transformProcessedDetails<T>(details);
   }
 
-  const selector = parseSelectorString(selectorStr);
+  const selector = parseSelectorString(selectorStr, store);
 
   traverseSelector({
     keySource: '',

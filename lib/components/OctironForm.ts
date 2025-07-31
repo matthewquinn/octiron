@@ -9,7 +9,7 @@ export type OctironFormAttrs = {
 
 export const OctironForm: m.ClosureComponent<OctironFormAttrs> = (vnode) => {
   const o = vnode.attrs.o;
-  const method = o.method.toUpperCase() as 'GET' || 'POST';
+  const method = o.method?.toUpperCase() as 'GET' || 'POST' || 'GET';
   const enctypes = {
     GET: 'application/x-www-form-urlencoded',
     POST: 'multipart/form-data',

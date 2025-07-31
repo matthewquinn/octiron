@@ -206,8 +206,6 @@ Deno.test("o.root()", async (t) => {
 });
 
 Deno.test("o.root(selector)", async (t) => {
-
-
   for (
     const octironType of [
       'root',

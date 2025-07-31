@@ -1,3 +1,4 @@
+import type { Store } from "../store.ts";
 
 export type SelectorObject = {
   subject: string;
@@ -14,7 +15,7 @@ const selectorRe = /\s*(?<subject>([^\[\s]+))(\[(?<filter>([^\]])+)\])?\s*/g;
  *
  * @param selector - The selector string to parse.
  */
-export function parseSelectorString(selector: string): SelectorObject[] {
+export function parseSelectorString(selector: string, store: Store): SelectorObject[] {
   let match: RegExpExecArray | null;
   const selectors: SelectorObject[] = [];
 
@@ -24,12 +25,12 @@ export function parseSelectorString(selector: string): SelectorObject[] {
 
     if (typeof filter === 'string' && typeof subject === 'string') {
       selectors.push({
-        subject,
+        subject: store.expand(subject),
         filter,
       });
     } else if (typeof subject === 'string') {
       selectors.push({
-        subject,
+        subject: store.expand(subject),
       });
     } else {
       throw new Error(`Invalid selector: ${selector}`);

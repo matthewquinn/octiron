@@ -1,4 +1,3 @@
-import type { JSONObject } from '../types/common.ts';
 import type { Handler } from "../types/store.ts";
 import { isJSONObject } from '../utils/isJSONObject.ts';
 import jsonld from 'jsonld';
@@ -7,7 +6,7 @@ import jsonld from 'jsonld';
 export const jsonLDHandler: Handler = {
   integrationType: 'jsonld',
   contentType: 'application/ld+json',
-  handler: async ({ res, store }) => {
+  handler: async ({ res }) => {
     const json = await res.json();
 
     // cannot use json-ld ops on scalar types
@@ -31,10 +30,8 @@ export const jsonLDHandler: Handler = {
       }
     });
 
-    const value = await jsonld.compact(expanded, store.context) as JSONObject;
-
     return {
-      jsonld: value,
+      jsonld: expanded[0],
     };
   },
 };

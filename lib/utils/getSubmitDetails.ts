@@ -34,25 +34,25 @@ export function getSubmitDetails({
   let method: string = 'get';
   let contentType: string | undefined;
   let encodingType: string | undefined;
-  const target = action['scm:target'];
+  const target = action['https://schema.org/target'];
 
   if (typeof target === 'string') {
     urlTemplate = target;
   } else if (isJSONObject(target)) {
-    if (typeof target['scm:urlTemplate'] === 'string') {
-      urlTemplate = target['scm:urlTemplate'];
+    if (typeof target['https://schema.org/urlTemplate'] === 'string') {
+      urlTemplate = target['https://schema.org/urlTemplate'];
     }
 
-    if (typeof target['scm:httpMethod'] === 'string') {
-      method = target['scm:httpMethod'].toLowerCase();
+    if (typeof target['https://schema.org/httpMethod'] === 'string') {
+      method = target['https://schema.org/httpMethod'].toLowerCase();
     }
 
-    if (typeof target['scm:contentType'] === 'string') {
-      contentType = target['scm:contentType'];
+    if (typeof target['https://schema.org/contentType'] === 'string') {
+      contentType = target['https://schema.org/contentType'];
     }
 
-    if (typeof target['scm:encodingType'] === 'string') {
-      encodingType = target['scm:encodingType'];
+    if (typeof target['https://schema.org/encodingType'] === 'string') {
+      encodingType = target['https://schema.org/encodingType'];
     }
   }
 
