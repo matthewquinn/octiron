@@ -217,8 +217,8 @@ export class Store {
 
       let expanded: string | undefined;
 
-      if (this.#vocab != null && termOrType.startsWith(this.#vocab)) {
-        expanded = termOrType.replace(this.#vocab, '');
+      if (this.#vocab != null && !/^[\w\d]+\:/.test(termOrType)) {
+        expanded = this.#vocab + termOrType;
       } else if (/https?:\/\//.test(termOrType)) {
         // is a type
         expanded = termOrType;
