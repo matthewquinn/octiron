@@ -157,7 +157,7 @@ export class Store {
     #keys: Set<string> = new Set();
     #context: Context;
     #termExpansions: Map<symbol, string | null> = new Map();
-    #fetcher: Fetcher;
+    #fetcher?: Fetcher;
     #responseHook?: ResponseHook;
     #dependencies: Dependencies = new Map();
     #listeners: Listeners = new Map();
@@ -166,7 +166,7 @@ export class Store {
       this.#rootIRI = args.rootIRI;
       this.#rootOrigin = new URL(args.rootIRI).origin;
       this.#vocab = args.vocab;
-      this.#fetcher = args.fetcher ?? fetch;
+      this.#fetcher = args.fetcher;
       this.#responseHook = args.responseHook;
 
       [this.#headers, this.#origins] = getInternalHeaderValues(args.headers, args.origins);
@@ -290,7 +290,7 @@ export class Store {
      * to be used to mark the request's loading status.
      */
     #getLoadingKey(iri: string, method: string, accept?: string): string {
-      accept = accept || this.#headers.get('accept') || defaultAccept;
+      accept = accept ?? this.#headers.get('accept') ?? defaultAccept;
 
       return `${method?.toLowerCase()}|${iri}|${accept.toLowerCase()}`;
     }
@@ -473,7 +473,7 @@ export class Store {
       let headers: Headers;
       const url = new URL(iri);
       const method = args.method || 'get';
-      const accept = args.accept || this.#headers.get('accept') || defaultAccept;
+      const accept = args.accept ?? this.#headers.get('accept') ?? defaultAccept;
       const loadingKey = this.#getLoadingKey(iri, method, args.accept);
 
       if (url.origin === this.#rootOrigin) {
@@ -497,11 +497,21 @@ export class Store {
       // This promise wrapping is so SSR can hook in and await the promise.
       const promise = new Promise<Response>((resolve) => {
         (async () => {
-          const res = await this.#fetcher(iri, {
-            method,
-            headers,
-            body: args.body,
-          });
+          let res: Response;
+          
+          if (this.#fetcher != null) {
+            res =  await this.#fetcher(iri, {
+              method,
+              headers,
+              body: args.body,
+            });
+          } else {
+            res = await fetch(iri, {
+              method,
+              headers,
+              body: args.body,
+            });
+          }
 
           await this.handleResponse(res, iri);
 
