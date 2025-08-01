@@ -99,7 +99,7 @@ export function getSelection<T extends SelectionResult>({
     result: [],
   };
 
-  if (typeof value === 'undefined') {
+  if (value == null) {
     const [{ subject: iri, filter }, ...selector] =
       parseSelectorString(selectorStr, store);
 
@@ -580,7 +580,7 @@ function selectEntity({
   details.dependencies.push(iri);
 
   // if loading is required mark found as false
-  if (typeof cache === 'undefined' || cache.loading) {
+  if (cache == null || cache.loading) {
     if (!details.required.includes(iri)) {
       details.required.push(iri);
     }
@@ -591,7 +591,7 @@ function selectEntity({
   if (!cache.ok) {
     details.hasErrors = true;
 
-    if (typeof selector === 'undefined' || selector.length === 0) {
+    if (selector == null || selector.length === 0) {
       return;
     }
 

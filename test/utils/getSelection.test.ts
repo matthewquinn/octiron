@@ -121,7 +121,7 @@ Deno.test("getSelection()", async (t) => {
       epic2["https://todos.example.com/subtodos"][0]["@id"],
     );
     assert.deepEqual(
-      selection.result[0].value["scm:name"],
+      selection.result[0].value["https://schema.org/name"],
       epic2["https://todos.example.com/subtodos"][0]["https://schema.org/name"],
     );
 
@@ -131,7 +131,7 @@ Deno.test("getSelection()", async (t) => {
       epic2["https://todos.example.com/subtodos"][1]["@id"],
     );
     assert.deepEqual(
-      selection.result[1].value["scm:name"],
+      selection.result[1].value["https://schema.org/name"],
       epic2["https://todos.example.com/subtodos"][1]["https://schema.org/name"],
     );
   });

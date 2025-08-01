@@ -195,16 +195,9 @@ async function toEntityState({
     ctx['@vocab'] = vocab;
   }
 
-  const compacted = await Promise.all(
-    entities.map((entity) => {
-      // deno-lint-ignore no-explicit-any
-      return jsonld.compact(entity, ctx as any);
-    }),
-  ) as Array<IRIObject>;
-
   const result: StoreArgs['primary'] = {};
 
-  for (const entity of flattenIRIObjects(compacted)) {
+  for (const entity of flattenIRIObjects(entities)) {
     result[entity["@id"]] = {
       iri: entity["@id"],
       ok: true,
