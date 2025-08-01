@@ -57,7 +57,7 @@ export function getSubmitDetails({
   }
 
   if (typeof urlTemplate !== 'string') {
-    throw new Error('Action has invalid scm:target');
+    throw new Error('Action has invalid https://schema.org/target');
   }
 
   const template = uriTemplates(urlTemplate);

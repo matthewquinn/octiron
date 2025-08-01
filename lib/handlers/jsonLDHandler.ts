@@ -30,8 +30,10 @@ export const jsonLDHandler: Handler = {
       }
     });
 
+    const compacted = await jsonld.compact(expanded, {});
+
     return {
-      jsonld: expanded[0],
+      jsonld: compacted,
     };
   },
 };
