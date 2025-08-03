@@ -1,4 +1,4 @@
-import type { AlternativesState, Context, PrimaryState, Fetcher, Handler, IntegrationStateInfo, IntegrationType, JSONLDHandlerResult, ReadonlySelectionResult, ResponseHook, SelectionDetails, SelectionListener, EntityState, SubmitArgs } from "./types/store.ts";
+import type { AlternativesState, Context, PrimaryState, Fetcher, Handler, IntegrationStateInfo, IntegrationType, JSONLDHandlerResult, ReadonlySelectionResult, ResponseHook, SelectionDetails, SelectionListener, EntityState, SubmitArgs, Aliases, EntitySelectionResult, ValueSelectionResult } from "./types/store.ts";
 import { HTMLFragmentsIntegration } from "./alternatives/htmlFragments.ts";
 import { HTMLIntegration } from "./alternatives/html.ts";
 import { isBrowserRender } from "./consts.ts";
@@ -50,7 +50,7 @@ function getJSONLdValues(vocab?: string, aliases?: Record<string, string>): [Map
 
   for (const [key, value] of Object.entries(aliases)) {
     context[key] = value;
-    aliasMap.set(`^${key}:`, value);
+    aliasMap.set(key, value);
   }
 
   return [aliasMap, context];
@@ -197,6 +197,18 @@ export class Store {
       return this.#primary.get(iri);
     }
 
+    public get vocab(): string | undefined {
+      return this.#vocab;
+    }
+
+    public get aliases(): Aliases {
+      return Object.fromEntries(
+        this.#aliases.entries()
+          .map(([key, value]) => [key.replace(/^/, ''), value])
+      );
+    }
+
+
     public get context(): Context {
       return this.#context;
     }
@@ -224,7 +236,7 @@ export class Store {
         expanded = termOrType;
       } else {
         for (const [key, value] of this.#aliases) {
-          const reg = new RegExp(key);
+          const reg = new RegExp(`^${key}:`);
           if (reg.test(termOrType)) {
             expanded = termOrType.replace(reg, value);
             break;
@@ -248,10 +260,6 @@ export class Store {
      * Generates a unique key for server rendering only.
      */
     public key(): string {
-      if (isBrowserRender) {
-        return '';
-      }
-
       while (true) {
         const key = Math.random().toString(36).slice(2, 7);
 
@@ -320,7 +328,7 @@ export class Store {
           continue;
         }
 
-        const details = getSelection({
+        const details = getSelection<EntitySelectionResult | ValueSelectionResult>({
           selector: listenerDetails.selector,
           value: listenerDetails.value,
           store: this,
@@ -498,7 +506,7 @@ export class Store {
       const promise = new Promise<Response>((resolve) => {
         (async () => {
           let res: Response;
-          
+
           if (this.#fetcher != null) {
             res =  await this.#fetcher(iri, {
               method,

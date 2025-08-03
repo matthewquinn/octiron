@@ -1,16 +1,19 @@
 import m from 'mithril';
+import { JsonPointer } from 'json-ptr';
 import { ActionStateRenderer } from "../renderers/ActionStateRenderer.ts";
 import { PerformRenderer } from "../renderers/PerformRenderer.ts";
 import { SelectionRenderer } from "../renderers/SelectionRenderer.ts";
 import type { Store } from "../store.ts";
-import type { JSONObject, Mutable, SCMAction } from "../types/common.ts";
-import type { BaseAttrs, Octiron, OctironAction, OctironDefaultArgs, OctironPerformArgs, OctironPresentArgs, OctironSelectArgs, PayloadValueMapper, PerformView, Predicate, PresentComponent, Selector, SelectView, TypeDefs, UpdateArgs } from "../types/octiron.ts";
+import type { JSONArray, JSONObject, JSONValue, Mutable, SCMAction } from "../types/common.ts";
+import type { ActionSelectView, BaseAttrs, Octiron, OctironAction, OctironActionSelectionArgs, OctironDefaultArgs, OctironPerformArgs, OctironPresentArgs, OctironSelectArgs, PayloadValueMapper, PerformView, Predicate, PresentComponent, Selector, SelectView, TypeDefs, UpdateArgs } from "../types/octiron.ts";
 import type { EntityState } from "../types/store.ts";
 import { getComponent } from "../utils/getComponent.ts";
 import { getSubmitDetails } from "../utils/getSubmitDetails.ts";
 import { getValueType } from "../utils/getValueType.ts";
 import { unravelArgs } from "../utils/unravelArgs.ts";
 import { mithrilRedraw } from "../utils/mithrilRedraw.ts";
+import { ActionSelectionRenderer } from "../renderers/ActionSelectionRenderer.ts";
+import { isJSONObject } from "../utils/isJSONObject.ts";
 
 export interface OctironActionHooks {
   _updateArgs(args: OctironPerformArgs): void;
@@ -94,7 +97,7 @@ export function actionFactory<
   }
 
   function onUpdate(value: JSONObject) {
-    const prev = payload; 
+    const prev = payload;
     const next = {
       ...prev,
       ...value,
@@ -115,22 +118,21 @@ export function actionFactory<
     mithrilRedraw();
   }
 
-  // function onPointerUpdate(
-  //   pointer: string,
-  //   value: JSONValue,
-  //   args: UpdateArgs,
-  // ) {
-  //   const next: Partial<JSONObject> = Object.assign({}, payload);
-  //   const ptr = JsonPointer.create(pointer);
+  function onPointerUpdate(
+    pointer: string,
+    value: JSONValue,
+  ) {
+    const next: Partial<JSONObject> = Object.assign({}, payload);
+    const ptr = JsonPointer.create(pointer);
 
-  //   if (typeof value === 'undefined' || value === null) {
-  //     ptr.unset(next) as Partial<JSONObject>;
-  //   } else {
-  //     ptr.set(next, value, true) as Partial<JSONObject>;
-  //   }
+    if (typeof value === 'undefined' || value === null) {
+      ptr.unset(next) as Partial<JSONObject>;
+    } else {
+      ptr.set(next, value, true) as Partial<JSONObject>;
+    }
 
-  //   onUpdate(next);
-  // }
+    onUpdate(next);
+  }
 
   const self: Mutable<OctironAction & OctironActionHooks> = function self(
     predicate: Predicate,
@@ -148,6 +150,9 @@ export function actionFactory<
   self.isOctiron = true;
   self.octironType = 'action';
   self.readonly = false;
+  self.value = refs.payload;
+  self.action = internals.octiron;
+  self.actionValue = internals.octiron;
 
   self.submit = async function (
     arg1?: PayloadValueMapper<JSONObject> | JSONObject
@@ -354,27 +359,32 @@ export function actionFactory<
     });
   };
 
-  // TODO: Make work with action selections
   self.select = function (
     arg1: Selector,
-    arg2?: OctironSelectArgs | SelectView,
-    arg3?: SelectView,
-  ): m.Children {
+    arg2?: OctironActionSelectionArgs | ActionSelectView,
+    arg3?: ActionSelectView,
+  ): m.Children | null {
     const [selector, args, view] = unravelArgs(arg1, arg2, arg3);
 
     return m(
-      SelectionRenderer,
+      ActionSelectionRenderer,
       {
+        internals: {
+          action: self as unknown as OctironAction,
+          parent: self as unknown as OctironAction,
+          entity: internals.octiron,
+          store: internals.store,
+          typeDefs: internals.typeDefs,
+          onSubmit,
+          onUpdate: onPointerUpdate,
+          submitting: refs.submitting,
+        },
         selector,
+        value: self.value,
+        actionValue: internals.octiron.value as JSONObject,
         args,
         view,
-        internals: {
-          store: internals.store,
-          typeDefs: args?.typeDefs || internals.typeDefs,
-          value: payload,
-          parent: self as unknown as OctironAction,
-        },
-      },
+      }
     );
   };
 
@@ -397,6 +407,30 @@ export function actionFactory<
     });
   };
 
+  self.append = function (
+    type: string,
+    value: JSONValue = {},
+    args: UpdateArgs = {},
+  ) {
+    if (isJSONObject(self.value)) {
+      const prevValue = self.value[type];
+      let nextValue: JSONArray = [];
+
+      if (prevValue != null && !Array.isArray(prevValue)) {
+        nextValue.push(prevValue);
+      } else if (Array.isArray(prevValue)) {
+        nextValue = [...prevValue];
+      }
+
+      nextValue.push(value);
+
+      return self.update({
+        ...self.value,
+        [type]: nextValue,
+      }, args);
+    }
+  };
+
   self._updateArgs = function (
     args: OctironPerformArgs,
   ) {
@@ -405,17 +439,17 @@ export function actionFactory<
       (factoryArgs as Record<string, any>)[key] = value;
     }
   };
-  
-  
+
+
   if (
-    typeof args.initialPayload !== 'undefined'
+    args.initialPayload != null
   ) {
     onUpdate(args.initialPayload);
   }
 
   if (
     typeof window === 'undefined' && args.submitOnInit &&
-    typeof submitResult === 'undefined'
+    submitResult == null
   ) {
     self.submit();
   } else if (typeof window !== 'undefined' && args.submitOnInit) {

@@ -1,5 +1,5 @@
 import type { Children, ComponentTypes } from 'mithril';
-import type { JSONObject, JSONValue } from './common.ts';
+import type { JSONObject, JSONValue, SCMPropertyValueSpecification } from './common.ts';
 import type { Store } from '../store.ts';
 import type { Octiron } from "./octiron.ts";
 
@@ -232,6 +232,52 @@ export type ValueSelectionResult = {
   readonly value: JSONValue;
 };
 
+export type ActionSelectionResult = {
+  /**
+   * A unique json pointer for identifing this selection result.
+   * Useful for caching objects and performing updates on it's value.
+   */
+  readonly pointer: string;
+
+  /**
+   * The type of the selection result. Value 'entity' indicates
+   * the value has an iri and can be fetched. The value `value`
+   * indicates the value is found in the body of an entity.
+   */
+  readonly type: 'action-value';
+
+  /**
+   * The object key (type, or term in json-ld lingo) used when
+   * retrieving this value from the parent object.
+   */
+  readonly datatype: string;
+
+  /**
+   * The selection value.
+   */
+  readonly value: JSONValue;
+
+  /**
+   * The point on the action definition describing the value.
+   */
+  readonly actionValue?: JSONValue;
+
+  /**
+   * An action selection can be readonly if the selected spec
+   * has readonly set to true. Or if the payload has entities
+   * or unspecifed values on it which the selection selects into.
+   */
+  readonly readonly: boolean;
+
+  /**
+   * The spec related to the value.
+   *
+   * This can be null if the payload has entities or unspecifed
+   * values on it which the selection selects into.
+   */
+  readonly spec?: SCMPropertyValueSpecification;
+}
+
 export type AlternativeTypeResult = {
   readonly key: symbol;
 
@@ -256,6 +302,7 @@ export type ReadonlySelectionResult =
 export type SelectionResult =
   | EntitySelectionResult
   | ValueSelectionResult
+  | ActionSelectionResult
 ;
 
 export type SelectionDetails<T = SelectionResult> = {

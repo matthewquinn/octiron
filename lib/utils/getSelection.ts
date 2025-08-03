@@ -1,6 +1,5 @@
-
 import type { JSONArray, JSONObject, JSONValue, Mutable } from '../types/common.ts';
-import type { EntitySelectionResult, SelectionDetails, SelectionResult, ValueSelectionResult } from '../types/store.ts';
+import type { ActionSelectionResult, EntitySelectionResult, SelectionDetails, SelectionResult, ValueSelectionResult } from '../types/store.ts';
 import { escapeJSONPointerParts } from './escapeJSONPointerParts.ts';
 import { getIterableValue } from "./getIterableValue.ts";
 import { isIRIObject } from "./isIRIObject.ts";
@@ -10,6 +9,7 @@ import { isMetadataObject } from "./isMetadataObject.ts";
 import { isValueObject } from "./isValueObject.ts";
 import { parseSelectorString } from './parseSelectorString.ts';
 import type { Store } from '../store.ts';
+import { resolvePropertyValueSpecification } from "./resolvePropertyValueSpecification.ts";
 
 /**
  * A circular selection error occurs when two or more
@@ -41,9 +41,15 @@ type ProcessingValueSelectionResult = {
   keySource: string;
 } & Omit<ValueSelectionResult, 'key'>;
 
+type ProcessingActionSelectionResult = {
+  // used to build the final key value.
+  keySource: string;
+} & Omit<ActionSelectionResult, 'key'>;
+
 type ProcessingSelectionDetails = SelectionDetails<
   | ProcessingEntitySelectionResult
   | ProcessingValueSelectionResult
+  | ProcessingActionSelectionResult
 >;
 
 
@@ -197,8 +203,8 @@ function resolveValue({
   value,
   datatype,
   filter,
-  // spec,
-  // actionValue,
+  spec,
+  actionValue,
   store,
   details,
 }: {
@@ -212,30 +218,31 @@ function resolveValue({
   store: Store;
   details: ProcessingSelectionDetails;
 }) {
-  if (value == null) {
+  if (value === undefined) {
     details.hasMissing = true;
 
     return;
   }
 
-  // if (spec != null) {
-  //   const pvs = resolvePropertyValueSpecification({
-  //     spec,
-  //     store,
-  //   });
+  if (spec != null) {
+    const pvs = resolvePropertyValueSpecification({
+      spec,
+      store,
+    });
 
-  //   details.result.push({
-  //     pointer: pointer,
-  //     type: 'action-value',
-  //     datatype,
-  //     value,
-  //     actionValue,
-  //     spec: pvs,
-  //     readonly: pvs.readonlyValue,
-  //   });
+    details.result.push({
+      keySource: pointer,
+      pointer,
+      type: 'action-value',
+      datatype,
+      value,
+      actionValue,
+      spec: pvs,
+      readonly: pvs.readonlyValue,
+    });
 
-  //   return;
-  // }
+    return;
+  }
 
   if (!isTraversable(value)) {
     details.result.push({
@@ -500,14 +507,18 @@ function traverseSelector({
 
   // edit selections are a special case in that an input
   // should render even when no value is present.
-  if (isJSONObject(value) && actionValue !== undefined && value[selector[0].subject] == null) {
+  if (
+    isJSONObject(value) &&
+    actionValue !== undefined &&
+    value[selector[0].subject] == null
+  ) {
     value = { [selector[0].subject]: null };
   }
 
   const [next, ...rest] = selector;
   const { subject: type, filter } = next;
 
-  if (value[type] == null) {
+  if (value[type] === undefined) {
     details.hasMissing = true;
 
     return;

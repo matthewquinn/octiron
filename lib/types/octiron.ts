@@ -229,7 +229,8 @@ export type OctironActionSelectionArgs<
   & FetchableArgs
   & IterableArgs
   & InterceptableArgs
-  & UpdateableArgs<Value, Attrs>;
+  & UpdateableArgs<Value, Attrs>
+  & PresentableArgs<Value, Attrs>
 
 export type OctironEditArgs<
   Value extends JSONValue = JSONValue,
@@ -250,11 +251,11 @@ export type OctironDefaultArgs<
  * A function that intercepts changes to an action
  * payload value and allows the intercepter to transform
  * the value before the payload is updated.
- * 
+ *
  * Action selectors can have intercepters specified on them.
  * Note that they intercept the value at the root of the selection
  * and not the final value of the selection.
- * 
+ *
  * @param next The changed value.
  * @param prev The previous value.
  * @param actionValue The action, or point in the action, which
@@ -478,15 +479,15 @@ export interface Submitable<
   ): Children;
 }
 
-export interface ActionSelectable extends Selectable {
-  // select(selector: Selector): Children;
-  // select(selector: Selector, args: OctironActionSelectionArgs): Children;
-  // select(selector: Selector, view: ActionSelectView): Children;
-  // select(
-  //   selector: Selector,
-  //   args: OctironActionSelectionArgs,
-  //   view: ActionSelectView,
-  // ): Children;
+export interface ActionSelectable {
+  select(selector: Selector): Children;
+  select(selector: Selector, args: OctironActionSelectionArgs): Children;
+  select(selector: Selector, view: ActionSelectView): Children;
+  select(
+    selector: Selector,
+    args: OctironActionSelectionArgs,
+    view: ActionSelectView,
+  ): Children;
 }
 
 export interface Default {
@@ -664,6 +665,10 @@ export interface OctironAction
    * The octiron store used for this value.
    */
   readonly store: Store;
+
+  readonly action: Octiron;
+
+  readonly actionValue: Octiron;
 }
 
 
@@ -684,7 +689,7 @@ export interface OctironActionSelection
    */
   readonly octironType: 'action-selection';
 
-  /** 
+  /**
    * Octiron predicate flag.
    */
   readonly isOctiron: true;
@@ -705,7 +710,7 @@ export interface OctironActionSelection
   /**
    * Only action-selection and edit instances can be editable.
    */
-  readonly readonly: false;
+  readonly readonly: boolean;
 
   /**
    * The value held by this instance
@@ -716,6 +721,9 @@ export interface OctironActionSelection
    * The octiron store used for this value.
    */
   readonly store: Store;
+  readonly action: Octiron;
+
+  readonly actionValue: Octiron;
 }
 
 
