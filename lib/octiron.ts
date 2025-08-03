@@ -27,11 +27,10 @@ export default function octiron({
   // deno-lint-ignore no-explicit-any
   typeDefs?: TypeDef<any>[];
 }): OctironRoot {
-  const config = typeDefs != null
-    ? makeTypeDefs(...typeDefs)
-    : {};
-
   const store = new Store(storeArgs);
+  const config = typeDefs != null
+    ? makeTypeDefs(store, ...typeDefs)
+    : {};
 
   return rootFactory({
     store,
@@ -46,13 +45,12 @@ octiron.fromInitialState = ({
   // deno-lint-ignore no-explicit-any
   typeDefs?: TypeDef<any>[];
 }) => {
-  const config = typeDefs != null
-    ? makeTypeDefs(...typeDefs)
-    : {};
-
   const store = Store.fromInitialState({
     ...storeArgs,
   });
+  const config = typeDefs != null
+    ? makeTypeDefs(store, ...typeDefs)
+    : {};
 
   return rootFactory({
     store,
