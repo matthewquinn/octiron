@@ -296,16 +296,17 @@ export type SubmittableArgs = {
 };
 
 export type UpdateableArgs<
-  Value extends JSONValue = JSONValue,
   Attrs extends BaseAttrs = BaseAttrs,
 > = {
-  initialValue?: Value,
+  initialValue?: JSONValue,
   throttle?: number;
   debounce?: number;
   submitOnChange?: boolean;
   attrs?: Attrs;
-  component?: EditComponent<Value, Attrs> | AnyComponent<Value, Attrs>;
-  fallbackComponent?: AnyComponent<Value, Attrs>;
+  component?: EditComponent<JSONValue, Attrs> | AnyComponent<JSONValue, Attrs>;
+  fallbackComponent?: AnyComponent<JSONValue, Attrs>;
+  typeDefs?: TypeDefs;
+  store?: Store;
 };
 export interface OctironView {
   (octiron: Octiron): Children;
@@ -481,11 +482,11 @@ export interface Submitable<
 
 export interface ActionSelectable {
   select(selector: Selector): Children;
-  select(selector: Selector, args: OctironActionSelectionArgs): Children;
+  select<Attrs extends BaseAttrs = BaseAttrs>(selector: Selector, args: OctironActionSelectionArgs<Attrs>): Children;
   select(selector: Selector, view: ActionSelectView): Children;
-  select(
+  select<Attrs extends BaseAttrs = BaseAttrs>(
     selector: Selector,
-    args: OctironActionSelectionArgs,
+    args: OctironActionSelectionArgs<Attrs>,
     view: ActionSelectView,
   ): Children;
 }
