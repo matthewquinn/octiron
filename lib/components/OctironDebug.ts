@@ -113,7 +113,7 @@ export const OctironDebug: m.ClosureComponent<OctironDebugAttrs> = ({
       }
 
       if (o.octironType === 'action' || o.octironType === 'action-selection') {
-        actionValueAction = m('button.oct-button', { onclick: onSetActionValue }, 'Action value');
+        actionValueAction = m('button.oct-button', { type: 'button', onclick: onSetActionValue }, 'Action value');
       }
 
       return m(
@@ -122,11 +122,11 @@ export const OctironDebug: m.ClosureComponent<OctironDebugAttrs> = ({
           '.oct-debug-controls',
           m(
             '.oct-button-group',
-            m('button.oct-button', { onclick: onSetValue }, 'Value'),
+            m('button.oct-button', { type: 'button', onclick: onSetValue }, 'Value'),
             actionValueAction,
-            m('button.oct-button', { onclick: onSetComponent }, 'Component'),
-            m('button.oct-button', { onclick: onSetExpanded }, 'Expanded'),
-            m('button.oct-button', { onclick: onSetFlattened }, 'Flattened'),
+            m('button.oct-button', { type: 'button', onclick: onSetComponent }, 'Component'),
+            m('button.oct-button', { type: 'button', onclick: onSetExpanded }, 'Expanded'),
+            m('button.oct-button', { type: 'button', onclick: onSetFlattened }, 'Flattened'),
             ...actions,
           ),
         ),
