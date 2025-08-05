@@ -164,12 +164,13 @@ export type FetchableArgs = {
 };
 
 export type PresentableArgs<
-  Value extends JSONValue = JSONValue,
   Attrs extends BaseAttrs = BaseAttrs,
 > = {
   attrs?: Attrs;
-  component?: PresentComponent<Value, Attrs>;
-  fallbackComponent?: PresentComponent<Value, Attrs>;
+  // deno-lint-ignore no-explicit-any
+  component?: PresentComponent<any, Attrs> | AnyComponent<any, Attrs>;
+  // deno-lint-ignore no-explicit-any
+  fallbackComponent?: PresentComponent<any, Attrs>;
   typeDefs?: TypeDefs;
   store?: Store;
 };
@@ -200,17 +201,15 @@ export type EditableArgs = {
 };
 
 export type OctironSelectArgs<
-  Value extends JSONValue = JSONValue,
   Attrs extends BaseAttrs = BaseAttrs,
 > =
   & FetchableArgs
   & IterableArgs
-  & PresentableArgs<Value, Attrs>;
+  & PresentableArgs<Attrs>;
 
 export type OctironPresentArgs<
-  Value extends JSONValue = JSONValue,
   Attrs extends BaseAttrs = BaseAttrs,
-> = PresentableArgs<Value, Attrs>;
+> = PresentableArgs<Attrs>;
 
 export type OctironPerformArgs<
   Attrs extends BaseAttrs = BaseAttrs,
@@ -219,32 +218,31 @@ export type OctironPerformArgs<
   & IterableArgs
   & SubmittableArgs
   & InterceptableArgs
-  & UpdateableArgs<JSONObject, Attrs>
-  & PresentableArgs<JSONObject, Attrs>;
+  & UpdateableArgs<Attrs>
+  & PresentableArgs<Attrs>
+;
 
 export type OctironActionSelectionArgs<
-  Value extends JSONValue = JSONValue,
   Attrs extends BaseAttrs = BaseAttrs,
 > =
   & FetchableArgs
   & IterableArgs
   & InterceptableArgs
-  & UpdateableArgs<Value, Attrs>
-  & PresentableArgs<Value, Attrs>
+  & UpdateableArgs<Attrs>
+;
 
 export type OctironEditArgs<
-  Value extends JSONValue = JSONValue,
   Attrs extends BaseAttrs = BaseAttrs,
 > =
-  & UpdateableArgs<Value, Attrs>
+  & UpdateableArgs<Attrs>
   & EditableArgs;
+;
 
 export type OctironDefaultArgs<
-  Value extends JSONValue = JSONValue,
   Attrs extends BaseAttrs = BaseAttrs,
 > =
-  | OctironPresentArgs<Value, Attrs>
-  | OctironEditArgs<Value, Attrs>
+  | OctironPresentArgs<Attrs>
+  | OctironEditArgs<Attrs>
 ;
 
 /**
@@ -303,8 +301,10 @@ export type UpdateableArgs<
   debounce?: number;
   submitOnChange?: boolean;
   attrs?: Attrs;
-  component?: EditComponent<JSONValue, Attrs> | AnyComponent<JSONValue, Attrs>;
-  fallbackComponent?: AnyComponent<JSONValue, Attrs>;
+  // deno-lint-ignore no-explicit-any
+  component?: EditComponent<any, Attrs> | AnyComponent<any, Attrs>;
+  // deno-lint-ignore no-explicit-any
+  fallbackComponent?: AnyComponent<any, Attrs>;
   typeDefs?: TypeDefs;
   store?: Store;
 };
@@ -349,20 +349,21 @@ export interface EntryPoint {
 
 export interface Selectable {
   select(selector: Selector): Children;
-  // deno-lint-ignore no-explicit-any
-  select(selector: Selector, args: OctironSelectArgs<any>): Children;
-  select(selector: Selector, view: SelectView): Children;
-  select(
+  select<Attrs extends BaseAttrs = BaseAttrs>(
     selector: Selector,
-  // deno-lint-ignore no-explicit-any
-    args: OctironSelectArgs<any>,
+    args: OctironSelectArgs<Attrs>,
+  ): Children;
+  select(selector: Selector, view: SelectView): Children;
+  select<Attrs extends BaseAttrs = BaseAttrs>(
+    selector: Selector,
+    args: OctironSelectArgs<Attrs>,
     view: SelectView,
   ): Children;
 }
 
 export interface Presentable {
   present(): Children;
-  present(args: OctironPresentArgs): Children;
+  present<Attrs extends BaseAttrs = BaseAttrs>(args: OctironPresentArgs<Attrs>): Children;
 }
 
 export interface PerformView {
@@ -415,9 +416,8 @@ export interface Appendable {
 
 export interface Editable {
   edit(): Children;
-  edit(args: OctironEditArgs): Children;
+  edit<Attrs extends BaseAttrs = BaseAttrs>(args: OctironEditArgs<Attrs>): Children;
 }
-
 
 export interface Submitable<
   Value extends JSONValue = JSONValue
@@ -506,7 +506,7 @@ export interface Default {
    *
    * @param {OctironDefaultArgs} args - Arguments to pass to called method.
    */
-  default(args: OctironDefaultArgs): Children;
+  default<Attrs extends BaseAttrs = BaseAttrs>(args: OctironDefaultArgs<Attrs>): Children;
 }
 
 export type Predicate = (octiron: Octiron) => boolean;

@@ -134,7 +134,7 @@ export function actionSelectionFactory<
     arg1: Selector,
     arg2?: OctironActionSelectionArgs | ActionSelectView,
     arg3?: ActionSelectView,
-  ): m.Children | null {
+  ): m.Children {
     if (!isJSONObject(self.value)) {
       return null;
     }
@@ -189,7 +189,7 @@ export function actionSelectionFactory<
 
     if (args?.component != null) {
       firstPickComponent = args.component as PresentComponent<JSONObject, BaseAttrs>;
-    } else if (factoryArgs?.component != null) {
+    } else if (args?.component !== null && factoryArgs?.component != null) {
       firstPickComponent = factoryArgs.component as unknown as PresentComponent<
         JSONObject,
         BaseAttrs
@@ -236,9 +236,12 @@ export function actionSelectionFactory<
   };
 
   self.edit = function(
-    // deno-lint-ignore no-explicit-any
-    args?: OctironEditArgs<any, BaseAttrs>,
+    args?: OctironEditArgs<BaseAttrs>,
   ): m.Children {
+    if (self.readonly) {
+      return self.present(args as OctironPresentArgs<BaseAttrs>);
+    }
+
     let attrs: BaseAttrs = {} as BaseAttrs;
     let firstPickComponent: PresentComponent<JSONObject, BaseAttrs> | undefined;
     let fallbackComponent: PresentComponent<JSONObject> | undefined;
@@ -251,7 +254,7 @@ export function actionSelectionFactory<
 
     if (args?.component != null) {
       firstPickComponent = args.component as PresentComponent<JSONObject, BaseAttrs>;
-    } else if (factoryArgs?.component != null) {
+    } else if (args?.component !== null && factoryArgs?.component != null) {
       firstPickComponent = factoryArgs.component as unknown as PresentComponent<
         JSONObject,
         BaseAttrs
@@ -266,7 +269,8 @@ export function actionSelectionFactory<
 
     const component = getComponent({
       style: "edit",
-      type: getValueType(internals.value),
+      datatype: internals.datatype,
+      type: getValueType(self.value),
       firstPickComponent: firstPickComponent as unknown as PresentComponent,
       fallbackComponent: fallbackComponent as unknown as PresentComponent,
       typeDefs: args?.typeDefs || internals.typeDefs || {},
@@ -300,7 +304,7 @@ export function actionSelectionFactory<
   self.default = function (
     args?: OctironPresentArgs | OctironEditArgs,
   ): m.Children {
-    return self.edit(args as OctironEditArgs);
+    return self.edit(Object.assign({ component: null }, args));
   };
 
   self.initial = function (children: m.Children) {
