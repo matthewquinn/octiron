@@ -407,7 +407,10 @@ function selectTypedValue({
 
   let spec: JSONObject | undefined;
 
-  if (isJSONObject(actionValue?.[`${type}-input`])) {
+  if (isJSONObject(actionValue) && actionValue[`${type}-input`] == null) {
+    // selecting for an action but the type is not editable
+    return;
+  } if (isJSONObject(actionValue)) {
     spec = actionValue[`${type}-input`] as JSONObject;
   }
 
