@@ -73,7 +73,7 @@ export const OctironExplorer: m.ClosureComponent<OctironExplorerAttrs> = ({
       if (selector !== previousSelector) {
         value = previousSelector = selector;
       }
-      
+
       onChange = attrs.onChange;
     },
     view: ({ attrs: { autofocus, o } }) => {
@@ -106,6 +106,7 @@ export const OctironExplorer: m.ClosureComponent<OctironExplorerAttrs> = ({
             m(
               'button.oct-button',
               {
+                type: 'button',
                 disabled: selector === value,
                 onclick: onApply,
               },
@@ -116,6 +117,7 @@ export const OctironExplorer: m.ClosureComponent<OctironExplorerAttrs> = ({
             m(
               'button.oct-button',
               {
+                type: 'button',
                 disabled: presentationStyle === 'debug',
                 onclick: onSetDebug,
               },
@@ -124,6 +126,7 @@ export const OctironExplorer: m.ClosureComponent<OctironExplorerAttrs> = ({
             m(
               'button.oct-button',
               {
+                type: 'button',
                 disabled: presentationStyle === 'components',
                 onclick: onSetComponents,
               },
