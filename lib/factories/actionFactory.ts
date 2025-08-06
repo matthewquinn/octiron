@@ -113,7 +113,7 @@ export function actionFactory<
       payload = next;
     }
     // TODO: perform _updateArgs() when supported
-    refs.payload = value;
+    self.value = refs.payload = value;
 
     mithrilRedraw();
   }
@@ -247,8 +247,7 @@ export function actionFactory<
   };
 
   self.present = function(
-    // deno-lint-ignore no-explicit-any
-    args?: OctironPresentArgs<any, BaseAttrs>,
+    args?: OctironPresentArgs<BaseAttrs>,
   ): m.Children {
     let attrs: BaseAttrs = {} as BaseAttrs;
     let firstPickComponent: PresentComponent<JSONObject, BaseAttrs> | undefined;
@@ -455,7 +454,6 @@ export function actionFactory<
   } else if (typeof window !== 'undefined' && args.submitOnInit) {
     self.submit();
   }
-
 
   return self as OctironAction & OctironActionHooks;
 }

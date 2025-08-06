@@ -1,6 +1,7 @@
 import m from 'mithril';
+import { JsonPointer } from 'json-ptr';
 import type { JSONArray, JSONObject, JSONValue, SCMPropertyValueSpecification } from "../types/common.ts";
-import type { ActionSelectView, BaseAttrs, Octiron, OctironAction, OctironActionSelection, OctironActionSelectionArgs, OctironDefaultArgs, OctironEditArgs, OctironPresentArgs, OctironSelectArgs, OctironSelection, PayloadValueMapper, Predicate, PresentComponent, Selector, SelectView, TypeDefs, UpdateArgs } from "../types/octiron.ts";
+import type { ActionSelectView, BaseAttrs, EditComponent, Interceptor, Octiron, OctironAction, OctironActionSelection, OctironActionSelectionArgs, OctironDefaultArgs, OctironEditArgs, OctironPresentArgs, OctironSelectArgs, OctironSelection, OnChange, PayloadValueMapper, Predicate, PresentComponent, Selector, SelectView, TypeDefs, UpdateArgs } from "../types/octiron.ts";
 import type { Store } from "../store.ts";
 import { octironFactory } from "./octironFactory.ts";
 import { isJSONObject } from "../utils/isJSONObject.ts";
@@ -17,7 +18,7 @@ export type OnActionSelectionSubmit = () => Promise<void>;
 export type OnActionSelectionUpdate = (
   pointer: string,
   value: JSONValue,
-  args: UpdateArgs,
+  args?: UpdateArgs,
 ) => void;
 
 export type ActionSelectionInternals = {
@@ -49,7 +50,7 @@ export function actionSelectionFactory<
   Attrs extends Record<string, any> = Record<string, any>
 >(
   internals: ActionSelectionInternals,
-  args: OctironActionSelectionArgs<JSONValue, Attrs>,
+  args: OctironActionSelectionArgs<Attrs>,
 ): OctironActionSelection & OctironActionSelectionHooks {
   const factoryArgs = Object.assign({}, args);
   const uniqueId = internals.store.key();
@@ -76,6 +77,35 @@ export function actionSelectionFactory<
   self.action = internals.action;
   // TODO: Probably not the correct instance
   self.actionValue = internals.parent;
+
+  function interceptUpdate(
+    pointer: string,
+    value: JSONValue,
+    interceptor?: Interceptor,
+    args: UpdateArgs = {},
+  ) {
+    const prev = self.value as JSONObject;
+
+    if (!isJSONObject(prev)) {
+      console.warn(`Non object action change intercepted.`);
+      return;
+    }
+
+    let next: Partial<JSONObject> = Object.assign({}, prev);
+    const ptr = JsonPointer.create(pointer);
+
+    if (value == null) {
+      ptr.unset(next);
+    } else {
+      ptr.set(next, value, true);
+    }
+
+    if (typeof interceptor === 'function') {
+      next = interceptor(next, prev, self.actionValue.value as JSONObject);
+    }
+
+    internals.onUpdate(internals.pointer, next, args);
+  }
 
   self.update = async function(
     arg1: PayloadValueMapper<JSONObject> | JSONObject,
@@ -173,10 +203,9 @@ export function actionSelectionFactory<
     });
   };
 
-  self.present = function(
-    // deno-lint-ignore no-explicit-any
-    args?: OctironPresentArgs<any, BaseAttrs>,
-  ): m.Children {
+  self.present = (
+    args?: OctironPresentArgs<BaseAttrs>,
+  ): m.Children => {
     let attrs: BaseAttrs = {} as BaseAttrs;
     let firstPickComponent: PresentComponent<JSONObject, BaseAttrs> | undefined;
     let fallbackComponent: PresentComponent<JSONObject> | undefined;
@@ -214,24 +243,11 @@ export function actionSelectionFactory<
       return null;
     }
 
-    const { pre, sep, post, start, end, predicate } = Object.assign(
-      {},
-      factoryArgs,
-      args,
-    );
-
-    // deno-lint-ignore no-explicit-any
-    return m(component as any, {
-      o: self,
+    return m(component as PresentComponent<JSONValue, BaseAttrs>, {
+      o: self as unknown as OctironActionSelection,
       renderType: "present",
       value: self.value,
       attrs,
-      pre,
-      sep,
-      post,
-      start,
-      end,
-      predicate,
     });
   };
 
@@ -271,8 +287,8 @@ export function actionSelectionFactory<
       style: "edit",
       datatype: internals.datatype,
       type: getValueType(self.value),
-      firstPickComponent: firstPickComponent as unknown as PresentComponent,
-      fallbackComponent: fallbackComponent as unknown as PresentComponent,
+      firstPickComponent,
+      fallbackComponent,
       typeDefs: args?.typeDefs || internals.typeDefs || {},
     });
 
@@ -280,24 +296,22 @@ export function actionSelectionFactory<
       return null;
     }
 
-    const { pre, sep, post, start, end, predicate } = Object.assign(
-      {},
-      factoryArgs,
-      args,
-    );
-
+    // don't apply intercepter fn to edit calls.
     // deno-lint-ignore no-explicit-any
-    return m(component as any, {
-      o: self,
+    const onChange: OnChange<any> = (value, args) => {
+      return internals.onUpdate(internals.pointer, value, args);
+    }
+
+    return m(component as EditComponent<JSONValue, BaseAttrs>, {
+      o: self as unknown as OctironActionSelection,
+      required: true,
+      readonly: false,
       renderType: "edit",
+      name: self.inputName,
       value: self.value,
       attrs,
-      pre,
-      sep,
-      post,
-      start,
-      end,
-      predicate,
+      onchange: onChange,
+      onChange,
     });
   };
 

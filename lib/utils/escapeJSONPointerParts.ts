@@ -5,7 +5,7 @@
  */
 export function escapeJSONPointerParts(...parts: string[]): string {
   const escaped = parts
-    .map((part) => part.replace(/~/, '~0').replace(/\//, '~1'))
+    .map((part) => part.replace(/~/g, '~0').replace(/\//g, '~1'))
     .join('/');
 
   return `${escaped}`;

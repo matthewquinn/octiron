@@ -53,7 +53,7 @@ export type UpdateArgs = {
 export type OnChange<Value extends JSONValue = JSONValue> = (
   value: Value | null,
   args?: UpdateArgs,
-) => Promise<void>;
+) => void;
 
 export type EditAttrs<
   Value extends JSONValue = JSONValue,
@@ -73,6 +73,7 @@ export type EditAttrs<
   multiple?: boolean;
   minLength?: number;
   maxLength?: number;
+  onchange: OnChange;
   onChange: OnChange;
 };
 
