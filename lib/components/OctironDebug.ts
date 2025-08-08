@@ -1,7 +1,7 @@
-import m, { render } from 'mithril';
+import m from 'mithril';
 import * as jsonld from 'jsonld';
 import { mithrilRedraw } from "../utils/mithrilRedraw.ts";
-import type { JSONObject, JSONValue } from "../types/common.ts";
+import type { JSONObject } from "../types/common.ts";
 import type { Octiron } from "../types/octiron.ts";
 import { OctironJSON } from "./OctironJSON.ts";
 import { flattenIRIObjects } from "../utils/flattenIRIObjects.ts";
@@ -125,8 +125,7 @@ export const OctironDebug: m.ClosureComponent<OctironDebugAttrs> = ({
             m('button.oct-button', { type: 'button', onclick: onSetValue }, 'Value'),
             actionValueAction,
             m('button.oct-button', { type: 'button', onclick: onSetComponent }, 'Component'),
-            m('button.oct-button', { type: 'button', onclick: onSetExpanded }, 'Expanded'),
-            m('button.oct-button', { type: 'button', onclick: onSetFlattened }, 'Flattened'),
+            m('button.oct-button', { type: 'button', onclick: () => console.log(o) }, 'Log'),
             ...actions,
           ),
         ),
