@@ -151,6 +151,7 @@ export const ActionSelectionRenderer: m.FactoryComponent<ActionSelectionRenderer
 
       for (const instance of Object.values(instances)) {
         instance.octiron._updateArgs(attrs.args);
+        instance.octiron._updateInternals(attrs.internals);
       }
 
       updateSelection();

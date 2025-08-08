@@ -407,10 +407,12 @@ export function actionFactory<
   };
 
   self.append = function (
-    type: string,
+    termOrType: string,
     value: JSONValue = {},
     args: UpdateArgs = {},
   ) {
+    const type = internals.store.expand(termOrType);
+
     if (isJSONObject(self.value)) {
       const prevValue = self.value[type];
       let nextValue: JSONArray = [];

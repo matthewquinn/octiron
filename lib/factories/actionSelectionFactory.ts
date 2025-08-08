@@ -42,7 +42,7 @@ export type ActionSelectionInternals = {
 
 export type OctironActionSelectionHooks = {
   _updateArgs(args: OctironActionSelectionArgs): void;
-  _updateInternals(internals: ActionSelectionInternals): void;
+  _updateInternals(internals: Partial<ActionSelectionInternals>): void;
 }
 
 export function actionSelectionFactory<
@@ -78,11 +78,11 @@ export function actionSelectionFactory<
   // TODO: Probably not the correct instance
   self.actionValue = internals.parent;
 
-  function interceptUpdate(
+  function onSelectionUpdate(
     pointer: string,
     value: JSONValue,
+    args?: UpdateArgs,
     interceptor?: Interceptor,
-    args: UpdateArgs = {},
   ) {
     const prev = self.value as JSONObject;
 
@@ -171,10 +171,26 @@ export function actionSelectionFactory<
 
     const [selector, args, view] = unravelArgs(arg1, arg2, arg3);
 
+    const onUpdate: OnActionSelectionUpdate = (
+      pointer,
+      value,
+      updateArgs,
+    ) => {
+      onSelectionUpdate(
+        pointer,
+        value,
+        updateArgs,
+        args.interceptor,
+      );
+    }
+
     return m(
       ActionSelectionRenderer,
       {
-        internals,
+        internals: {
+          ...internals,
+          onUpdate,
+        },
         selector,
         value: self.value,
         actionValue: internals.octiron.value as JSONObject,
@@ -360,10 +376,12 @@ export function actionSelectionFactory<
   };
 
   self.append = function (
-    type: string,
+    termOrType: string,
     value: JSONValue = {},
     args: UpdateArgs = {},
   ) {
+    const type = internals.store.expand(termOrType);
+
     if (isJSONObject(self.value)) {
       const prevValue = self.value[type];
       let nextValue: JSONArray = [];
@@ -383,7 +401,7 @@ export function actionSelectionFactory<
     }
   };
 
-  self._updateInternals = function (args: ActionSelectionInternals) {
+  self._updateInternals = function (args: Partial<ActionSelectionInternals>) {
     for (const [key, value] of Object.entries(args)) {
       // deno-lint-ignore no-explicit-any
       (internals as Record<string, any>)[key] = value;
