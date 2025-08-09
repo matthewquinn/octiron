@@ -53,16 +53,16 @@ Deno.test('getComponent()', async (t) => {
 
   const typeDefs = makeTypeDefs(
     {
-      type: 'fee',
+      type: 'https://schema.example.com/fee',
       present: PresentFee,
     },
     {
-      type: 'foe',
+      type: 'https://schema.example.com/foe',
       present: PresentFoe,
       edit: EditFoe,
     },
     {
-      type: 'fum',
+      type: 'https://schema.example.com/fum',
       present: PresentFum,
       edit: EditFum,
     },
@@ -71,9 +71,9 @@ Deno.test('getComponent()', async (t) => {
   await t.step('It returns the first pick component if provided', () => {
     const component = getComponent({
       style: 'present',
-      type: ['foe', 'fum'],
+      type: ['https://schema.example.com/foe', 'https://schema.example.com/fum'],
       typeDefs,
-      datatype: 'fee',
+      datatype: 'https://schema.example.com/fee',
       firstPickComponent: PresentBar,
       fallbackComponent: PresentBaz,
     });
@@ -84,9 +84,9 @@ Deno.test('getComponent()', async (t) => {
   await t.step('It returns the datatype on match when no first pick', () => {
     const component = getComponent({
       style: 'present',
-      type: ['fee', 'fum'],
+      type: ['https://schema.example.com/fee', 'https://schema.example.com/fum'],
       typeDefs,
-      datatype: 'foe',
+      datatype: 'https://schema.example.com/foe',
       fallbackComponent: PresentBaz,
     });
 
@@ -96,9 +96,9 @@ Deno.test('getComponent()', async (t) => {
   await t.step('It returns the edit component for the datatype on match when no first pick', () => {
     const component = getComponent({
       style: 'edit',
-      type: ['fee', 'fum'],
+      type: ['https://schema.example.com/fee', 'https://schema.example.com/fum'],
       typeDefs,
-      datatype: 'foe',
+      datatype: 'https://schema.example.com/foe',
       fallbackComponent: PresentBaz,
     });
 
@@ -108,11 +108,13 @@ Deno.test('getComponent()', async (t) => {
   await t.step('It returns the first type on match when no better match', () => {
     const component = getComponent({
       style: 'present',
-      type: ['fee', 'fum'],
+      type: ['https://schema.example.com/fee', 'https://schema.example.com/fum'],
       typeDefs,
-      datatype: 'bar',
+      datatype: 'https://schema.example.com/bar',
       fallbackComponent: PresentBaz,
     });
+
+    console.log(component)
 
     assertEquals(component, PresentFee);
   });
@@ -120,9 +122,9 @@ Deno.test('getComponent()', async (t) => {
   await t.step('It returns the second type on match when no better match', () => {
     const component = getComponent({
       style: 'present',
-      type: ['baz', 'fum'],
+      type: ['https://schema.example.com/baz', 'https://schema.example.com/fum'],
       typeDefs,
-      datatype: 'bar',
+      datatype: 'https://schema.example.com/bar',
       fallbackComponent: PresentBaz,
     });
 
@@ -132,9 +134,9 @@ Deno.test('getComponent()', async (t) => {
   await t.step('It returns the second type on match when no better match', () => {
     const component = getComponent({
       style: 'present',
-      type: ['baz', 'fum'],
+      type: ['https://schema.example.com/baz', 'https://schema.example.com/fum'],
       typeDefs,
-      datatype: 'bar',
+      datatype: 'https://schema.example.com/bar',
       fallbackComponent: PresentBaz,
     });
 
@@ -144,9 +146,9 @@ Deno.test('getComponent()', async (t) => {
   await t.step('It returns the edit component for the second type on match when no better match', () => {
     const component = getComponent({
       style: 'edit',
-      type: ['baz', 'fum'],
+      type: ['https://schema.example.com/baz', 'https://schema.example.com/fum'],
       typeDefs,
-      datatype: 'bar',
+      datatype: 'https://schema.example.com/bar',
       fallbackComponent: PresentBaz,
     });
 
@@ -156,9 +158,9 @@ Deno.test('getComponent()', async (t) => {
   await t.step('It returns the fallback pick component when no other match', () => {
     const component = getComponent({
       style: 'present',
-      type: 'baz',
+      type: 'https://schema.example.com/baz',
       typeDefs,
-      datatype: 'bar',
+      datatype: 'https://schema.example.com/bar',
       fallbackComponent: PresentBaz,
     });
 
@@ -168,9 +170,9 @@ Deno.test('getComponent()', async (t) => {
     await t.step('It returns undefined when no fallback or other match', () => {
       const component = getComponent({
         style: 'present',
-        type: 'baz',
+        type: 'https://schema.example.com/baz',
         typeDefs,
-        datatype: 'bar',
+        datatype: 'https://schema.example.com/bar',
       });
 
       assertEquals(component, undefined);

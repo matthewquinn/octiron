@@ -42,6 +42,13 @@ export function makeTypeDefs<
       // deno-lint-ignore no-explicit-any
       (config as any)[storeOrTypeDef.expand(typeDef.type)] = typeDef;
     }
+  } else {
+    // deno-lint-ignore no-explicit-any
+    (config[storeOrTypeDef.type] as any) = storeOrTypeDef;
+    for (const typeDef of typeDefs) {
+      // deno-lint-ignore no-explicit-any
+      (config as any)[typeDef.type] = typeDef;
+    }
   }
 
   return config;
