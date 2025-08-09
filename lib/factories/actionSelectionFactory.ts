@@ -1,16 +1,16 @@
-import m from 'mithril';
 import { JsonPointer } from 'json-ptr';
-import type { JSONArray, JSONObject, JSONValue, SCMPropertyValueSpecification } from "../types/common.ts";
-import type { ActionSelectView, BaseAttrs, EditComponent, Interceptor, Octiron, OctironAction, OctironActionSelection, OctironActionSelectionArgs, OctironDefaultArgs, OctironEditArgs, OctironPresentArgs, OctironSelectArgs, OctironSelection, OnChange, PayloadValueMapper, Predicate, PresentComponent, Selector, SelectView, TypeDefs, UpdateArgs } from "../types/octiron.ts";
+import m from 'mithril';
+import { ActionSelectionRenderer } from "../renderers/ActionSelectionRenderer.ts";
+import { SelectionRenderer } from "../renderers/SelectionRenderer.ts";
 import type { Store } from "../store.ts";
-import { octironFactory } from "./octironFactory.ts";
+import type { JSONArray, JSONObject, JSONValue, SCMPropertyValueSpecification } from "../types/common.ts";
+import type { ActionSelectView, BaseAttrs, EditComponent, Interceptor, Octiron, OctironAction, OctironActionSelection, OctironActionSelectionArgs, OctironEditArgs, OctironPresentArgs, OctironSelectArgs, OctironSelection, OnChange, PayloadValueMapper, PresentComponent, Selector, SelectView, TypeDefs, UpdateArgs } from "../types/octiron.ts";
+import { getComponent } from "../utils/getComponent.ts";
+import { getValueType } from "../utils/getValueType.ts";
 import { isJSONObject } from "../utils/isJSONObject.ts";
 import { mithrilRedraw } from "../utils/mithrilRedraw.ts";
 import { unravelArgs } from "../utils/unravelArgs.ts";
-import { SelectionRenderer } from "../renderers/SelectionRenderer.ts";
-import { getComponent } from "../utils/getComponent.ts";
-import { getValueType } from "../utils/getValueType.ts";
-import { ActionSelectionRenderer } from "../renderers/ActionSelectionRenderer.ts";
+import { octironFactory } from "./octironFactory.ts";
 
 
 export type OnActionSelectionSubmit = () => Promise<void>;
@@ -401,8 +401,8 @@ export function actionSelectionFactory<
     }
   };
 
-  self._updateInternals = function (args: Partial<ActionSelectionInternals>) {
-    for (const [key, value] of Object.entries(args)) {
+  self._updateInternals = function (incomming: Partial<ActionSelectionInternals>) {
+    for (const [key, value] of Object.entries(incomming)) {
       // deno-lint-ignore no-explicit-any
       (internals as Record<string, any>)[key] = value;
     }

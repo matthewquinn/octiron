@@ -150,6 +150,7 @@ export const PerformRenderer: m.FactoryComponent<PerformRendererAttrs> = ({ attr
       }
 
       details = {
+        selector: '',
         complete: true,
         hasErrors: false,
         hasMissing: false,

@@ -34,7 +34,26 @@ export function getSubmitDetails({
   let method: string = 'get';
   let contentType: string | undefined;
   let encodingType: string | undefined;
-  const target = action['https://schema.org/target'];
+  let target = action['https://schema.org/target'];
+
+  if (Array.isArray(target)) {
+    for (const item of target) {
+      if (item === 'string') {
+        target = item;
+        break;
+      } else if (
+        isJSONObject(target) && (
+          target['https://schema.org/contentType'] == null || (
+            target['https://schema.org/contentType'] === 'mutipart/form-data' ||
+            target['https://schema.org/contentType'] === 'application/ld+json'
+          )
+        )
+      ) {
+        target = item;
+        break;
+      }
+    }
+  }
 
   if (typeof target === 'string') {
     urlTemplate = target;

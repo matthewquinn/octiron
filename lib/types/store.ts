@@ -157,6 +157,7 @@ export interface Failure {
 }
 
 export type EntitySelectionResult = {
+
   /**
    * A unique key for identifing this selection result.
    * Useful for caching objects which use the result.
@@ -202,6 +203,7 @@ export type EntitySelectionResult = {
 };
 
 export type ValueSelectionResult = {
+
   /**
    * A unique key for identifing this selection result.
    * Useful for caching objects which use the result.
@@ -233,6 +235,7 @@ export type ValueSelectionResult = {
 };
 
 export type ActionSelectionResult = {
+
   /**
    * A unique json pointer for identifing this selection result.
    * Useful for caching objects and performing updates on it's value.
@@ -306,6 +309,7 @@ export type SelectionResult =
 ;
 
 export type SelectionDetails<T = SelectionResult> = {
+  selector: string;
   /**
    * True if the selection does not require fetching any depencencies.
    * A selection can be complete while having errors.

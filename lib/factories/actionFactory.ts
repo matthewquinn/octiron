@@ -43,8 +43,14 @@ export function actionFactory<
   args: OctironPerformArgs<Attrs>,
 ): OctironAction & OctironActionHooks {
   const factoryArgs = Object.assign({}, args);
-  let payload: JSONObject = args.initialPayload || {};
+  let payload: JSONObject = {};
   let submitResult: EntityState | undefined;
+
+  if (isJSONObject(args.initialPayload)) {
+    for (const [key, value] of Object.entries(args.initialPayload)) {
+      payload[internals.store.expand(key)] = value;
+    }
+  }
 
   const { url, method, body } = getSubmitDetails({
     payload,
@@ -440,13 +446,6 @@ export function actionFactory<
       (factoryArgs as Record<string, any>)[key] = value;
     }
   };
-
-
-  if (
-    args.initialPayload != null
-  ) {
-    onUpdate(args.initialPayload);
-  }
 
   if (
     typeof window === 'undefined' && args.submitOnInit &&

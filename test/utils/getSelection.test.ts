@@ -1,11 +1,5 @@
 import assert from "node:assert";
-import {
-  mocks,
-  scmVocab,
-  todosRootIRI,
-  todosVocab,
-  TodoTypes,
-} from "../mocks.ts";
+import * as mocks from "../mocks.ts";
 import { getSelection, CircularSelectionError } from "../../lib/utils/getSelection.ts";
 import { isJSONObject } from "../../lib/utils/isJSONObject.ts";
 import { Store } from "../../lib/store.ts";
@@ -48,18 +42,18 @@ const epic2 = mocks.createEpic({
 
 Deno.test("getSelection()", async (t) => {
   const ctx = {
-    vocab: todosVocab,
+    vocab: mocks.todosVocab,
     aliases: {
-      scm: scmVocab,
+      scm: mocks.scmVocab,
     },
   };
   const primary = await mocks.toEntityState(ctx, user1, user2, user3, epic2);
   const store = new Store({
-    rootIRI: todosRootIRI,
+    rootIRI: mocks.todosRootIRI,
     primary,
-    vocab: todosVocab,
+    vocab: mocks.todosVocab,
     aliases: {
-      scm: scmVocab,
+      scm: mocks.scmVocab,
     },
     handlers: [],
   });
@@ -69,16 +63,16 @@ Deno.test("getSelection()", async (t) => {
       store,
       selector: "foo baa baz",
       value: {
-        [`${todosVocab}foo`]: [
+        [`${mocks.todosVocab}foo`]: [
           {
-            [`${todosVocab}baa`]: {
-              [`${todosVocab}baz`]: 123,
+            [`${mocks.todosVocab}baa`]: {
+              [`${mocks.todosVocab}baz`]: 123,
             },
           },
           {
             "@value": {
-              [`${todosVocab}baa`]: {
-                [`${todosVocab}baz`]: 456,
+              [`${mocks.todosVocab}baa`]: {
+                [`${mocks.todosVocab}baz`]: 456,
               },
             },
           },
@@ -139,14 +133,14 @@ Deno.test("getSelection()", async (t) => {
   await t.step("Selects children of an entity in expanded JSON-LD form", async () => {
     const primary = await mocks.toEntityState({}, user1, user2, user3, epic2);
     const store = new Store({
-      rootIRI: todosRootIRI,
+      rootIRI: mocks.todosRootIRI,
       primary,
       handlers: [],
     });
     const iri = epic2["@id"];
     const selection = getSelection({
       store,
-      selector: `${iri} ${TodoTypes.subtodos}`,
+      selector: `${iri} ${mocks.TodoTypes.subtodos}`,
     });
 
     assert(isJSONObject(selection.result[0].value));
@@ -200,9 +194,9 @@ Deno.test("getSelection()", async (t) => {
   });
 
   await t.step('Catches cirular loops in selections', () => {
-    const iri1 = `${todosRootIRI}/path/1`;
-    const iri2 = `${todosRootIRI}/path/2`;
-    const iri3 = `${todosRootIRI}/path/3`;
+    const iri1 = `${mocks.todosRootIRI}/path/1`;
+    const iri2 = `${mocks.todosRootIRI}/path/2`;
+    const iri3 = `${mocks.todosRootIRI}/path/3`;
 
     // each of these objects only have iris pointing to the next
     // object. The `getSelection` will loop round following the
@@ -216,11 +210,11 @@ Deno.test("getSelection()", async (t) => {
     };
 
     const store = new Store({
-      rootIRI: todosRootIRI,
+      rootIRI: mocks.todosRootIRI,
       primary,
-      vocab: todosVocab,
+      vocab: mocks.todosVocab,
       aliases: {
-        scm: scmVocab,
+        scm: mocks.scmVocab,
       },
       handlers: [],
     });

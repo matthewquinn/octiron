@@ -32,7 +32,7 @@ export interface OctironHooks {
  */
 export function selectionFactory<Attrs extends BaseAttrs = {}>(
   internals: SelectionFactoryInternals,
-  args?: OctironSelectArgs<JSONValue, Attrs>,
+  args?: OctironSelectArgs<Attrs>,
 ): OctironSelection & OctironHooks {
   const factoryArgs = Object.assign({}, args);
   const type = getValueType(internals.value);
@@ -147,8 +147,7 @@ export function selectionFactory<Attrs extends BaseAttrs = {}>(
         );
       },
 
-      // deno-lint-ignore no-explicit-any
-      present(args?: OctironPresentArgs<any, BaseAttrs>) {
+      present(args?: OctironPresentArgs<BaseAttrs>) {
         let attrs: BaseAttrs = {} as BaseAttrs;
         let firstPickComponent: PresentComponent<JSONValue, BaseAttrs> | undefined;
         let fallbackComponent: PresentComponent<JSONValue> | undefined;

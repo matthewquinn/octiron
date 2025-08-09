@@ -1,6 +1,5 @@
 import { DOMParser } from '@b-fuze/deno-dom';
 import { faker } from '@faker-js/faker';
-import jsonld from 'jsonld';
 import type { Children } from "mithril";
 import { jsonLDHandler } from "../lib/handlers/jsonLDHandler.ts";
 import { Store, type StoreArgs } from "../lib/store.ts";
@@ -18,6 +17,25 @@ export const todosVocab = 'https://todos.example.com/';
 export const scmVocab = 'https://schema.org/';
 
 export enum TodoTypes {
+  potentialAction = "https://schema.org/potentialAction",
+  target = "https://schema.org/target",
+  urlTemplate = "https://schema.org/urlTemplate",
+  httpMethod = "https://schema.org/httpMethod",
+  contentType = "https://schema.org/contentType",
+  encodingType = "https://schema.org/encodingType",
+  PropertyValueSpecification = "https://schema.org/PropertyValueSpecification",
+  readonlyValue = "https://schema.org/readonlyValue",
+  valueName = "https://schema.org/valueName",
+  valueRequired = "https://schema.org/valueRequired",
+  defaultValue = "https://schema.org/defaultValue",
+  minValue = "https://schema.org/minValue",
+  maxValue = "https://schema.org/maxValue",
+  stepValue = "https://schema.org/stepValue",
+  valuePattern = "https://schema.org/valuePattern",
+  multipleValue = "https://schema.org/multipleValue",
+  valueMinLength = "https://schema.org/valueMinLength",
+  valueMaxLength = "https://schema.org/valueMaxLength",
+  
   Listing = "https://todos.example.com/Listing",
   members = "https://todos.example.com/members",
 
@@ -26,12 +44,16 @@ export enum TodoTypes {
   TodoListing = "https://todos.example.com/TodoListing",
   todoListing = "https://todos.example.com/todoListing",
   todo = "https://todos.example.com/todo",
+  steps = "https://todos.example.com/steps",
+  text = "https://todos.example.com/text",
   todos = "https://todos.example.com/todos",
   title = "https://schema.org/name", // correct use of schema.org/name I believe
   description = "https://schema.org/description",
   status = "https://todos.example.com/status",
   assignee = "https://todos.example.com/assignee",
   subtodos = "https://todos.example.com/subtodos",
+
+  CreateTodoAction = 'https://todos.example.com/CreateTodoAction',
 
   User = "https://todos.example.com/User",
   UserListing = "https://todos.example.com/UserListing",
@@ -62,7 +84,7 @@ function makeDetailIRI(type: string) {
   return `${makeIRI(type)}/${makeUniqueId()}`;
 }
 
-function createAPIRoot() {
+export function createAPIRoot() {
   return {
     "@id": todosRootIRI,
     "@type": TodoTypes.APIRoot,
@@ -77,7 +99,7 @@ function createAPIRoot() {
   };
 }
 
-function createUser({
+export function createUser({
   username = faker.internet.username(),
   email = faker.internet.email(),
 }: {
@@ -94,7 +116,7 @@ function createUser({
 
 export type MockUser = ReturnType<typeof createUser>;
 
-function createUserListing<
+export function createUserListing<
   const T extends JSONObject,
 >({
   users,
@@ -108,7 +130,8 @@ function createUserListing<
   } as const;
 }
 
-function createEpic<
+
+export function createEpic<
   const T extends JSONObject,
 >({
   title = faker.word.words(3),
@@ -134,7 +157,8 @@ function createEpic<
   } as const;
 }
 
-function createTodo({
+
+export function createTodo({
   title = faker.word.words(3),
   description = faker.lorem.sentences(),
   status = faker.helpers.arrayElement<TodoStatus>(['todo', 'in-progress', 'done']),
@@ -157,7 +181,39 @@ function createTodo({
 
 export type MockTodo = ReturnType<typeof createTodo>;
 
-function createTodoListing<
+export function createTodoAction() {
+  return {
+    '@id': `${todosRootIRI}/create-todo`,
+    '@type': TodoTypes.CreateTodoAction,
+    [TodoTypes.target]: [
+      {
+        [TodoTypes.urlTemplate]: makeIRI('todos'),
+        [TodoTypes.httpMethod]: 'POST',
+        [TodoTypes.contentType]: 'multipart/form-data',
+      },
+      {
+        [TodoTypes.urlTemplate]: makeIRI('todos'),
+        [TodoTypes.httpMethod]: 'POST',
+        [TodoTypes.contentType]: 'application/ld+json',
+      },
+    ],
+    [TodoTypes.steps]: {
+      [`${TodoTypes.text}-input`]: {
+        '@type': TodoTypes.PropertyValueSpecification,
+        [TodoTypes.valueRequired]: true,
+        [TodoTypes.valueMinLength]: 10,
+      }
+    },
+    [`${TodoTypes.steps}-input`]: {
+      '@type': TodoTypes.PropertyValueSpecification,
+      [TodoTypes.valueRequired]: true,
+      [TodoTypes.multipleValue]: true,
+      [TodoTypes.valueMinLength]: 1,
+    },
+  };
+}
+
+export function createTodoListing<
   const T,
 >({
   todos,
@@ -168,6 +224,10 @@ function createTodoListing<
     "@id": makeIRI("todos"),
     "@type": [TodoTypes.TodoListing, TodoTypes.Listing],
     [TodoTypes.members]: todos,
+    [TodoTypes.potentialAction]: {
+      '@id': `${todosRootIRI}/create-todo`,
+      '@type': TodoTypes.CreateTodoAction,
+    },
   } as const;
 }
 
@@ -182,13 +242,13 @@ function createTodoListing<
  *                       JSON-LD context
  * @param {...*} entities - Entities to transform into entity state.
  */
-async function toEntityState({
+export function toEntityState({
   vocab,
   aliases = {},
 }: {
   vocab?: string;
   aliases?: Aliases;
-}, ...entities: JSONObject[]): Promise<NonNullable<StoreArgs['primary']>> {
+}, ...entities: JSONObject[]): NonNullable<StoreArgs['primary']> {
   const ctx: JSONObject = aliases;
 
   if (vocab != null) {
@@ -209,7 +269,7 @@ async function toEntityState({
   return result;
 }
 
-function createEntityState(url: string, value: IRIObject): StoreArgs['primary'] {
+export function createEntityState(url: string, value: IRIObject): StoreArgs['primary'] {
   return {
     [url]: {
       iri: value['@id'],
@@ -222,7 +282,7 @@ function createEntityState(url: string, value: IRIObject): StoreArgs['primary'] 
 
 export type MockAPI = Record<string, IRIObject>
 
-function makeAPI(responses: IRIObject[]): MockAPI {
+export function makeAPI(responses: IRIObject[]): MockAPI {
   return responses.reduce((acc, entity) => {
     return {
       ...acc,
@@ -237,7 +297,7 @@ export type Listener = (
 ) => void;
 export type ListenHook = (listener: Listener) => void;
 
-function makeFetcherHook({
+export function makeFetcherHook({
   api,
 }: {
   api?: MockAPI
@@ -274,19 +334,19 @@ function makeFetcherHook({
   return [fetcher, fetcherHook];
 }
 
-function makeDom() {
+export function makeDom() {
   const dom = new DOMParser().parseFromString(`<div id="app"></div>`, "text/html");
 
   return dom.getElementById('app');
 }
 
-function delay(ms: number) {
+export function delay(ms: number) {
   return new Promise(resolve => {
     setTimeout(resolve, ms);
   });
 }
 
-function component(children: Children) {
+export function component(children: Children) {
   return {
     view: () => {
       return children;
@@ -294,7 +354,7 @@ function component(children: Children) {
   };
 }
 
-function makeStore({
+export function makeStore({
   rootIRI = todosRootIRI,
   vocab = todosVocab,
   aliases = {
@@ -334,23 +394,3 @@ function makeStore({
     fetcher,
   });
 }
-
-export const mocks = {
-  todosRootIRI,
-  todosVocab,
-  scmVocab,
-  createAPIRoot,
-  createEpic,
-  createTodo,
-  createUser,
-  createUserListing,
-  createTodoListing,
-  toEntityState,
-  createEntityState,
-  makeAPI,
-  makeFetcherHook,
-  makeDom,
-  delay,
-  component,
-  makeStore,
-} as const;

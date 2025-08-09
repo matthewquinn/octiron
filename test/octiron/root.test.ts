@@ -8,7 +8,7 @@ import { selectionFactory } from "../../lib/factories/selectionFactory.ts";
 import type { IRIObject, JSONObject } from "../../lib/types/common.ts";
 import type { PresentComponent } from "../../lib/types/octiron.ts";
 import { isJSONObject } from "../../lib/utils/isJSONObject.ts";
-import { mocks, todosRootIRI } from "../mocks.ts";
+import * as mocks from "../mocks.ts";
 import type { EntityState } from "../../lib/types/store.ts";
 
 
@@ -181,7 +181,7 @@ Deno.test("o.root()", async (t) => {
 
     await renderChild(root.root());
 
-    assertArrayIncludes(fetchedIRIs, [todosRootIRI]);
+    assertArrayIncludes(fetchedIRIs, [mocks.todosRootIRI]);
     assert(fetchedIRIs.length === 1);
   });
 
@@ -199,7 +199,7 @@ Deno.test("o.root()", async (t) => {
 
       await renderChild(select.root());
 
-      assertArrayIncludes(fetchedIRIs, [todosRootIRI]);
+      assertArrayIncludes(fetchedIRIs, [mocks.todosRootIRI]);
       assert(fetchedIRIs.length === 1);
     },
   );
@@ -226,7 +226,7 @@ Deno.test("o.root(selector)", async (t) => {
       `It can perform deep selections from a "${o.octironType}" instance`,
       async () => {
         const fetchedIRIs: string[] = [];
-        fetcherHook((iri) => fetchedIRIs.push(iri));
+        fetcherHook((iri: string) => fetchedIRIs.push(iri));
 
         const component: PresentComponent<string> = () => ({
           view({ attrs: { value } }) {
@@ -246,7 +246,7 @@ Deno.test("o.root(selector)", async (t) => {
         assertEquals(usernames[1], users[1]['https://todos.example.com/username']);
         assertEquals(usernames[2], users[2]['https://todos.example.com/username']);
         assertEquals(usernames[3], users[3]['https://todos.example.com/username']);
-        assertArrayIncludes(fetchedIRIs, [todosRootIRI]);
+        assertArrayIncludes(fetchedIRIs, [mocks.todosRootIRI]);
         assert(fetchedIRIs.length === 2);
         reset();
       },

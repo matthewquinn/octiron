@@ -59,7 +59,7 @@ export const ActionSelectionRenderer: m.FactoryComponent<ActionSelectionRenderer
           continue;
         }
 
-        const internals = instances[selectionResult.pointer].internals
+        const internals = Object.assign({}, instances[selectionResult.pointer].internals);
 
         internals.name = selectionResult.datatype;
         internals.type = selectionResult.type;
@@ -71,6 +71,8 @@ export const ActionSelectionRenderer: m.FactoryComponent<ActionSelectionRenderer
         if (selectionResult.spec != null) {
           internals.spec = selectionResult.spec;
         }
+
+        instances[selectionResult.pointer].octiron._updateInternals(internals);
       }
 
       hasChanges = true;
@@ -183,9 +185,10 @@ export const ActionSelectionRenderer: m.FactoryComponent<ActionSelectionRenderer
         }
 
         if (selectionResult.value == null && typeof fallback === 'function') {
-          children.push(fallback(octiron));
+          children.push(null)
+          // children.push(fallback(octiron));
         } else if (selectionResult.value == null && fallback != null) {
-          children.push(fallback);
+          children.push(fallback as m.Children);
         } else {
           children.push(view(octiron));
         }

@@ -1,5 +1,23 @@
-import type { Store } from "../store.ts";
+import { Store } from "../store.ts";
 import type { TypeDef, TypeDefs } from "../types/octiron.ts";
+
+
+export function makeTypeDefs<
+  const Type extends string = string,
+  // deno-lint-ignore no-explicit-any
+  const TypeDefList extends TypeDef<any, Type> = TypeDef<any, Type>,
+>(
+  store: Store,
+  ...typeDefs: Readonly<TypeDefList[]>
+): TypeDefs<Type, TypeDefList>;
+
+export function makeTypeDefs<
+  const Type extends string = string,
+  // deno-lint-ignore no-explicit-any
+  const TypeDefList extends TypeDef<any, Type> = TypeDef<any, Type>,
+>(
+  ...typeDefs: Readonly<TypeDefList[]>
+): TypeDefs<Type, TypeDefList>;
 
 /**
  * @description
@@ -13,14 +31,17 @@ export function makeTypeDefs<
   // deno-lint-ignore no-explicit-any
   const TypeDefList extends TypeDef<any, Type> = TypeDef<any, Type>,
 >(
-  store: Store,
+  // deno-lint-ignore no-explicit-any
+  storeOrTypeDef: Store | TypeDef<any, Type>,
   ...typeDefs: Readonly<TypeDefList[]>
 ): TypeDefs<Type, TypeDefList> {
   const config = {} as TypeDefs<Type, TypeDefList>;
 
-  for (const typeDef of typeDefs) {
-    // deno-lint-ignore no-explicit-any
-    (config as any)[store.expand(typeDef.type)] = typeDef;
+  if (storeOrTypeDef instanceof Store) {
+    for (const typeDef of typeDefs) {
+      // deno-lint-ignore no-explicit-any
+      (config as any)[storeOrTypeDef.expand(typeDef.type)] = typeDef;
+    }
   }
 
   return config;

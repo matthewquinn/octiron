@@ -549,7 +549,7 @@ export class Store {
       value?: JSONObject;
       listener: SelectionListener;
     }) {
-      const details = getSelection({
+      const details = getSelection<ReadonlySelectionResult>({
         selector,
         value,
         store: this,

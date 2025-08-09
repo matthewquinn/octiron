@@ -1,4 +1,4 @@
-import type { JSONArray, JSONObject, JSONValue, Mutable } from '../types/common.ts';
+import type { JSONArray, JSONObject, JSONValue, Mutable, SCMPropertyValueSpecification } from '../types/common.ts';
 import type { ActionSelectionResult, EntitySelectionResult, SelectionDetails, SelectionResult, ValueSelectionResult } from '../types/store.ts';
 import { escapeJSONPointerParts } from './escapeJSONPointerParts.ts';
 import { getIterableValue } from "./getIterableValue.ts";
@@ -97,6 +97,7 @@ export function getSelection<T extends SelectionResult>({
   store: Store;
 }): SelectionDetails<T> {
   const details: ProcessingSelectionDetails = {
+    selector: selectorStr,
     complete: false,
     hasErrors: false,
     hasMissing: false,
@@ -224,11 +225,22 @@ function resolveValue({
     return;
   }
 
-  if (spec != null) {
+  if (
+    spec != null && (
+      // hit the for loop below if the action value
+      // has editable properties and the value is an
+      // array
+      !isIterable(value) || !isJSONObject(actionValue)
+    )
+  ) {
     const pvs = resolvePropertyValueSpecification({
       spec,
       store,
     });
+
+    if (isJSONObject(value) && isValueObject(value)) {
+      value = value['@value'];
+    }
 
     details.result.push({
       keySource: pointer,
@@ -268,6 +280,8 @@ function resolveValue({
         keySource,
         pointer: makePointer(pointer, index),
         value: item,
+        spec,
+        actionValue,
         datatype,
         filter,
         store,
@@ -410,7 +424,7 @@ function selectTypedValue({
   if (isJSONObject(actionValue) && actionValue[`${type}-input`] == null) {
     // selecting for an action but the type is not editable
     return;
-  } if (isJSONObject(actionValue)) {
+  } else if (isJSONObject(actionValue)) {
     spec = actionValue[`${type}-input`] as JSONObject;
   }
 
@@ -447,7 +461,6 @@ function traverseSelector({
   store: Store;
   details: ProcessingSelectionDetails;
 }): void {
-
   if (selector.length === 0) {
     return;
   } else if (!isTraversable(value)) {
@@ -521,13 +534,31 @@ function traverseSelector({
   const [next, ...rest] = selector;
   const { subject: type, filter } = next;
 
+  // null is a placeholder for action payload types with no value.
+  // jsonld drops null values otherwise.
   if (value[type] === undefined) {
     details.hasMissing = true;
 
     return;
   }
 
-  if (rest.length === 0) {
+  if (rest.length === 0 && isJSONObject(actionValue?.[type])) {
+    pointer = makePointer(pointer, type);
+
+    resolveValue({
+      keySource: pointer,
+      pointer,
+      value: value[type],
+      datatype: type,
+      details,
+      store,
+      actionValue: actionValue?.[type],
+      spec: actionValue[`${type}-input`] as SCMPropertyValueSpecification,
+      filter,
+    });
+
+    return;
+  } else if (rest.length === 0) {
     selectTypedValue({
       keySource,
       pointer,
