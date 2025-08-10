@@ -114,8 +114,6 @@ Deno.test('getComponent()', async (t) => {
       fallbackComponent: PresentBaz,
     });
 
-    console.log(component)
-
     assertEquals(component, PresentFee);
   });
 

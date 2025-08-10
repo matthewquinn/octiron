@@ -9,6 +9,7 @@ await esbuild.build({
   format: 'esm',
   external: ['mithril', 'jsonld'],
   treeShaking: true,
+  sourcemap: true,
 });
 
 await esbuild.build({
@@ -20,6 +21,7 @@ await esbuild.build({
   external: ['mithril', 'jsonld'],
   treeShaking: true,
   minify: true,
+  sourcemap: true,
 });
 
 const command = new Deno.Command('./node_modules/.bin/tsc', {

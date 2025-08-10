@@ -125,7 +125,7 @@ export const ActionSelectionRenderer: m.FactoryComponent<ActionSelectionRenderer
   }
 
   function updateSelection() {
-    const { selector, actionValue, value } = currentAttrs;
+    const { selector, value, actionValue } = currentAttrs;
     const { store } = currentAttrs.internals;
 
     if (!isJSONObject(value)) {

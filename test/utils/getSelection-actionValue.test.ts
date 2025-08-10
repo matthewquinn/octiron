@@ -44,7 +44,7 @@ const epic2 = mocks.createEpic({
   ],
 });
 
-Deno.test("getSelection()", async (t) => {
+Deno.test("getSelection(actionValue)", async (t) => {
   const ctx = {
     vocab: mocks.todosVocab,
     aliases: {

@@ -75,8 +75,6 @@ export function actionSelectionFactory<
   self.submitting = internals.submitting;
   self.value = internals.value ?? args.initialValue;
   self.action = internals.action;
-  // TODO: Probably not the correct instance
-  self.actionValue = internals.parent;
 
   function onSelectionUpdate(
     pointer: string,
@@ -101,7 +99,7 @@ export function actionSelectionFactory<
     }
 
     if (typeof interceptor === 'function') {
-      next = interceptor(next, prev, self.actionValue.value as JSONObject);
+      next = interceptor(next, prev, internals.actionValue as JSONObject);
     }
 
     internals.onUpdate(internals.pointer, next, args);
@@ -188,12 +186,18 @@ export function actionSelectionFactory<
       ActionSelectionRenderer,
       {
         internals: {
-          ...internals,
+          submitting: internals.submitting,
+          entity: internals.entity,
+          action: internals.action,
+          parent: self as unknown as OctironActionSelection,
+          store: internals.store,
+          typeDefs: internals.typeDefs,
+          onSubmit: internals.onSubmit,
           onUpdate,
         },
         selector,
         value: self.value,
-        actionValue: internals.octiron.value as JSONObject,
+        actionValue: internals.actionValue as JSONObject,
         args,
         view,
       },
