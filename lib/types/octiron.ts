@@ -558,6 +558,8 @@ export interface OctironRoot
    */
   readonly id?: string;
 
+  readonly index: number;
+
   /**
    * Only action-selection and edit instances can be editable.
    */
@@ -597,6 +599,8 @@ export interface OctironSelection
    * Unique instance id.
    */
   readonly id?: string;
+
+  readonly index: number;
 
   /**
    * Only action-selection and edit instances can be editable.
@@ -639,6 +643,8 @@ export interface OctironAction
    * Unique instance id.
    */
   readonly id?: string;
+
+    readonly index: number;
 
   /**
    * Only action-selection and edit instances can be editable.
@@ -701,6 +707,8 @@ export interface OctironActionSelection
    * to set ids in HTML elements.
    */
   readonly id: string;
+
+  readonly index: number;
 
   /**
    * The HTML input elements name. Mostly useful if

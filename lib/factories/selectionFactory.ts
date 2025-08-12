@@ -15,6 +15,7 @@ export type SelectionFactoryInternals = {
   parent?: Octiron;
   value?: JSONValue;
   datatype?: string;
+  index: number;
 };
 
 /* Internal hooks for upstream to provide updates */
@@ -57,6 +58,7 @@ export function selectionFactory<Attrs extends BaseAttrs = {}>(
       octironType: 'selection',
       readonly: true,
       id: internals.datatype,
+      index: internals.index,
 
       get value() {
         return refs.value;

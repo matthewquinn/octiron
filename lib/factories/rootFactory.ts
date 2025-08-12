@@ -28,6 +28,7 @@ export function rootFactory(
       readonly: true,
       value: null,
       store: internals.store,
+      index: 0,
 
       not(
         predicate: Predicate,

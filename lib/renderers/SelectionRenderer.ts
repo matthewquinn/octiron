@@ -96,9 +96,10 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
       return;
     }
 
-    for (const selectionResult of details.result) {
+    for (let index = 0; index < details.result.length; index++) {
+      const selectionResult = details.result[index];
       const key = Symbol.for(selectionResult.pointer);
-      
+
       nextKeys.push(key);
 
       if (Object.hasOwn(instances, key)) {
@@ -130,6 +131,7 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
 
       if (selectionResult.type === 'entity') {
         octiron = selectionFactory({
+          index,
           store,
           typeDefs,
           value: selectionResult.value,
@@ -137,6 +139,7 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
         });
       } else {
         octiron = selectionFactory({
+          index,
           store,
           typeDefs,
           value: selectionResult.value,
@@ -286,7 +289,7 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
       if (pre != null) {
         children.push(m.fragment({ key: preKey }, [pre]));
       }
-      
+
       for (let index = 0; index < list.length; index++) {
         const { selectionResult, octiron } = list[index];
         const { key } = selectionResult;

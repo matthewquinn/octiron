@@ -18,6 +18,7 @@ export type ActionSelectionRendererAttrs = {
     | 'name'
     | 'type'
     | 'datatype'
+    | 'index'
     | 'pointer'
     | 'spec'
     | 'value'
@@ -46,7 +47,9 @@ export const ActionSelectionRenderer: m.FactoryComponent<ActionSelectionRenderer
 
     const nextKeys: Array<string> = [];
 
-    for (const selectionResult of details.result) {
+    for (let index = 0; index < details.result.length; index++) {
+      const selectionResult = details.result[index];
+
       nextKeys.push(selectionResult.pointer);
 
       if (instances[selectionResult.pointer] != null) {
@@ -78,6 +81,7 @@ export const ActionSelectionRenderer: m.FactoryComponent<ActionSelectionRenderer
       hasChanges = true;
 
       const selection = selectionFactory({
+        index,
         store: currentAttrs.internals.store,
         typeDefs: currentAttrs.internals.typeDefs,
         datatype: selectionResult.datatype,
@@ -85,6 +89,7 @@ export const ActionSelectionRenderer: m.FactoryComponent<ActionSelectionRenderer
       });
 
       const internals: ActionSelectionInternals = {
+        index,
         ...currentAttrs.internals,
         octiron: selection,
         name: selectionResult.datatype,

@@ -25,6 +25,7 @@ export type ActionSelectionInternals = {
   submitting: boolean;
   type: string | string[];
   datatype: string;
+  index: number;
   pointer: string;
   name: string;
   value: JSONValue;
@@ -71,6 +72,7 @@ export function actionSelectionFactory<
   self.readonly = internals.spec == null ? true : (internals.spec.readonlyValue || false);
   self.store = internals.store;
   self.id = uniqueId;
+  self.index = internals.index;
   self.inputName = internals.datatype;
   self.submitting = internals.submitting;
   self.value = internals.value ?? args.initialValue;

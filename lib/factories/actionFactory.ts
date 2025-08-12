@@ -23,6 +23,7 @@ export type ActionInternals = {
   octiron: Octiron;
   store: Store;
   typeDefs: TypeDefs;
+  index: number;
 };
 
 export type ActionRefs = {
@@ -155,6 +156,7 @@ export function actionFactory<
 
   self.isOctiron = true;
   self.octironType = 'action';
+  self.index = internals.index;
   self.readonly = false;
   self.value = refs.payload;
   self.action = internals.octiron;
