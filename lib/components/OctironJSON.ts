@@ -71,9 +71,7 @@ export const OctironJSON: m.ClosureComponent<OctironJSONAttrs> = () => {
   const terminalTypes = ['@id', '@type', '@context'];
   function renderObject(value: JSONObject, url?: URL, selector: string = '') {
     const items: m.Children[] = [];
-    const list = Object.entries(value).toSorted((item) =>
-      item[0] === '@context' ? 1 : -1
-    );
+    const list = Object.entries(value).toSorted();
 
     for (let index = 0; index < list.length; index++) {
       const [term, value] = list[index];
@@ -169,7 +167,7 @@ export const OctironJSON: m.ClosureComponent<OctironJSONAttrs> = () => {
   return {
     view: ({ attrs: { value, selector, location } }) => {
       const url = location != null ? new URL(location) : undefined;
-      
+
       return m('.oct-json', [
         maybeRenderDetails(
           null,
