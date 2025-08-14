@@ -76,6 +76,7 @@ export const ActionSelectionRenderer: m.FactoryComponent<ActionSelectionRenderer
         }
 
         instances[selectionResult.pointer].octiron._updateInternals(internals);
+        continue;
       }
 
       hasChanges = true;
