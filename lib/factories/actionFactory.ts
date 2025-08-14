@@ -162,6 +162,16 @@ export function actionFactory<
   self.action = internals.octiron;
   self.actionValue = internals.octiron;
 
+  self.get = (termOrType) => {
+    if (!isJSONObject(self.value)) {
+      return null;
+    }
+
+    const type = self.store.expand(termOrType);
+
+    return self.value[type] ?? null;
+  }
+
   self.submit = async function (
     arg1?: PayloadValueMapper<JSONObject> | JSONObject
   ): Promise<void> {

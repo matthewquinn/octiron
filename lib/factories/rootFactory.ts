@@ -3,6 +3,7 @@ import type { OctironRoot, OctironSelection, Predicate, SelectView, OctironSelec
 import { SelectionRenderer } from "../renderers/SelectionRenderer.ts";
 import { unravelArgs } from "../utils/unravelArgs.ts";
 import type { Store } from "../store.ts";
+import { isJSONObject } from "../utils/isJSONObject.ts";
 
 export type RootFactoryInternals = {
   store: Store;
@@ -29,6 +30,16 @@ export function rootFactory(
       value: null,
       store: internals.store,
       index: 0,
+
+      get(termOrType: string) {
+        if (!isJSONObject(self.value)) {
+          return null;
+        }
+
+        const type = self.store.expand(termOrType);
+
+        return self.value[type] ?? null;
+      },
 
       not(
         predicate: Predicate,

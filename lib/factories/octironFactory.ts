@@ -1,8 +1,8 @@
 import type { Children } from "mithril";
 import type { Octiron } from "@octiron/octiron";
 import type { Mutable } from "../types/common.ts";
-import type { OctironSelectArgs, Predicate, Selector, SelectView } from "../types/octiron.ts";
-import { unravelArgs } from "../utils/unravelArgs.ts";
+import type { Predicate } from "../types/octiron.ts";
+import { isJSONObject } from "../utils/isJSONObject.ts";
 
 
 export function octironFactory<O extends Octiron>() {
@@ -37,6 +37,16 @@ export function octironFactory<O extends Octiron>() {
 
     return null;
   };
+
+  self.get = (termOrType) => {
+    if (!isJSONObject(self.value)) {
+      return null;
+    }
+
+    const type = self.store.expand(termOrType);
+
+    return self.value[type] ?? null;
+  }
 
   return self;
 }

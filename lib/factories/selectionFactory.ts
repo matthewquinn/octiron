@@ -68,6 +68,17 @@ export function selectionFactory<Attrs extends BaseAttrs = {}>(
         return internals.store;
       },
 
+
+      get(termOrType: string) {
+        if (!isJSONObject(self.value)) {
+          return null;
+        }
+
+        const type = self.store.expand(termOrType);
+
+        return self.value[type] ?? null;
+      },
+
       not: (predicate: Predicate, children: m.Children) => {
         const passes = predicate(self);
 

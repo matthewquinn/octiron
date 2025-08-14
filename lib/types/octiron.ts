@@ -348,6 +348,10 @@ export interface EntryPoint {
   ): Children;
 }
 
+export interface Queryable {
+  get(termOrType: string): JSONValue;
+};
+
 export interface Selectable {
   select(selector: Selector): Children;
   select<Attrs extends BaseAttrs = BaseAttrs>(
@@ -539,6 +543,7 @@ export interface OctironRoot
     Default,
     Origin,
     // EntryPoint,
+    Queryable,
     Selectable,
     Filterable,
     Presentable,
@@ -581,6 +586,7 @@ export interface OctironSelection
     Default,
     Origin,
     EntryPoint,
+    Queryable,
     Selectable,
     Filterable,
     Presentable,
@@ -623,6 +629,7 @@ export interface OctironAction
     Default,
     Origin,
     EntryPoint,
+    Queryable,
     ActionSelectable,
     Presentable,
     Submitable<JSONObject>,
@@ -685,6 +692,7 @@ export interface OctironActionSelection
     Default,
     Origin,
     EntryPoint,
+    Queryable,
     ActionSelectable,
     Presentable,
     Submitable<JSONObject>,
