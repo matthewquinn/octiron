@@ -396,7 +396,7 @@ export class Store {
         });
       }
 
-      for (const iri in iris) {
+      for (const iri of iris) {
         this.#publish(iri);
       }
     }
