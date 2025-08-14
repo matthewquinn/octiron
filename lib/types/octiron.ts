@@ -486,14 +486,14 @@ export interface Submitable<
 }
 
 export interface ActionSelectable {
-  select(selector: Selector): Children;
-  select<Attrs extends BaseAttrs = BaseAttrs>(selector: Selector, args: OctironActionSelectionArgs<Attrs>): Children;
-  select(selector: Selector, view: ActionSelectView): Children;
   select<Attrs extends BaseAttrs = BaseAttrs>(
     selector: Selector,
     args: OctironActionSelectionArgs<Attrs>,
     view: ActionSelectView,
   ): Children;
+  select(selector: Selector): Children;
+  select<Attrs extends BaseAttrs = BaseAttrs>(selector: Selector, args: OctironActionSelectionArgs<Attrs>): Children;
+  select(selector: Selector, view: ActionSelectView): Children;
 }
 
 export interface Default {

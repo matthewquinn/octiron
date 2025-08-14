@@ -10,6 +10,7 @@ import { isValueObject } from "./isValueObject.ts";
 import { parseSelectorString } from './parseSelectorString.ts';
 import type { Store } from '../store.ts';
 import { resolvePropertyValueSpecification } from "./resolvePropertyValueSpecification.ts";
+import { isTypeObject } from "./isTypedObject.ts";
 
 /**
  * A circular selection error occurs when two or more
@@ -79,21 +80,24 @@ export function transformProcessedDetails<T extends SelectionResult>(
  * A type selector selects values from the context of a provided value
  * and will pull from the store if any iri objects are selected in the process.
  *
- * @param {string} args.selector          Selector string begining with a type.
- * @param {JSONObject} [args.value]       Context object to begin the selection from.
- * @param {JSONObject} [args.actionValue] The action, or point in the action definition which describes this value.
- * @param {Store} args.store       Octiron store to search using.
- * @returns {SelectionDetails}            Selection contained in a details object.
+ * @param {string} args.selector            Selector string begining with a type.
+ * @param {JSONObject} [args.value]         Context object to begin the selection from.
+ * @param {JSONObject} [args.actionValue]   The action, or point in the action definition which describes this value.
+ * @param {JSONValue} [args.defaultValue]   A default value when used to select action values.
+ * @param {Store} args.store                Octiron store to search using.
+ * @returns {SelectionDetails}              Selection contained in a details object.
  */
 export function getSelection<T extends SelectionResult>({
   selector: selectorStr,
   value,
   actionValue,
+  defaultValue,
   store,
 }: {
   selector: string;
   value?: JSONObject;
   actionValue?: JSONObject;
+  defaultValue?: JSONValue;
   store: Store;
 }): SelectionDetails<T> {
   const details: ProcessingSelectionDetails = {
@@ -135,6 +139,7 @@ export function getSelection<T extends SelectionResult>({
     selector,
     store,
     details,
+    defaultValue,
   });
 
   details.complete = details.required.length === 0;
@@ -223,6 +228,12 @@ function resolveValue({
     details.hasMissing = true;
 
     return;
+  } else if (value === null && isJSONObject(actionValue)) {
+    for (const item of Object.values(actionValue)) {
+      if (isTypeObject(item) && item["@type"] === 'https://schema.org/PropertyValueSpecification') {
+        return;
+      }
+    }
   }
 
   if (
@@ -452,6 +463,7 @@ function traverseSelector({
   actionValue,
   store,
   details,
+  defaultValue,
 }: {
   keySource: string;
   pointer: string;
@@ -460,6 +472,7 @@ function traverseSelector({
   actionValue?: JSONObject;
   store: Store;
   details: ProcessingSelectionDetails;
+  defaultValue?: JSONValue;
 }): void {
   if (selector.length === 0) {
     return;
@@ -488,6 +501,7 @@ function traverseSelector({
         actionValue,
         store,
         details,
+        defaultValue,
       });
 
       if (details.hasErrors || details.hasMissing) {
@@ -505,6 +519,7 @@ function traverseSelector({
       actionValue,
       store,
       details,
+      defaultValue,
     });
   }
 
@@ -528,7 +543,7 @@ function traverseSelector({
     actionValue !== undefined &&
     value[selector[0].subject] == null
   ) {
-    value = { [selector[0].subject]: null };
+    value = { [selector[0].subject]: defaultValue ?? null };
   }
 
   const [next, ...rest] = selector;

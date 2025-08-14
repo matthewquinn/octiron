@@ -143,6 +143,7 @@ export const ActionSelectionRenderer: m.FactoryComponent<ActionSelectionRenderer
       store,
       actionValue,
       value,
+      defaultValue: currentAttrs.args.initialValue,
     });
 
     createInstances();

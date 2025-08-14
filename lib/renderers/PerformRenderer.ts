@@ -15,7 +15,7 @@ export type PerformRendererAttrs = {
 };
 
 export const PerformRenderer: m.FactoryComponent<PerformRendererAttrs> = ({ attrs }) => {
-  const key = Symbol();
+  const key = Symbol('PerformRenderer');
   let currentAttrs = attrs;
   let details: SelectionDetails<ReadonlySelectionResult>;
 
@@ -30,7 +30,9 @@ export const PerformRenderer: m.FactoryComponent<PerformRendererAttrs> = ({ attr
 
     const nextKeys: Array<string> = [];
 
-    for (const selectionResult of details.result) {
+    for (let index = 0; index < details.result.length; index++) {
+      const selectionResult = details.result[index];
+
       nextKeys.push(selectionResult.pointer);
 
       if (Object.hasOwn(instances, selectionResult.pointer)) {
@@ -59,11 +61,15 @@ export const PerformRenderer: m.FactoryComponent<PerformRendererAttrs> = ({ attr
       hasChanges = true;
 
       const octiron = selectionFactory({
+        index,
         store: currentAttrs.internals.store,
         typeDefs: currentAttrs.internals.typeDefs,
         value: selectionResult.value as SCMAction,
       });
-      const action = actionFactory(currentAttrs.internals, currentAttrs.args);
+      const action = actionFactory({
+        ...currentAttrs.internals,
+        octiron,
+      }, currentAttrs.args);
 
       instances[selectionResult.pointer] = {
         action,

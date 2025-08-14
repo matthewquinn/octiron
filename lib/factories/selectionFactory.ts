@@ -238,6 +238,7 @@ export function selectionFactory<Attrs extends BaseAttrs = {}>(
           args,
           view,
           internals: {
+            index: 0,
             octiron: self,
             store: internals.store,
             typeDefs: args.typeDefs || internals.typeDefs,

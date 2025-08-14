@@ -11,6 +11,8 @@ import { isJSONObject } from "../utils/isJSONObject.ts";
 import { mithrilRedraw } from "../utils/mithrilRedraw.ts";
 import { unravelArgs } from "../utils/unravelArgs.ts";
 import { octironFactory } from "./octironFactory.ts";
+import { isIterable } from "../utils/isIterable.ts";
+import { getIterableValue } from "../utils/getIterableValue.ts";
 
 
 export type OnActionSelectionSubmit = () => Promise<void>;
@@ -374,11 +376,27 @@ export function actionSelectionFactory<
   self.remove = function (
     args: UpdateArgs = {},
   ) {
-    internals.onUpdate(
-      internals.pointer,
-      null as unknown as JSONObject,
-      args,
-    );
+    const parentValue = internals.parent.value as JSONObject;
+    const value = parentValue[internals.datatype];
+
+    if (isIterable(value)) {
+      const arrValue = getIterableValue(value);
+
+      arrValue.splice(self.index, 1);
+
+      if (arrValue.length === 0) {
+        delete parentValue[internals.datatype];
+      }
+    } else if (isJSONObject(value)) {
+      delete parentValue[internals.datatype];
+    }
+
+    mithrilRedraw()
+    // internals.onUpdate(
+    //   internals.pointer,
+    //   null as unknown as JSONObject,
+    //   args,
+    // );
   };
 
   self.append = function (
@@ -395,7 +413,7 @@ export function actionSelectionFactory<
       if (prevValue != null && !Array.isArray(prevValue)) {
         nextValue.push(prevValue);
       } else if (Array.isArray(prevValue)) {
-        nextValue = [...prevValue];
+        nextValue = [...prevValue.filter((value) => value != null)];
       }
 
       nextValue.push(value);

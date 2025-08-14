@@ -28,7 +28,7 @@ export type ActionInternals = {
 
 export type ActionRefs = {
   url?: string;
-  method: string;
+  method?: string;
   submitting: boolean;
   payload: JSONObject;
   store: Store;
@@ -53,28 +53,36 @@ export function actionFactory<
     }
   }
 
-  const { url, method, body } = getSubmitDetails({
-    payload,
-    action: internals.octiron.value as SCMAction,
-    store: internals.store,
-  });
-
-  if (body == null) {
-    submitResult = internals.store.entity(url);
-  }
-
+  let url: string | undefined;
+  let method: string | undefined;
+  let body: string | undefined
   // this object is passed into children which need to keep hold of the
   // original object but read the most recent value after mutations on
   // on its members.
   const refs: ActionRefs = {
-    url,
-    method,
     submitting: false,
     payload,
     store: internals.store,
     typeDefs: internals.typeDefs,
     submitResult,
   };
+
+  try {
+    const submitDetails = getSubmitDetails({
+      payload,
+      action: internals.octiron.value as SCMAction,
+      store: internals.store,
+    });
+    refs.url = submitDetails.url;
+    refs.method = submitDetails.method;
+    body = submitDetails.body;
+  } catch (err) {
+    console.error(err);
+  }
+
+  if (body == null && url != null) {
+    refs.submitResult = submitResult = internals.store.entity(url);
+  }
 
   async function onSubmit() {
     const { url, method, body, contentType, encodingType } = getSubmitDetails({
@@ -132,10 +140,10 @@ export function actionFactory<
     const next: Partial<JSONObject> = Object.assign({}, payload);
     const ptr = JsonPointer.create(pointer);
 
-    if (typeof value === 'undefined' || value === null) {
-      ptr.unset(next) as Partial<JSONObject>;
+    if (value == null) {
+      ptr.unset(next);
     } else {
-      ptr.set(next, value, true) as Partial<JSONObject>;
+      ptr.set(next, value, true);
     }
 
     onUpdate(next);
@@ -161,6 +169,7 @@ export function actionFactory<
   self.value = refs.payload;
   self.action = internals.octiron;
   self.actionValue = internals.octiron;
+  self.store = internals.store;
 
   self.get = (termOrType) => {
     if (!isJSONObject(self.value)) {
@@ -417,6 +426,7 @@ export function actionFactory<
       args,
       view,
       internals: {
+        index: 0,
         octiron: self as unknown as OctironAction,
         store: internals.store,
         typeDefs: internals.typeDefs,
@@ -431,23 +441,24 @@ export function actionFactory<
   ) {
     const type = internals.store.expand(termOrType);
 
-    if (isJSONObject(self.value)) {
-      const prevValue = self.value[type];
-      let nextValue: JSONArray = [];
-
-      if (prevValue != null && !Array.isArray(prevValue)) {
-        nextValue.push(prevValue);
-      } else if (Array.isArray(prevValue)) {
-        nextValue = [...prevValue];
-      }
-
-      nextValue.push(value);
-
-      return self.update({
-        ...self.value,
-        [type]: nextValue,
-      }, args);
+    if (!isJSONObject(self.value)) {
+      return;
     }
+    const prevValue = self.value[type];
+    let nextValue: JSONArray = [];
+
+    if (prevValue != null && !Array.isArray(prevValue)) {
+      nextValue.push(prevValue);
+    } else if (Array.isArray(prevValue)) {
+      nextValue = [...prevValue.filter((value) => value != undefined)];
+    }
+
+    nextValue.push(value);
+
+    return self.update({
+      ...self.value,
+      [type]: nextValue,
+    }, args);
   };
 
   self._updateArgs = function (
