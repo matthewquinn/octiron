@@ -3,6 +3,7 @@ import { selectionFactory } from '../factories/selectionFactory.ts';
 import type { OctironSelectArgs, OctironSelection, SelectView, TypeDefs } from '../types/octiron.ts';
 import type { EntityState } from '../types/store.ts';
 import type { Store } from "../store.ts";
+import type { Mutable } from "../types/common.ts";
 
 export type ActionRendererRef = {
   submitting: boolean;
@@ -54,22 +55,24 @@ export const ActionStateRenderer: m.ClosureComponent<ActionStateRendererAttrs> =
     view: ({ attrs: { type, selector, args, view }, children }) => {
       if (type === 'initial' && typeof submitResult === 'undefined') {
         return children;
-      } else if (
-        typeof submitResult === 'undefined' || typeof o !== 'function'
-      ) {
+      } else if (submitResult == null || o == null) {
         return null;
       }
 
       const shouldRender = (type === 'success' && submitResult.ok) ||
         (type === 'failure' && !submitResult.ok);
 
-      if (shouldRender && selector != null && args != null && view != null) {
-        return o.select(selector, args, view);
-      } else if (shouldRender && typeof view === 'function') {
+      (o as Mutable<OctironSelection>).position = 1;
+
+      if (shouldRender && selector != null) {
+        return o.select(selector, args as OctironSelectArgs, view as SelectView);
+      } else if (shouldRender && view != null) {
         return view(o);
-      } else if (shouldRender && typeof args !== 'undefined') {
+      } else if (shouldRender && args != null) {
         return o.present(args);
       }
+
+      (o as Mutable<OctironSelection>).position = -1
 
       return null;
     },

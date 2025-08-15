@@ -125,7 +125,7 @@ export const OctironDebug: m.ClosureComponent<OctironDebugAttrs> = ({
             m('button.oct-button', { type: 'button', onclick: onSetValue }, 'Value'),
             actionValueAction,
             m('button.oct-button', { type: 'button', onclick: onSetComponent }, 'Component'),
-            m('button.oct-button', { type: 'button', onclick: () => console.log(o) }, 'Log'),
+            m('button.oct-button', { type: 'button', onclick: () => console.debug(o) }, 'Log'),
             ...actions,
           ),
         ),

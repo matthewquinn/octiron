@@ -5,7 +5,7 @@ import type { ActionSelectionResult, SelectionDetails } from '../types/store.ts'
 import { getSelection } from '../utils/getSelection.ts';
 import { isJSONObject } from '../utils/isJSONObject.ts';
 import { mithrilRedraw } from '../utils/mithrilRedraw.ts';
-import type { JSONObject } from '../types/common.ts';
+import type { JSONObject, Mutable } from '../types/common.ts';
 import { selectionFactory } from '../factories/selectionFactory.ts';
 import type { InstanceHooks } from "../factories/octironFactory.ts";
 
@@ -186,6 +186,8 @@ export const ActionSelectionRenderer: m.FactoryComponent<ActionSelectionRenderer
 
       for (let index = 0; index < list.length; index++) {
         const { octiron, selectionResult } = list[index];
+
+        (octiron as Mutable<OctironActionSelection>).position = index + 1;
 
         if (index !== 0) {
           children.push(sep);

@@ -61,9 +61,7 @@ export function getComponent<
   }
 
   if (Array.isArray(type)) {
-    console.log('CHECKING TYPE', type)
     for (const item of type) {
-      console.log('CHECKING ITEM', item)
       if (
         typeDefs[item]?.[style] != null
       ) {

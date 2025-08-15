@@ -33,12 +33,6 @@ export const selectComponentFromArgs = <
   const firstPickComponent = (args?.component ?? args?.component !== null ? factoryArgs?.component : null) as Component;
   const fallbackComponent = (args?.fallbackComponent ?? args?.component !== null ? factoryArgs?.fallbackComponent : null) as Component;
 
-  console.log('PROP TYPE', internals.octiron?.propType);
-  console.log('DATA TYPE', internals.octiron?.dataType)
-  console.log('ARGS', args);
-  console.log('FACTORY ARGS', factoryArgs);
-  console.log('TYPE DEFS', args?.typeDefs ?? internals?.typeDefs)
-
   const component = getComponent({
     style,
     propType: internals.octiron?.propType,
@@ -47,8 +41,6 @@ export const selectComponentFromArgs = <
     fallbackComponent,
     typeDefs: args?.typeDefs ?? internals.typeDefs,
   });
-
-  console.log('GOT COMPONENT')
 
   return [attrs, component];
 }

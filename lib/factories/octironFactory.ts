@@ -98,9 +98,6 @@ export function octironFactory<O extends Octiron>(
   self.position = -1;
 
   if (typeKey !== TypeKeys['root']) {
-    console.log('ASSIGNING TYPES')
-    console.log('INTERNALS', internals)
-    console.log('VALUE', self.value);
     self.propType = internals.propType;
     self.dataType = getDataType(self.value);
   }
@@ -223,7 +220,6 @@ export function octironFactory<O extends Octiron>(
         );
 
         if (component == null) {
-          console.log('NO COMPONENT');
           return null;
         }
 
@@ -233,7 +229,6 @@ export function octironFactory<O extends Octiron>(
           args,
         );
 
-        console.log('RENDERING COMPONENT')
 
         // deno-lint-ignore no-explicit-any
         return m(component as any, {

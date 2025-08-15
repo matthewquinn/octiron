@@ -1,7 +1,7 @@
 import type m from 'mithril';
 import { actionFactory, type ActionInternals } from '../factories/actionFactory.ts';
 import { selectionFactory } from '../factories/selectionFactory.ts';
-import type { JSONObject, SCMAction } from '../types/common.ts';
+import type { JSONObject, Mutable, SCMAction } from '../types/common.ts';
 import type { OctironAction, OctironPerformArgs, OctironSelection, PerformView, Selector } from '../types/octiron.ts';
 import type { Failure, ReadonlySelectionResult, SelectionDetails } from '../types/store.ts';
 import { isIRIObject } from '../utils/isIRIObject.ts';
@@ -225,6 +225,8 @@ export const PerformRenderer: m.FactoryComponent<PerformRendererAttrs> = ({ attr
 
       for (let index = 0; index < list.length; index++) {
         const { selectionResult, action, octiron } = list[index];
+
+        (action as Mutable<OctironAction>).position = index + 1;
 
         if (index !== 0) {
           children.push(sep);

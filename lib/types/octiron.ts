@@ -564,7 +564,7 @@ export interface OctironRoot
   readonly propType?: string;
 
   /**
-   * The propType this value has.
+   * The value's '@type' value if present.
    */
   readonly dataType?: string | string[];
 
@@ -625,8 +625,9 @@ export interface OctironSelection
    */
   readonly propType?: string;
 
+
   /**
-   * The propType this value has.
+   * The value's '@type' value if present.
    */
   readonly dataType?: string | string[];
 
@@ -690,7 +691,7 @@ export interface OctironAction
   readonly propType?: string;
 
   /**
-   * The propType this value has.
+   * The value's '@type' value if present.
    */
   readonly dataType?: string | string[];
 
@@ -773,7 +774,7 @@ export interface OctironActionSelection
   readonly propType?: string;
 
   /**
-   * The propType this value has.
+   * The value's '@type' value if present.
    */
   readonly dataType?: string | string[];
 
