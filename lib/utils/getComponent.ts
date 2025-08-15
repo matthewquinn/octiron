@@ -1,75 +1,78 @@
-import type { AnyComponent, EditComponent, PresentComponent, TypeDefs } from "../types/octiron.ts";
+import type { AnyComponent, BaseAttrs, EditComponent, PresentComponent, TypeDefs } from "../types/octiron.ts";
 
 /**
  * @description
  * Returns a component based of Octiron's selection rules:
  *
  * 1. If the first pick component is given, return it.
- * 2. If a typedef is defined for the datatype (jsonld term or type)
+ * 2. If a typedef is defined for the propType (jsonld term or type)
  *    for the given style, return it.
  * 3. If a typedef is defined for the (or one of the) types (jsonld '@type')
  *    value for the given style, return it.
  * 4. If a fallback component is given, return it.
  *
  * @param args.style - The style of presentation.
- * @param args.datatype - The datatype the component should be configured to
+ * @param args.propType - The propType the component should be configured to
  *                        handle.
  * @param args.type - The type the component should be configured to handle.
  * @param args.firstPickComponent - The component to use if passed by upstream.
  * @param args.fallbackComponent - The component to use if no other component
  *                                 is picked.
  */
-export function getComponent({
+export function getComponent<
+  Style extends 'present' | 'edit',
+  Component extends (
+    Style extends 'present'
+      ? PresentComponent | AnyComponent
+      : EditComponent | AnyComponent
+  )
+>({
   style,
-  datatype,
+  propType,
   type,
   firstPickComponent,
   typeDefs,
   fallbackComponent,
 }: {
-  style: "present" | "edit";
-  datatype?: string;
+  style: Style;
+  propType?: string;
   type?: string | string[];
   typeDefs: TypeDefs;
-  // deno-lint-ignore no-explicit-any
-  firstPickComponent?: PresentComponent<any>;
-  // deno-lint-ignore no-explicit-any
-  fallbackComponent?: PresentComponent<any>;
-  // deno-lint-ignore no-explicit-any
-}): PresentComponent<any> | EditComponent<any> | AnyComponent<any> | undefined {
+  firstPickComponent?: Component;
+  fallbackComponent?: Component;
+}): Component | undefined {
   if (firstPickComponent != null) {
     return firstPickComponent;
   }
 
   if (
-    datatype != null &&
-    typeDefs[datatype]?.[style] != null
+    propType != null &&
+    typeDefs[propType]?.[style] != null
   ) {
-    // deno-lint-ignore no-explicit-any
-    return typeDefs[datatype][style] as PresentComponent<any>;
+    return typeDefs[propType][style] as Component;
   }
 
   if (
-    typeof type === "string" &&
+    !Array.isArray(type) &&
+    type != null &&
     typeDefs[type]?.[style] != null
   ) {
-    // deno-lint-ignore no-explicit-any
-    return typeDefs[type][style] as PresentComponent<any>;
+    return typeDefs[type][style] as Component;
   }
 
   if (Array.isArray(type)) {
+    console.log('CHECKING TYPE', type)
     for (const item of type) {
+      console.log('CHECKING ITEM', item)
       if (
         typeDefs[item]?.[style] != null
       ) {
-        // deno-lint-ignore no-explicit-any
-        return typeDefs[item][style] as PresentComponent<any>;
+        return typeDefs[item][style] as Component;
       }
     }
   }
 
-  if (typeof fallbackComponent !== "undefined") {
-    // deno-lint-ignore no-explicit-any
-    return fallbackComponent as PresentComponent<any>;
+  if (fallbackComponent != null) {
+    return fallbackComponent as Component;
   }
 }

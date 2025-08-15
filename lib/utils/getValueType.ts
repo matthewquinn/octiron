@@ -8,7 +8,7 @@ import { isTypeObject } from "./isTypedObject.ts";
  *
  * @param value A JSON value which might be a typed JSON-ld object.
  */
-export function getValueType(value: JSONValue): string | string[] | undefined {
+export function getDataType(value: JSONValue): string | string[] | undefined {
   if (isTypeObject(value)) {
     return value['@type'];
   }

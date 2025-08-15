@@ -583,7 +583,7 @@ Deno.test("o.root({ loading })", async (t) => {
     select,
     reset,
     renderChild,
-  } = await makeScenario();
+  } = makeScenario();
 
   for (
     const o of [
@@ -591,11 +591,12 @@ Deno.test("o.root({ loading })", async (t) => {
       select,
     ]
   ) {
+    console.log(o)
     await t.step(
       `Filters a selection list using a "${o.octironType}" instance`,
       async () => {
-        const component: PresentComponent<string> = () => ({
-          view() {
+        const component: PresentComponent<string> = ({ attrs: o }) => ({
+          view({ attrs: { o }}) {
             return 'RENDERED';
           },
         });
@@ -621,7 +622,7 @@ Deno.test("o.root({ fallback })", async (t) => {
     select,
     reset,
     renderChild,
-  } = await makeScenario();
+  } = makeScenario();
 
   for (
     const o of [

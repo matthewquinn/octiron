@@ -207,7 +207,7 @@ function resolveValue({
   keySource,
   pointer,
   value,
-  datatype,
+  propType,
   filter,
   spec,
   actionValue,
@@ -219,7 +219,7 @@ function resolveValue({
   value: JSONValue;
   spec?: JSONObject;
   actionValue?: JSONValue;
-  datatype: string;
+  propType: string;
   filter?: string;
   store: Store;
   details: ProcessingSelectionDetails;
@@ -257,7 +257,7 @@ function resolveValue({
       keySource: pointer,
       pointer,
       type: 'action-value',
-      datatype,
+      propType,
       value,
       actionValue,
       spec: pvs,
@@ -272,7 +272,7 @@ function resolveValue({
       keySource: pointer,
       pointer: pointer,
       type: 'value',
-      datatype,
+      propType,
       value,
     });
 
@@ -293,7 +293,7 @@ function resolveValue({
         value: item,
         spec,
         actionValue,
-        datatype,
+        propType,
         filter,
         store,
         details,
@@ -315,7 +315,7 @@ function resolveValue({
       keySource,
       pointer,
       value: value['@value'],
-      datatype,
+      propType,
       store,
       details,
     });
@@ -353,7 +353,7 @@ function resolveValue({
     keySource,
     pointer,
     type: 'value',
-    datatype,
+    propType,
     value,
   });
 }
@@ -364,7 +364,7 @@ function resolveValue({
 function selectTypedValue({
   keySource,
   pointer,
-  type,
+  propType,
   value,
   actionValue,
   filter,
@@ -373,14 +373,14 @@ function selectTypedValue({
 }: {
   keySource: string;
   pointer: string;
-  type: string;
+  propType: string;
   value: JSONValue;
   actionValue?: JSONObject;
   filter?: string;
   store: Store;
   details: ProcessingSelectionDetails;
 }): void {
-  pointer = makePointer(pointer, type);
+  pointer = makePointer(pointer, propType);
 
   if (!isTraversable(value)) {
     return;
@@ -399,7 +399,7 @@ function selectTypedValue({
       selectTypedValue({
         keySource,
         pointer: makePointer(pointer, index),
-        type,
+        propType,
         value: item,
         actionValue,
         filter,
@@ -420,7 +420,7 @@ function selectTypedValue({
       keySource,
       pointer,
       iri: value['@id'],
-      selector: [{ subject: type, filter }],
+      selector: [{ subject: propType, filter }],
       store,
       details,
     });
@@ -432,20 +432,20 @@ function selectTypedValue({
 
   let spec: JSONObject | undefined;
 
-  if (isJSONObject(actionValue) && actionValue[`${type}-input`] == null) {
+  if (isJSONObject(actionValue) && actionValue[`${propType}-input`] == null) {
     // selecting for an action but the type is not editable
     return;
   } else if (isJSONObject(actionValue)) {
-    spec = actionValue[`${type}-input`] as JSONObject;
+    spec = actionValue[`${propType}-input`] as JSONObject;
   }
 
   resolveValue({
     keySource,
     pointer,
-    value: value[type],
+    value: value[propType],
     spec,
-    actionValue: actionValue?.[type],
-    datatype: type,
+    actionValue: actionValue?.[propType],
+    propType,
     filter,
     store,
     details,
@@ -547,28 +547,28 @@ function traverseSelector({
   }
 
   const [next, ...rest] = selector;
-  const { subject: type, filter } = next;
+  const { subject: propType, filter } = next;
 
   // null is a placeholder for action payload types with no value.
   // jsonld drops null values otherwise.
-  if (value[type] === undefined) {
+  if (value[propType] === undefined) {
     details.hasMissing = true;
 
     return;
   }
 
-  if (rest.length === 0 && isJSONObject(actionValue?.[type])) {
-    pointer = makePointer(pointer, type);
+  if (rest.length === 0 && isJSONObject(actionValue?.[propType])) {
+    pointer = makePointer(pointer, propType);
 
     resolveValue({
       keySource: pointer,
       pointer,
-      value: value[type],
-      datatype: type,
+      value: value[propType],
+      propType,
       details,
       store,
-      actionValue: actionValue?.[type],
-      spec: actionValue[`${type}-input`] as SCMPropertyValueSpecification,
+      actionValue: actionValue?.[propType],
+      spec: actionValue[`${propType}-input`] as SCMPropertyValueSpecification,
       filter,
     });
 
@@ -577,7 +577,7 @@ function traverseSelector({
     selectTypedValue({
       keySource,
       pointer,
-      type,
+      propType: propType,
       filter,
       value,
       actionValue,
@@ -594,15 +594,15 @@ function traverseSelector({
 
   let traversedActionValue: JSONObject | undefined;
 
-  if (isJSONObject(actionValue?.[type])) {
-    traversedActionValue = actionValue[type];
+  if (isJSONObject(actionValue?.[propType])) {
+    traversedActionValue = actionValue[propType];
   }
 
   traverseSelector({
-    keySource: makePointer(keySource, type),
-    pointer: makePointer(pointer, type),
+    keySource: makePointer(keySource, propType),
+    pointer: makePointer(pointer, propType),
     selector: rest,
-    value: value[type],
+    value: value[propType],
     actionValue: traversedActionValue,
     store,
     details,

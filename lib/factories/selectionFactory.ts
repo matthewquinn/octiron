@@ -1,264 +1,27 @@
-import type { JSONValue } from '../types/common.ts';
-import type { BaseAttrs, Octiron, OctironDefaultArgs, OctironPerformArgs, OctironPresentArgs, OctironSelectArgs, OctironSelection, PerformView, Predicate, PresentComponent, Selector, SelectView, TypeDefs } from '../types/octiron.ts';
-import m from "mithril";
-import { SelectionRenderer } from "../renderers/SelectionRenderer.ts";
-import { getComponent } from '../utils/getComponent.ts';
-import { unravelArgs } from "../utils/unravelArgs.ts";
-import { getValueType } from "../utils/getValueType.ts";
-import { isJSONObject } from "../utils/isJSONObject.ts";
+import type { BaseAttrs, Octiron, OctironSelectArgs, OctironSelection, TypeDefs } from '../types/octiron.ts';
 import type { Store } from "../store.ts";
-import { PerformRenderer } from "../renderers/PerformRenderer.ts";
+import type { JSONValue } from "../types/common.ts";
+import { type CommonArgs, type InstanceHooks, octironFactory } from "./octironFactory.ts";
 
 export type SelectionFactoryInternals = {
   store: Store;
   typeDefs: TypeDefs;
   parent?: Octiron;
   value?: JSONValue;
-  datatype?: string;
-  index: number;
+  propType?: string;
+  index?: number;
 };
 
-/* Internal hooks for upstream to provide updates */
-export interface OctironHooks {
-  _updateArgs(args: OctironSelectArgs): void;
-  _updateValue(value: JSONValue): void;
-};
-
-/**
- * @description
- * An internal factory function for creating `OctironSelection` objects.
- *
- * @param internals Internally held values from upstream.
- * @param args User given arguments.
- */
-export function selectionFactory<Attrs extends BaseAttrs = {}>(
+export function selectionFactory<Attrs extends BaseAttrs>(
   internals: SelectionFactoryInternals,
   args?: OctironSelectArgs<Attrs>,
-): OctironSelection & OctironHooks {
+): OctironSelection & InstanceHooks {
   const factoryArgs = Object.assign({}, args);
-  const type = getValueType(internals.value);
+  const self = octironFactory(
+    'selection',
+    internals,
+    factoryArgs as CommonArgs,
+  );
 
-  const refs = {
-    isOctiron: true,
-    octironType: 'selection',
-    value: internals.value,
-  };
-
-  const self: OctironSelection & OctironHooks = Object.assign(
-    (predicate: Predicate, children?: m.Children) => {
-      const passes = predicate(self);
-
-      if (passes) {
-        return children;
-      }
-      return null;
-    },
-    {
-      isOctiron: true,
-      octironType: 'selection',
-      readonly: true,
-      id: internals.datatype,
-      index: internals.index,
-
-      get value() {
-        return refs.value;
-      },
-
-      get store() {
-        return internals.store;
-      },
-
-
-      get(termOrType: string) {
-        if (!isJSONObject(self.value)) {
-          return null;
-        }
-
-        const type = self.store.expand(termOrType);
-
-        return self.value[type] ?? null;
-      },
-
-      not: (predicate: Predicate, children: m.Children) => {
-        const passes = predicate(self);
-
-        if (!passes) {
-          return children;
-        }
-        return null;
-      },
-
-      root: (
-        arg1?: Selector | OctironSelectArgs | SelectView,
-        arg2?: OctironSelectArgs | SelectView,
-        arg3?: SelectView,
-      ) => {
-        let selector: string;
-        const [childSelector, args, view] = unravelArgs(arg1, arg2, arg3);
-
-        if (childSelector == null) {
-          selector = internals.store.rootIRI;
-        } else {
-          selector = `${internals.store.rootIRI} ${childSelector}`;
-        }
-
-        return m(SelectionRenderer, {
-          selector,
-          args,
-          view,
-          internals: {
-            store: internals.store,
-            typeDefs: args?.typeDefs || internals.typeDefs,
-            parent: self,
-          },
-        });
-      },
-
-      enter(
-        arg1: Selector,
-        arg2?: OctironSelectArgs | SelectView,
-        arg3?: SelectView,
-      ) {
-        const [selector, args, view] = unravelArgs(arg1, arg2, arg3);
-
-        return m(SelectionRenderer, {
-          selector,
-          args,
-          view,
-          internals: {
-            store: internals.store,
-            typeDefs: args?.typeDefs || internals.typeDefs,
-            parent: self,
-          },
-        });
-      },
-
-      select: (
-        arg1: Selector,
-        arg2?: OctironSelectArgs | SelectView,
-        arg3?: SelectView,
-      ): m.Children | null => {
-        const [selector, args, view] = unravelArgs(arg1, arg2, arg3);
-
-        if (!isJSONObject(internals.value)) {
-          return null;
-        }
-
-        return m(
-          SelectionRenderer,
-          {
-            selector,
-            args,
-            view,
-            internals: {
-              store: internals.store,
-              typeDefs: args?.typeDefs || internals.typeDefs,
-              value: internals.value,
-              parent: self,
-            },
-          },
-        );
-      },
-
-      present(args?: OctironPresentArgs<BaseAttrs>) {
-        let attrs: BaseAttrs = {} as BaseAttrs;
-        let firstPickComponent: PresentComponent<JSONValue, BaseAttrs> | undefined;
-        let fallbackComponent: PresentComponent<JSONValue> | undefined;
-
-        if (args?.attrs != null) {
-          attrs = args.attrs as BaseAttrs;
-        } else if (factoryArgs?.attrs != null) {
-          attrs = factoryArgs.attrs as unknown as BaseAttrs;
-        }
-
-        if (args?.component != null) {
-          firstPickComponent = args.component as PresentComponent<JSONValue, BaseAttrs>;
-        } else if (factoryArgs?.component != null) {
-          firstPickComponent = factoryArgs.component as unknown as PresentComponent<
-            JSONValue,
-            BaseAttrs
-          >;
-        }
-
-        if (args?.fallbackComponent != null) {
-          fallbackComponent = args.fallbackComponent as unknown as PresentComponent<JSONValue>;
-        } else if (factoryArgs?.fallbackComponent != null) {
-          fallbackComponent = factoryArgs.fallbackComponent as unknown as PresentComponent<JSONValue>;
-        }
-
-        const component = getComponent({
-          style: "present",
-          datatype: internals.datatype,
-          type,
-          firstPickComponent: firstPickComponent as unknown as PresentComponent,
-          fallbackComponent: fallbackComponent as unknown as PresentComponent,
-          typeDefs: args?.typeDefs || internals.typeDefs || {},
-        });
-
-        if (component == null) {
-          return null;
-        }
-
-        const { pre, sep, post, start, end, predicate } = Object.assign(
-          {},
-          factoryArgs,
-          args,
-        );
-
-        // deno-lint-ignore no-explicit-any
-        return m(component as any, {
-          o: self,
-          renderType: "present",
-          value: self.value,
-          attrs,
-          pre,
-          sep,
-          post,
-          start,
-          end,
-          predicate,
-        });
-      },
-
-      default(
-        arg1?: OctironDefaultArgs,
-      ) {
-        return self.present(arg1 as OctironSelectArgs)
-      },
-
-      perform: (
-        arg1?: Selector | OctironPerformArgs | PerformView,
-        arg2?: OctironPerformArgs | PerformView,
-        arg3?: PerformView,
-      ) => {
-        const [selector, args, view] = unravelArgs(arg1, arg2, arg3);
-
-        return m(PerformRenderer, {
-          selector,
-          args,
-          view,
-          internals: {
-            index: 0,
-            octiron: self,
-            store: internals.store,
-            typeDefs: args.typeDefs || internals.typeDefs,
-          },
-        });
-      },
-
-      _updateArgs: (args: OctironSelectArgs) => {
-        for (const [key, value] of Object.entries(args)) {
-          // deno-lint-ignore no-explicit-any
-          (factoryArgs as Record<string, any>)[key] = value;
-        }
-      },
-
-      _updateValue: (value: JSONValue) => {
-        refs.value = value;
-      },
-
-    } as const,
-  ) satisfies OctironSelection & OctironHooks;
-
-  return self;
+  return self as OctironSelection & InstanceHooks;
 }

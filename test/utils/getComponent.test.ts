@@ -73,7 +73,7 @@ Deno.test('getComponent()', async (t) => {
       style: 'present',
       type: ['https://schema.example.com/foe', 'https://schema.example.com/fum'],
       typeDefs,
-      datatype: 'https://schema.example.com/fee',
+      propType: 'https://schema.example.com/fee',
       firstPickComponent: PresentBar,
       fallbackComponent: PresentBaz,
     });
@@ -81,24 +81,24 @@ Deno.test('getComponent()', async (t) => {
     assertEquals(component, PresentBar);
   });
 
-  await t.step('It returns the datatype on match when no first pick', () => {
+  await t.step('It returns the propType on match when no first pick', () => {
     const component = getComponent({
       style: 'present',
       type: ['https://schema.example.com/fee', 'https://schema.example.com/fum'],
       typeDefs,
-      datatype: 'https://schema.example.com/foe',
+      propType: 'https://schema.example.com/foe',
       fallbackComponent: PresentBaz,
     });
 
     assertEquals(component, PresentFoe);
   });
 
-  await t.step('It returns the edit component for the datatype on match when no first pick', () => {
+  await t.step('It returns the edit component for the propType on match when no first pick', () => {
     const component = getComponent({
       style: 'edit',
       type: ['https://schema.example.com/fee', 'https://schema.example.com/fum'],
       typeDefs,
-      datatype: 'https://schema.example.com/foe',
+      propType: 'https://schema.example.com/foe',
       fallbackComponent: PresentBaz,
     });
 
@@ -110,7 +110,7 @@ Deno.test('getComponent()', async (t) => {
       style: 'present',
       type: ['https://schema.example.com/fee', 'https://schema.example.com/fum'],
       typeDefs,
-      datatype: 'https://schema.example.com/bar',
+      propType: 'https://schema.example.com/bar',
       fallbackComponent: PresentBaz,
     });
 
@@ -122,7 +122,7 @@ Deno.test('getComponent()', async (t) => {
       style: 'present',
       type: ['https://schema.example.com/baz', 'https://schema.example.com/fum'],
       typeDefs,
-      datatype: 'https://schema.example.com/bar',
+      propType: 'https://schema.example.com/bar',
       fallbackComponent: PresentBaz,
     });
 
@@ -134,7 +134,7 @@ Deno.test('getComponent()', async (t) => {
       style: 'present',
       type: ['https://schema.example.com/baz', 'https://schema.example.com/fum'],
       typeDefs,
-      datatype: 'https://schema.example.com/bar',
+      propType: 'https://schema.example.com/bar',
       fallbackComponent: PresentBaz,
     });
 
@@ -146,7 +146,7 @@ Deno.test('getComponent()', async (t) => {
       style: 'edit',
       type: ['https://schema.example.com/baz', 'https://schema.example.com/fum'],
       typeDefs,
-      datatype: 'https://schema.example.com/bar',
+      propType: 'https://schema.example.com/bar',
       fallbackComponent: PresentBaz,
     });
 
@@ -158,7 +158,7 @@ Deno.test('getComponent()', async (t) => {
       style: 'present',
       type: 'https://schema.example.com/baz',
       typeDefs,
-      datatype: 'https://schema.example.com/bar',
+      propType: 'https://schema.example.com/bar',
       fallbackComponent: PresentBaz,
     });
 
@@ -170,7 +170,7 @@ Deno.test('getComponent()', async (t) => {
         style: 'present',
         type: 'https://schema.example.com/baz',
         typeDefs,
-        datatype: 'https://schema.example.com/bar',
+        propType: 'https://schema.example.com/bar',
       });
 
       assertEquals(component, undefined);

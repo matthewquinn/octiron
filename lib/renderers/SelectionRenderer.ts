@@ -1,4 +1,4 @@
-import type { JSONValue } from "../types/common.ts";
+import type { JSONValue, Mutable } from "../types/common.ts";
 import type {
   Octiron,
   OctironSelectArgs,
@@ -127,26 +127,14 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
 
       hasChanges = true;
 
-      let octiron: Octiron;
-
-      if (selectionResult.type === 'entity') {
-        octiron = selectionFactory({
-          index,
-          store,
-          typeDefs,
-          value: selectionResult.value,
-          parent,
-        });
-      } else {
-        octiron = selectionFactory({
-          index,
-          store,
-          typeDefs,
-          value: selectionResult.value,
-          datatype: selectionResult.datatype,
-          parent,
-        });
-      }
+      const octiron = selectionFactory({
+        index,
+        store,
+        typeDefs,
+        value: selectionResult.value,
+        propType: selectionResult.type === 'entity' ? undefined : selectionResult.propType,
+        parent,
+      });
 
       instances[key] = {
         octiron,
@@ -268,12 +256,14 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
         fallback,
       } = currentAttrs.args;
 
-      if (typeof view === 'undefined') {
-        return;
-      }
-
       const children: m.Children = [];
-      let list = Reflect.ownKeys(instances).map(((key) => instances[key as symbol]));
+      let list = Reflect.ownKeys(instances).map(((key) => {
+        const instance = instances[key as symbol];
+
+        (instance.octiron as Mutable<OctironSelection>).position = -1;
+
+        return instance;
+      }));
 
       if (start != null || end != null) {
         list = list.slice(
@@ -293,6 +283,9 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
       for (let index = 0; index < list.length; index++) {
         const { selectionResult, octiron } = list[index];
         const { key } = selectionResult;
+
+        (octiron as Mutable<OctironSelection>).position = index + 1;
+
 
         if (index !== 0) {
           children.push(m.fragment({ key: `@${Symbol.keyFor(key)}` }, [sep]));

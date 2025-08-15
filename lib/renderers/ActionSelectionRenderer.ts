@@ -1,5 +1,5 @@
 import type m from "mithril";
-import { actionSelectionFactory, type OctironActionSelectionHooks, type ActionSelectionInternals } from '../factories/actionSelectionFactory.ts';
+import { actionSelectionFactory, type ActionSelectionInternals } from '../factories/actionSelectionFactory.ts';
 import type { ActionSelectView, OctironActionSelection, OctironActionSelectionArgs, OctironSelection, Selector } from '../types/octiron.ts';
 import type { ActionSelectionResult, SelectionDetails } from '../types/store.ts';
 import { getSelection } from '../utils/getSelection.ts';
@@ -7,6 +7,7 @@ import { isJSONObject } from '../utils/isJSONObject.ts';
 import { mithrilRedraw } from '../utils/mithrilRedraw.ts';
 import type { JSONObject } from '../types/common.ts';
 import { selectionFactory } from '../factories/selectionFactory.ts';
+import type { InstanceHooks } from "../factories/octironFactory.ts";
 
 
 export type ActionSelectionRendererAttrs = {
@@ -17,7 +18,7 @@ export type ActionSelectionRendererAttrs = {
     ActionSelectionInternals,
     | 'name'
     | 'type'
-    | 'datatype'
+    | 'propType'
     | 'index'
     | 'pointer'
     | 'spec'
@@ -38,7 +39,7 @@ export const ActionSelectionRenderer: m.FactoryComponent<ActionSelectionRenderer
   const instances: Record<string, {
     internals: ActionSelectionInternals;
     selection: OctironSelection;
-    octiron: OctironActionSelection & OctironActionSelectionHooks;
+    octiron: OctironActionSelection & InstanceHooks;
     selectionResult: ActionSelectionResult;
   }> = {};
 
@@ -62,11 +63,11 @@ export const ActionSelectionRenderer: m.FactoryComponent<ActionSelectionRenderer
           continue;
         }
 
-        const internals = Object.assign({}, instances[selectionResult.pointer].internals);
+        const internals = instances[selectionResult.pointer].internals;
 
-        internals.name = selectionResult.datatype;
+        internals.name = selectionResult.propType;
         internals.type = selectionResult.type;
-        internals.datatype = selectionResult.datatype;
+        internals.propType = selectionResult.propType;
         internals.pointer = selectionResult.pointer;
         internals.value = selectionResult.value;
         internals.actionValue = selectionResult.actionValue;
@@ -75,7 +76,6 @@ export const ActionSelectionRenderer: m.FactoryComponent<ActionSelectionRenderer
           internals.spec = selectionResult.spec;
         }
 
-        instances[selectionResult.pointer].octiron._updateInternals(internals);
         continue;
       }
 
@@ -85,7 +85,7 @@ export const ActionSelectionRenderer: m.FactoryComponent<ActionSelectionRenderer
         index,
         store: currentAttrs.internals.store,
         typeDefs: currentAttrs.internals.typeDefs,
-        datatype: selectionResult.datatype,
+        propType: selectionResult.propType,
         value: selectionResult.value,
       });
 
@@ -93,9 +93,9 @@ export const ActionSelectionRenderer: m.FactoryComponent<ActionSelectionRenderer
         index,
         ...currentAttrs.internals,
         octiron: selection,
-        name: selectionResult.datatype,
+        name: selectionResult.propType,
         type: selectionResult.type,
-        datatype: selectionResult.datatype,
+        propType: selectionResult.propType,
         pointer: selectionResult.pointer,
         spec: selectionResult.spec,
         value: selectionResult.value,
@@ -160,7 +160,7 @@ export const ActionSelectionRenderer: m.FactoryComponent<ActionSelectionRenderer
 
       for (const instance of Object.values(instances)) {
         instance.octiron._updateArgs(attrs.args);
-        instance.octiron._updateInternals(attrs.internals);
+        // instance.octiron._updateInternals(attrs.internals);
       }
 
       updateSelection();

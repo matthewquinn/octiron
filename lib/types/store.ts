@@ -226,7 +226,7 @@ export type ValueSelectionResult = {
    * The object key (type, or term in json-ld lingo) used when
    * retrieving this value from the parent object.
    */
-  readonly datatype?: string;
+  readonly propType?: string;
 
   /**
    * The selection value.
@@ -253,7 +253,7 @@ export type ActionSelectionResult = {
    * The object key (type, or term in json-ld lingo) used when
    * retrieving this value from the parent object.
    */
-  readonly datatype: string;
+  readonly propType: string;
 
   /**
    * The selection value.
@@ -288,7 +288,7 @@ export type AlternativeTypeResult = {
 
   readonly type: 'alt';
 
-  readonly datatype?: undefined;
+  readonly propType?: undefined;
 
   readonly value?: undefined;
 

@@ -542,7 +542,7 @@ export interface OctironRoot
   extends
     Default,
     Origin,
-    // EntryPoint,
+    EntryPoint,
     Queryable,
     Selectable,
     Filterable,
@@ -559,11 +559,30 @@ export interface OctironRoot
   readonly isOctiron: true;
 
   /**
+   * The property type this instance had on the parent value.
+   */
+  readonly propType?: string;
+
+  /**
+   * The propType this value has.
+   */
+  readonly dataType?: string | string[];
+
+  /**
    * Unique instance id.
    */
   readonly id?: string;
 
+  /**
+   * 0 based index of the octiron instance within it's selection.
+   */
   readonly index: number;
+
+  /**
+   * 1 based position of the octiron instance within
+   * it's selection with filters applied.
+   */
+  readonly position: number;
 
   /**
    * Only action-selection and edit instances can be editable.
@@ -602,11 +621,30 @@ export interface OctironSelection
   readonly isOctiron: true;
 
   /**
+   * The property type this instance had on the parent value.
+   */
+  readonly propType?: string;
+
+  /**
+   * The propType this value has.
+   */
+  readonly dataType?: string | string[];
+
+  /**
    * Unique instance id.
    */
   readonly id?: string;
 
+  /**
+   * 0 based index of the octiron instance within it's selection.
+   */
   readonly index: number;
+
+  /**
+   * 1 based position of the octiron instance within
+   * it's selection with filters applied.
+   */
+  readonly position: number;
 
   /**
    * Only action-selection and edit instances can be editable.
@@ -647,11 +685,30 @@ export interface OctironAction
   readonly isOctiron: true;
 
   /**
+   * The property type this instance had on the parent value.
+   */
+  readonly propType?: string;
+
+  /**
+   * The propType this value has.
+   */
+  readonly dataType?: string | string[];
+
+  /**
    * Unique instance id.
    */
   readonly id?: string;
 
-    readonly index: number;
+  /**
+   * 0 based index of the octiron instance within it's selection.
+   */
+  readonly index: number;
+
+  /**
+   * 1 based position of the octiron instance within
+   * it's selection with filters applied.
+   */
+  readonly position: number;
 
   /**
    * Only action-selection and edit instances can be editable.
@@ -711,12 +768,31 @@ export interface OctironActionSelection
   readonly isOctiron: true;
 
   /**
+   * The property type this instance had on the parent value.
+   */
+  readonly propType?: string;
+
+  /**
+   * The propType this value has.
+   */
+  readonly dataType?: string | string[];
+
+  /**
    * Unique instance id that can optionally be used
    * to set ids in HTML elements.
    */
   readonly id: string;
 
+  /**
+   * 0 based index of the octiron instance within it's selection.
+   */
   readonly index: number;
+
+  /**
+   * 1 based position of the octiron instance within
+   * it's selection with filters applied.
+   */
+  readonly position: number;
 
   /**
    * The HTML input elements name. Mostly useful if

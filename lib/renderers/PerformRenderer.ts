@@ -1,11 +1,12 @@
 import type m from 'mithril';
-import { actionFactory, type OctironActionHooks, type ActionInternals } from '../factories/actionFactory.ts';
+import { actionFactory, type ActionInternals } from '../factories/actionFactory.ts';
 import { selectionFactory } from '../factories/selectionFactory.ts';
 import type { JSONObject, SCMAction } from '../types/common.ts';
 import type { OctironAction, OctironPerformArgs, OctironSelection, PerformView, Selector } from '../types/octiron.ts';
 import type { Failure, ReadonlySelectionResult, SelectionDetails } from '../types/store.ts';
 import { isIRIObject } from '../utils/isIRIObject.ts';
 import { mithrilRedraw } from '../utils/mithrilRedraw.ts';
+import type { InstanceHooks } from "../factories/octironFactory.ts";
 
 export type PerformRendererAttrs = {
   internals: ActionInternals;
@@ -21,7 +22,7 @@ export const PerformRenderer: m.FactoryComponent<PerformRendererAttrs> = ({ attr
 
   const instances: Record<string, {
     octiron: OctironSelection;
-    action: OctironAction & OctironActionHooks;
+    action: OctironAction & InstanceHooks;
     selectionResult: ReadonlySelectionResult;
   }> = {};
 
