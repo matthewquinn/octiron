@@ -16,9 +16,6 @@ const integrationClasses = {
 };
 
 type StateInfo = {
-  rootIRI: string;
-  vocab?: string;
-  aliases?: Record<string, string>;
   primary: Record<string, EntityState>;
   alternatives: Record<string, IntegrationStateInfo[]>;
 };
@@ -100,7 +97,7 @@ export type StoreArgs = {
    * A map of origins and the headers to use when sending
    * requests to them. Octiron will only send requests
    * to endpoints which share origins with the `rootIRI`
-   * or are configured in the origins object. Appart
+   * or are configured in the origins object. Aside
    * from the accept header which has a common default
    * value, headers are not shared between origins.
    */
@@ -256,12 +253,13 @@ export class Store {
         store: this,
       });
     }
+
     /**
      * Generates a unique key for server rendering only.
      */
     public key(): string {
       while (true) {
-        const key = Math.random().toString(36).slice(2, 7);
+        const key = `oct-${Math.random().toString(36).slice(2, 7)}`;
 
         if (!this.#keys.has(key)) {
           this.#keys.add(key);
@@ -607,69 +605,119 @@ export class Store {
       return this.entity(iri) as SuccessEntityState | FailureEntityState;
     }
 
+    /**
+     * Creates an Octiron store from initial state written to the page's HTML.
+     *
+     * @param rootIRI       The root endpoint of the API.
+     * @param [disableLogs] Disables warning and error logs if the initial state
+     *                      is not present or corrupt.
+     * @param [vocab]       The JSON-ld @vocab to use for Octiron selectors.
+     * @param [aliases]     The JSON-ld aliases to use for Octiron selectors.
+     * @param [headers]     Headers to send when making requests to endpoints sharing
+     *                      origins with the `rootIRI`.
+     * @param [origins]     A map of origins and the headers to use when sending
+     *                      requests to them. Octiron will only send requests
+     *                      to endpoints which share origins with the `rootIRI`
+     *                      or are configured in the origins object. Aside
+     *                      from the accept header, which has a common default
+     *                      value, headers are not shared between origins.
+     */
     static fromInitialState({
+      disableLogs,
+      rootIRI,
+      vocab,
+      aliases,
       headers,
       origins,
       handlers = [],
     }: {
+      disableLogs?: boolean;
+      rootIRI: string;
+      vocab?: string;
+      aliases?: Record<string, string>;
       headers?: Record<string, string>;
       origins?: Record<string, Record<string, string>>;
       handlers?: Handler[];
     }): Store {
-      const el = document.getElementById('oct-state-info') as HTMLScriptElement;
-      const stateInfo = JSON.parse(el.innerText) as StateInfo;
-      const alternatives: AlternativesState = new Map();
-      const handlersMap: Record<string, Handler> = handlers.reduce((acc, handler) => ({
-        ...acc,
-        [handler.contentType]: handler,
-      }), {});
-
-      for (const [integrationType, entities] of Object.entries(stateInfo.alternatives)) {
-        for (const stateInfo of entities) {
-          const handler = handlersMap[stateInfo.contentType];
-          const cls = integrationClasses[integrationType as IntegrationType];
-
-          if (cls.type !== handler.integrationType) {
-            continue;
-          }
-
-          // deno-lint-ignore no-explicit-any
-          const state = cls.fromInitialState(handler as any, stateInfo as any);
-
-          if (state == null) {
-            continue;
-          }
-
-          let integrations = alternatives.get(state.contentType);
-
-          if (integrations == null) {
-            integrations = new Map();
-
-            alternatives.set(state.contentType, integrations);
-          }
-
-          integrations.set(state.iri, state);
-        }
-      }
-
-      return new Store({
+      const storeArgs = {
+        rootIRI,
+        vocab,
+        aliases,
         handlers,
-        alternatives,
         headers,
         origins,
-        rootIRI: stateInfo.rootIRI,
-        vocab: stateInfo.vocab,
-        aliases: stateInfo.aliases,
-        primary: stateInfo.primary,
-      });
+      };
+
+      try {
+        const el = document.getElementById('oct-state') as HTMLScriptElement;
+
+        if (el == null) {
+          if (!disableLogs) {
+            console.warn('Failed to construct Octiron state from initial state');
+          }
+
+          return new Store(storeArgs);
+        }
+
+        const stateInfo = JSON.parse(el.innerText) as StateInfo;
+        const alternatives: AlternativesState = new Map();
+        const handlersMap: Record<string, Handler> = handlers.reduce((acc, handler) => ({
+          ...acc,
+          [handler.contentType]: handler,
+        }), {});
+
+        for (const [integrationType, entities] of Object.entries(stateInfo.alternatives)) {
+          for (const stateInfo of entities) {
+            const handler = handlersMap[stateInfo.contentType];
+            const cls = integrationClasses[integrationType as IntegrationType];
+
+            if (cls.type !== handler.integrationType) {
+              continue;
+            }
+
+            // deno-lint-ignore no-explicit-any
+            const state = cls.fromInitialState(handler as any, stateInfo as any);
+
+            if (state == null) {
+              continue;
+            }
+
+            let integrations = alternatives.get(state.contentType);
+
+            if (integrations == null) {
+              integrations = new Map();
+
+              alternatives.set(state.contentType, integrations);
+            }
+
+            integrations.set(state.iri, state);
+          }
+        }
+
+        return new Store({
+          ...storeArgs,
+          alternatives,
+          primary: stateInfo.primary,
+        });
+      } catch (err) {
+        if (!disableLogs) {
+          console.warn('Failed to construct Octiron state from initial state');
+          console.error(err)
+        }
+
+        return new Store(storeArgs);
+      }
     }
 
+    /**
+     * Writes the Octiron store's state to a string to be embedded
+     * near the end of a HTML document. Ideally this is placed before
+     * the closing of the document's body tag. Octiron uses ids prefixed
+     * with `oct-`, avoid using these ids to prevent id collision.
+     */
     public toInitialState(): string {
       let html = '';
       const stateInfo: StateInfo = {
-        rootIRI: this.#rootIRI,
-        vocab: this.#vocab,
-        aliases: Object.fromEntries(this.#aliases),
         primary: Object.fromEntries(this.#primary),
         alternatives: {},
       };
@@ -688,7 +736,7 @@ export class Store {
         }
       }
 
-      html += `<script id="oct-state-info" type="application/json">${JSON.stringify(stateInfo)}</script>`
+      html += `<script id="oct-state" type="application/json">${JSON.stringify(stateInfo)}</script>`
 
       return html;
     }

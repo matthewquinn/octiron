@@ -2,7 +2,7 @@ import { JsonPointer } from 'json-ptr';
 import m from 'mithril';
 import { ActionSelectionRenderer } from "../renderers/ActionSelectionRenderer.ts";
 import type { JSONArray, JSONObject, JSONValue } from "../types/common.ts";
-import type { ActionSelectionParentArgs, ActionSelectionRendererArgs, ActionSelectView, BaseAttrs, CommonParentArgs, CommonRendererArgs, EditComponent, Interceptor, Octiron, OctironAction, OctironActionSelection, OctironActionSelectionArgs, OctironEditArgs, OctironPresentArgs, OctironSelectArgs, OctironSelection, OnChange, PayloadValueMapper, Selector, SelectView, TypeDefs, UpdateArgs } from "../types/octiron.ts";
+import type { ActionSelectionParentArgs, ActionSelectionRendererArgs, ActionSelectView, BaseAttrs, CommonParentArgs, CommonRendererArgs, EditComponent, Interceptor, Octiron, OctironAction, OctironActionSelection, OctironActionSelectionArgs, OctironDefaultArgs, OctironEditArgs, OctironPresentArgs, OctironSelectArgs, OctironSelection, OnChange, PayloadValueMapper, Selector, SelectView, TypeDefs, UpdateArgs } from "../types/octiron.ts";
 import { isJSONObject } from "../utils/isJSONObject.ts";
 import { mithrilRedraw } from "../utils/mithrilRedraw.ts";
 import { unravelArgs } from "../utils/unravelArgs.ts";
@@ -10,7 +10,6 @@ import { type ChildArgs, type CommonArgs, type InstanceHooks, octironFactory } f
 import { isIterable } from "../utils/isIterable.ts";
 import { getIterableValue } from "../utils/getIterableValue.ts";
 import { selectComponentFromArgs } from "../utils/selectComponentFromArgs.ts";
-import { parseArgs } from "node:util";
 
 
 export type OnActionSelectionSubmit = () => Promise<void>;
@@ -155,14 +154,17 @@ export function actionSelectionFactory<
       readonly: false,
       renderType: "edit",
       name: self.inputName,
-      value: self.value,
+      value: rendererArgs.value,
       attrs,
       onchange: rendererArgs.update,
       onChange: rendererArgs.update,
     });
   };
 
-  self.present = self.edit;
+  self.default = (args?: OctironDefaultArgs<BaseAttrs>) => {
+    return self.edit(Object.assign({ component: null }, args) as OctironEditArgs<BaseAttrs>)
+  }
+  // self.default = self.edit;
   self.initial = parentArgs.action.initial;
   self.success = parentArgs.action.success;
   self.failure = parentArgs.action.failure;

@@ -13,6 +13,7 @@ export type ActionRendererRef = {
 };
 
 export type ActionStateRendererAttrs = {
+  not?: boolean;
   type: 'initial' | 'success' | 'failure';
   children?: m.Children;
   selector?: string;
@@ -57,15 +58,19 @@ export const ActionStateRenderer: m.ClosureComponent<ActionStateRendererAttrs> =
     onbeforeupdate: ({ attrs }) => {
       setInstance(attrs);
     },
-    view: ({ attrs: { type, selector, args, view }, children }) => {
+    view: ({ attrs: { type, selector, args, view, ...attrs }, children }) => {
       if (type === 'initial' && typeof submitResult === 'undefined') {
         return children;
       } else if (submitResult == null || o == null) {
         return null;
       }
 
-      const shouldRender = (type === 'success' && submitResult.ok) ||
+      let shouldRender = (type === 'success' && submitResult.ok) ||
         (type === 'failure' && !submitResult.ok);
+
+      if (attrs.not) {
+        shouldRender = !shouldRender;
+      }
 
       (o as Mutable<OctironSelection>).position = 1;
 

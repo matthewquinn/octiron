@@ -427,10 +427,6 @@ export interface Editable {
 export interface Submitable<
   Value extends JSONValue = JSONValue
 > {
-  /**
-   * True if the action is currently being submitted.
-   */
-  readonly submitting: boolean;
 
   /**
    * Overrides the current payload value.
@@ -537,6 +533,32 @@ export interface Filterable {
    */
   not(predicate: Predicate, children: Children): Children;
 }
+
+export interface ActionNot extends Submitable {
+  (predicate: Predicate, children: Children): Children;
+}
+
+export interface ActionFilterable {
+  /**
+   * Renders the children if the predicate passes.
+   *
+   * @params {Predicate} predicate - A function which takes an Octiron instance
+   *                                 returns a boolean.
+   * @params {Children} children   - Mithril children to render if the predicate
+   *                                 passes.
+   */
+  (predicate: Predicate, children: Children): Children;
+
+    /**
+     * Renders the children if the predicate fails.
+     *
+     * @params {Predicate} predicate - A function which takes an Octiron instance
+     *                                 returns a boolean.
+     * @params {Children} children   - Mithril children to render if the predicate
+     *                                 fails.
+     */
+  not: ActionNot;
+};
 
 export interface OctironRoot
   extends
@@ -672,7 +694,7 @@ export interface OctironAction
     ActionSelectable,
     Presentable,
     Submitable<JSONObject>,
-    Filterable,
+    ActionFilterable,
     Performable,
     Appendable {
   /**
@@ -710,6 +732,11 @@ export interface OctironAction
    * it's selection with filters applied.
    */
   readonly position: number;
+
+  /**
+   * True if the action is currently submitting a request.
+   */
+  readonly submitting: boolean;
 
   /**
    * Only action-selection and edit instances can be editable.
@@ -755,7 +782,7 @@ export interface OctironActionSelection
     Presentable,
     Submitable<JSONObject>,
     Editable,
-    Filterable,
+    ActionFilterable,
     Performable,
     Appendable {
   /**
@@ -794,6 +821,11 @@ export interface OctironActionSelection
    * it's selection with filters applied.
    */
   readonly position: number;
+
+  /**
+   * True if the action is currently submitting a request.
+   */
+  readonly submitting: boolean;
 
   /**
    * The HTML input elements name. Mostly useful if

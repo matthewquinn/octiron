@@ -3,7 +3,7 @@ import { JsonPointer } from 'json-ptr';
 import { ActionStateRenderer } from "../renderers/ActionStateRenderer.ts";
 import type { Store } from "../store.ts";
 import type { JSONArray, JSONObject, JSONValue, SCMAction } from "../types/common.ts";
-import type { ActionParentArgs, ActionSelectionParentArgs, ActionSelectView, CommonParentArgs, CommonRendererArgs, OctironAction, OctironActionSelectionArgs, OctironPerformArgs, OctironSelectArgs, PayloadValueMapper, PerformRendererArgs, Predicate, PresentComponent, SelectionParentArgs, Selector, SelectView, TypeDefs, UpdateArgs, UpdatePointer } from "../types/octiron.ts";
+import type { ActionParentArgs, ActionSelectionParentArgs, ActionSelectView, CommonParentArgs, CommonRendererArgs, OctironAction, OctironActionSelectionArgs, OctironPerformArgs, OctironSelectArgs, PayloadValueMapper, PerformRendererArgs, Predicate, PresentComponent, SelectionParentArgs, Selector, SelectView, Submitable, TypeDefs, UpdateArgs, UpdatePointer } from "../types/octiron.ts";
 import type { EntityState } from "../types/store.ts";
 import { getSubmitDetails } from "../utils/getSubmitDetails.ts";
 import { unravelArgs } from "../utils/unravelArgs.ts";
@@ -115,7 +115,7 @@ export function actionFactory<
       payload = next;
     }
     // TODO: perform _updateArgs() when supported
-    self.value = refs.payload = value;
+    childArgs.value = self.value = refs.payload = value;
 
     mithrilRedraw();
   }
@@ -159,6 +159,26 @@ export function actionFactory<
   childArgs.action = self as unknown as OctironAction;
   childArgs.submitting = self.submitting;
 
+  self.select = (
+    arg1: Selector,
+    arg2?: OctironActionSelectionArgs | ActionSelectView,
+    arg3?: ActionSelectView,
+  ): m.Children => {
+    const [selector, args, view] = unravelArgs(arg1, arg2, arg3);
+
+    return m(
+      ActionSelectionRenderer,
+      {
+        parentArgs: childArgs as ActionSelectionParentArgs,
+        selector,
+        value: self.value,
+        actionValue: parentArgs.parent.value as JSONObject,
+        args,
+        view,
+      }
+    );
+  };
+
   self.submit = async function (
     arg1?: PayloadValueMapper<JSONObject> | JSONObject
   ): Promise<void> {
@@ -188,80 +208,11 @@ export function actionFactory<
     }
   } as OctironAction['update'];
 
-  self.initial = (
-    children: m.Children
-  ): m.Children => {
-    return m(
-      ActionStateRenderer,
-      {
-        type: 'initial',
-        args: {},
-        submitResult: refs.submitResult as EntityState,
-        parentArgs: childArgs as SelectionParentArgs,
-      },
-      children,
-    );
-  };
-
-  self.success = (
-    arg1?: Selector | OctironSelectArgs | SelectView,
-    arg2?: OctironSelectArgs | SelectView,
-    arg3?: SelectView,
-  ): m.Children => {
-    const [selector, args, view] = unravelArgs(arg1, arg2, arg3);
-
-    return m(ActionStateRenderer, {
-      type: 'success',
-      selector,
-      args,
-      view,
-      submitResult: refs.submitResult as EntityState,
-      parentArgs: childArgs as SelectionParentArgs,
-    });
-  };
-
-  self.failure = function (
-    arg1?: Selector | OctironSelectArgs | SelectView,
-    arg2?: OctironSelectArgs | SelectView,
-    arg3?: SelectView,
-  ) {
-    const [selector, args, view] = unravelArgs(arg1, arg2, arg3);
-
-    return m(ActionStateRenderer, {
-      type: 'failure',
-      selector,
-      args,
-      view,
-      submitResult: refs.submitResult as EntityState,
-      parentArgs: childArgs as SelectionParentArgs,
-    });
-  };
-
-  self.select = function (
-    arg1: Selector,
-    arg2?: OctironActionSelectionArgs | ActionSelectView,
-    arg3?: ActionSelectView,
-  ): m.Children | null {
-    const [selector, args, view] = unravelArgs(arg1, arg2, arg3);
-
-    return m(
-      ActionSelectionRenderer,
-      {
-        parentArgs: childArgs as ActionSelectionParentArgs,
-        selector,
-        value: self.value,
-        actionValue: parentArgs.parent.value as JSONObject,
-        args,
-        view,
-      }
-    );
-  };
-
-  self.append = function (
+  self.append = (
     termOrType: string,
     value: JSONValue = {},
     args: UpdateArgs = {},
-  ) {
+  ) => {
     const type = parentArgs.store.expand(termOrType);
 
     if (!isJSONObject(self.value)) {
@@ -283,6 +234,56 @@ export function actionFactory<
       [type]: nextValue,
     }, args);
   };
+
+  const makeInitialStateMethod = (
+    not?: true,
+  ) => {
+    return (
+      children: m.Children,
+    ) => {
+      return m(
+        ActionStateRenderer,
+        {
+          not,
+          type: 'initial',
+          args: {},
+          submitResult: refs.submitResult as EntityState,
+          parentArgs: childArgs as SelectionParentArgs,
+        },
+        children,
+      );
+    }
+  }
+
+  const makeActionStateMethod = (
+    type: 'success' | 'failure',
+    not?: true,
+  ) => {
+    return (
+      arg1?: Selector | OctironSelectArgs | SelectView,
+      arg2?: OctironSelectArgs | SelectView,
+      arg3?: SelectView,
+    ) => {
+      const [selector, args, view] = unravelArgs(arg1, arg2, arg3);
+
+      return m(ActionStateRenderer, {
+        not,
+        type,
+        selector,
+        args,
+        view,
+        submitResult: refs.submitResult as EntityState,
+        parentArgs: childArgs as SelectionParentArgs,
+      });
+    }
+  }
+
+  self.initial = makeInitialStateMethod();
+  self.not.initial = makeInitialStateMethod(true);
+  self.success = makeActionStateMethod('success');
+  self.not.success = makeActionStateMethod('success', true);
+  self.failure = makeActionStateMethod('failure');
+  self.not.failure = makeActionStateMethod('failure', true);
 
   if (
     typeof window === 'undefined' && args.submitOnInit &&
