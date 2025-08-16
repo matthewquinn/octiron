@@ -1,15 +1,15 @@
 import type m from 'mithril';
-import { actionFactory, type ActionInternals } from '../factories/actionFactory.ts';
+import { actionFactory } from '../factories/actionFactory.ts';
 import { selectionFactory } from '../factories/selectionFactory.ts';
-import type { JSONObject, Mutable, SCMAction } from '../types/common.ts';
-import type { OctironAction, OctironPerformArgs, OctironSelection, PerformView, Selector } from '../types/octiron.ts';
+import type { JSONObject, Mutable } from '../types/common.ts';
+import type { ActionParentArgs, OctironAction, OctironPerformArgs, OctironSelection, PerformRendererArgs, PerformView, SelectionParentArgs, Selector } from '../types/octiron.ts';
 import type { Failure, ReadonlySelectionResult, SelectionDetails } from '../types/store.ts';
 import { isIRIObject } from '../utils/isIRIObject.ts';
 import { mithrilRedraw } from '../utils/mithrilRedraw.ts';
 import type { InstanceHooks } from "../factories/octironFactory.ts";
 
 export type PerformRendererAttrs = {
-  internals: ActionInternals;
+  parentArgs: SelectionParentArgs & ActionParentArgs,
   selector?: Selector;
   args: OctironPerformArgs;
   view: PerformView;
@@ -28,6 +28,7 @@ export const PerformRenderer: m.FactoryComponent<PerformRendererAttrs> = ({ attr
 
   function createInstances() {
     let hasChanges = false;
+    const { args, parentArgs } = currentAttrs;
 
     const nextKeys: Array<string> = [];
 
@@ -61,16 +62,20 @@ export const PerformRenderer: m.FactoryComponent<PerformRendererAttrs> = ({ attr
 
       hasChanges = true;
 
-      const octiron = selectionFactory({
+      const rendererArgs: PerformRendererArgs = {
         index,
-        store: currentAttrs.internals.store,
-        typeDefs: currentAttrs.internals.typeDefs,
-        value: selectionResult.value as SCMAction,
-      });
-      const action = actionFactory({
-        ...currentAttrs.internals,
-        octiron,
-      }, currentAttrs.args);
+        value: selectionResult.value,
+      };
+      const octiron = selectionFactory(
+        args,
+        parentArgs,
+        rendererArgs,
+      );
+      const action = actionFactory(
+        args,
+        parentArgs,
+        rendererArgs,
+      );
 
       instances[selectionResult.pointer] = {
         action,
@@ -103,7 +108,7 @@ export const PerformRenderer: m.FactoryComponent<PerformRendererAttrs> = ({ attr
     const promises: Promise<any>[] = [];
 
     for (const iri of required) {
-      promises.push(currentAttrs.internals.store.fetch(iri));
+      promises.push(currentAttrs.parentArgs.store.fetch(iri));
     }
 
     await Promise.allSettled(promises);
@@ -132,27 +137,27 @@ export const PerformRenderer: m.FactoryComponent<PerformRendererAttrs> = ({ attr
   }
 
   function subscribe() {
-    const { selector, internals } = currentAttrs;
+    const { selector, parentArgs } = currentAttrs;
 
     if (typeof selector === 'undefined') {
       // The value is the action
       let result: ReadonlySelectionResult;
 
-      if (isIRIObject(internals.octiron.value)) {
+      if (isIRIObject(parentArgs.parent.value)) {
         result = {
           pointer: '/local',
           key: Symbol.for('/local'),
           type: 'entity',
-          iri: internals.octiron.value['@id'],
+          iri: parentArgs.parent.value['@id'],
           ok: true,
-          value: internals.octiron.value,
+          value: parentArgs.parent.value,
         };
       } else {
         result = {
           pointer: '/local',
           key: Symbol.for('/local'),
           type: 'value',
-          value: internals.octiron.value,
+          value: parentArgs.parent.value,
         };
       }
 
@@ -167,10 +172,10 @@ export const PerformRenderer: m.FactoryComponent<PerformRendererAttrs> = ({ attr
       };
     } else {
       // Perform needs to select the action value
-      details = internals.store.subscribe({
+      details = parentArgs.store.subscribe({
         key,
         selector: selector,
-        value: internals.octiron.value as JSONObject,
+        value: parentArgs.parent.value as JSONObject,
         listener,
       });
 
@@ -188,7 +193,7 @@ export const PerformRenderer: m.FactoryComponent<PerformRendererAttrs> = ({ attr
     },
     onbeforeupdate: ({ attrs }) => {
       if (attrs.selector !== currentAttrs.selector) {
-        attrs.internals.store.unsubscribe(key);
+        attrs.parentArgs.store.unsubscribe(key);
 
         subscribe();
       }
@@ -196,13 +201,13 @@ export const PerformRenderer: m.FactoryComponent<PerformRendererAttrs> = ({ attr
       currentAttrs = attrs;
 
       for (const instance of Object.values(instances)) {
-        instance.action._updateArgs(attrs.args);
+        instance.action._updateArgs('args', attrs.args);
       }
     },
     onbeforeremove: ({ attrs }) => {
       currentAttrs = attrs;
 
-      attrs.internals.store.unsubscribe(key);
+      attrs.parentArgs.store.unsubscribe(key);
     },
     view: ({ attrs: { view, args } }): m.Children => {
       if (details == null || !details.complete) {

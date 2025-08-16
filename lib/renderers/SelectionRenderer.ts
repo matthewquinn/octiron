@@ -1,35 +1,28 @@
-import type { JSONValue, Mutable } from "../types/common.ts";
+import type { Mutable } from "../types/common.ts";
 import type {
-  Octiron,
+CommonRendererArgs,
   OctironSelectArgs,
   OctironSelection,
+  SelectionParentArgs,
   Selector,
   SelectView,
-  TypeDefs,
 } from "../types/octiron.ts";
 import type {
   Failure,
   ReadonlySelectionResult,
   SelectionDetails,
 } from "../types/store.ts";
-import m from "mithril";
+import m, { render } from "mithril";
 import { selectionFactory } from "../factories/selectionFactory.ts";
 import { isJSONObject } from "../utils/isJSONObject.ts";
 import { mithrilRedraw } from "../utils/mithrilRedraw.ts";
-import type { Store } from "../store.ts";
 
-export type SelectionRendererInternals = {
-  store: Store;
-  typeDefs: TypeDefs;
-  parent?: Octiron;
-  value?: JSONValue;
-};
 
 export type SelectionRendererAttrs = {
   selector: Selector;
   args: OctironSelectArgs;
   view: SelectView;
-  internals: SelectionRendererInternals;
+  parentArgs: SelectionParentArgs;
 };
 
 const preKey = Symbol.for('@pre');
@@ -39,9 +32,9 @@ function shouldReselect(
   next: SelectionRendererAttrs,
   prev: SelectionRendererAttrs,
 ) {
-  return next.internals.store !== prev.internals.store ||
+  return next.parentArgs.store !== prev.parentArgs.store ||
     next.selector !== prev.selector ||
-    next.internals.value !== prev.internals.value;
+    next.parentArgs.value !== prev.parentArgs.value;
 }
 
 /**
@@ -52,7 +45,7 @@ function shouldReselect(
  * given a unique key in the form of a json-path.
  *
  * Once an Octiron instance is created using a selection, further changes via
- * the upstream internals object or user given args applied to the downstream
+ * the upstream parentArgs object or user given args applied to the downstream
  * Octiron instances using their internal update hooks.
  */
 export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
@@ -69,13 +62,6 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
 
   function createInstances() {
     let hasChanges = false;
-
-    const {
-      store,
-      typeDefs,
-      parent,
-    } = currentAttrs.internals;
-
     const nextKeys: Array<symbol> = [];
 
     if (details == null) {
@@ -127,14 +113,16 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
 
       hasChanges = true;
 
-      const octiron = selectionFactory({
+      const rendererArgs: CommonRendererArgs = {
         index,
-        store,
-        typeDefs,
         value: selectionResult.value,
         propType: selectionResult.type === 'entity' ? undefined : selectionResult.propType,
-        parent,
-      });
+      }
+      const octiron = selectionFactory(
+        currentAttrs.args,
+        currentAttrs.parentArgs,
+        rendererArgs,
+      );
 
       instances[key] = {
         octiron,
@@ -166,7 +154,7 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
     const promises: Promise<any>[] = [];
 
     for (const iri of required) {
-      promises.push(currentAttrs.internals.store.fetch(iri));
+      promises.push(currentAttrs.parentArgs.store.fetch(iri));
     }
 
     await Promise.allSettled(promises);
@@ -196,19 +184,19 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
 
   function subscribe() {
     if (
-      typeof currentAttrs.internals.value !== 'undefined' &&
-      !isJSONObject(currentAttrs.internals.value)
+      typeof currentAttrs.parentArgs.value !== 'undefined' &&
+      !isJSONObject(currentAttrs.parentArgs.value)
     ) {
-      currentAttrs.internals.store.unsubscribe(key);
+      currentAttrs.parentArgs.store.unsubscribe(key);
       createInstances();
 
       return;
     }
 
-    details = currentAttrs.internals.store.subscribe({
+    details = currentAttrs.parentArgs.store.subscribe({
       key,
       selector: currentAttrs.selector,
-      value: currentAttrs.internals.value,
+      value: currentAttrs.parentArgs.value,
       listener,
     });
 
@@ -229,14 +217,14 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
       currentAttrs = attrs;
 
       if (reselect) {
-        attrs.internals.store.unsubscribe(key);
+        attrs.parentArgs.store.unsubscribe(key);
         subscribe();
       }
     },
     onbeforeremove: ({ attrs }) => {
       currentAttrs = attrs;
 
-      attrs.internals.store.unsubscribe(key);
+      attrs.parentArgs.store.unsubscribe(key);
     },
     view: ({ attrs }): m.Children => {
       if (details == null || !details.complete) {

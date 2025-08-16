@@ -1,13 +1,12 @@
 import { JsonPointer } from 'json-ptr';
 import m from 'mithril';
 import { ActionSelectionRenderer } from "../renderers/ActionSelectionRenderer.ts";
-import type { Store } from "../store.ts";
-import type { JSONArray, JSONObject, JSONValue, SCMPropertyValueSpecification } from "../types/common.ts";
-import type { ActionSelectView, BaseAttrs, EditComponent, Interceptor, Octiron, OctironAction, OctironActionSelection, OctironActionSelectionArgs, OctironEditArgs, OctironPresentArgs, OctironSelectArgs, OctironSelection, OnChange, PayloadValueMapper, Selector, SelectView, TypeDefs, UpdateArgs } from "../types/octiron.ts";
+import type { JSONArray, JSONObject, JSONValue } from "../types/common.ts";
+import type { ActionSelectionParentArgs, ActionSelectionRendererArgs, ActionSelectView, BaseAttrs, CommonParentArgs, CommonRendererArgs, EditComponent, Interceptor, Octiron, OctironAction, OctironActionSelection, OctironActionSelectionArgs, OctironEditArgs, OctironPresentArgs, OctironSelectArgs, OctironSelection, OnChange, PayloadValueMapper, Selector, SelectView, TypeDefs, UpdateArgs } from "../types/octiron.ts";
 import { isJSONObject } from "../utils/isJSONObject.ts";
 import { mithrilRedraw } from "../utils/mithrilRedraw.ts";
 import { unravelArgs } from "../utils/unravelArgs.ts";
-import { type CommonArgs, type InstanceHooks, octironFactory } from "./octironFactory.ts";
+import { type ChildArgs, type CommonArgs, type InstanceHooks, octironFactory } from "./octironFactory.ts";
 import { isIterable } from "../utils/isIterable.ts";
 import { getIterableValue } from "../utils/getIterableValue.ts";
 import { selectComponentFromArgs } from "../utils/selectComponentFromArgs.ts";
@@ -21,62 +20,41 @@ export type OnActionSelectionUpdate = (
   args?: UpdateArgs,
 ) => void;
 
-export type ActionSelectionInternals = {
-  submitting: boolean;
-  type: string | string[];
-  propType: string;
-  index: number;
-  pointer: string;
-  name: string;
-  value: JSONValue;
-  actionValue?: JSONValue;
-  entity: Octiron;
-  action: OctironAction;
-  parent: OctironAction | OctironActionSelection;
-  octiron: OctironSelection;
-  store: Store;
-  spec?: SCMPropertyValueSpecification;
-  typeDefs: TypeDefs;
-  onSubmit: OnActionSelectionSubmit;
-  onUpdate: OnActionSelectionUpdate;
-};
 
 export function actionSelectionFactory<
   // deno-lint-ignore no-explicit-any
   Attrs extends Record<string, any> = Record<string, any>
 >(
-  internals: ActionSelectionInternals,
   args: OctironActionSelectionArgs<Attrs>,
+  parentArgs: ActionSelectionParentArgs,
+  rendererArgs: ActionSelectionRendererArgs,
 ): OctironActionSelection & InstanceHooks {
   const factoryArgs = Object.assign({}, args);
-  const refs = Object.assign({}, args);
-
-  function onUpdate(value: JSONObject) {
-    return internals.onUpdate(internals.pointer, value, {
-      throttle: refs.throttle,
-      debounce: refs.debounce,
-      submitOnChange: refs.submitOnChange,
-    });
-  }
+  const childArgs: Partial<ChildArgs> = {
+    action: parentArgs.action,
+    submitting: parentArgs.submitting,
+    value: rendererArgs.value,
+  };
 
   const self = octironFactory(
     'action-selection',
-    internals,
     factoryArgs as CommonArgs,
+    parentArgs as CommonParentArgs,
+    rendererArgs as CommonRendererArgs,
+    childArgs as ChildArgs,
   );
 
-  self.readonly = internals.spec == null ? true : (internals.spec.readonlyValue ?? false);
-  self.inputName = internals.propType;
-  self.submitting = internals.submitting;
-  // self.value = internals.value ?? args.initialValue;
-  self.action = internals.action;
+  self.readonly = rendererArgs.spec == null ? true : (rendererArgs.spec.readonlyValue ?? false);
+  self.inputName = rendererArgs.propType as string;
+  self.submitting = parentArgs.submitting;
+  self.action = parentArgs.action;
 
-  function onSelectionUpdate(
+  childArgs.updatePointer = (
     pointer: string,
     value: JSONValue,
     args?: UpdateArgs,
-    interceptor?: Interceptor,
-  ) {
+    interceptor = factoryArgs.interceptor,
+  ) => {
     const prev = self.value as JSONObject;
 
     if (!isJSONObject(prev)) {
@@ -94,10 +72,10 @@ export function actionSelectionFactory<
     }
 
     if (typeof interceptor === 'function') {
-      next = interceptor(next, prev, internals.actionValue as JSONObject);
+      next = interceptor(next, prev, rendererArgs.actionValue as JSONObject);
     }
 
-    internals.onUpdate(internals.pointer, next, args);
+    parentArgs.updatePointer(rendererArgs.pointer, next, args);
   }
 
   self.update = async (
@@ -111,20 +89,20 @@ export function actionSelectionFactory<
     }
 
     if (typeof arg1 === 'function') {
-      onUpdate(arg1(value));
+      rendererArgs.update(arg1(value));
     } else if (arg1 != null) {
-      onUpdate(arg1);
+      rendererArgs.update(arg1);
     }
 
     if (args?.submit || args?.submitOnChange) {
-      await internals.onSubmit();
+      await parentArgs.submit();
     } else {
       mithrilRedraw();
     }
   };
 
   self.submit = (): Promise<void> => {
-    return internals.onSubmit();
+    return parentArgs.submit();
   };
 
   self.select = (
@@ -138,35 +116,13 @@ export function actionSelectionFactory<
 
     const [selector, args, view] = unravelArgs(arg1, arg2, arg3);
 
-    const onUpdate: OnActionSelectionUpdate = (
-      pointer,
-      value,
-      updateArgs,
-    ) => {
-      onSelectionUpdate(
-        pointer,
-        value,
-        updateArgs,
-        args.interceptor,
-      );
-    }
-
     return m(
       ActionSelectionRenderer,
       {
-        internals: {
-          submitting: internals.submitting,
-          entity: internals.entity,
-          action: internals.action,
-          parent: self as unknown as OctironActionSelection,
-          store: internals.store,
-          typeDefs: internals.typeDefs,
-          onSubmit: internals.onSubmit,
-          onUpdate,
-        },
+        parentArgs: childArgs as ActionSelectionParentArgs,
         selector,
         value: self.value,
-        actionValue: internals.actionValue as JSONObject,
+        actionValue: rendererArgs.actionValue as JSONObject,
         args,
         view,
       },
@@ -182,19 +138,13 @@ export function actionSelectionFactory<
 
     const [attrs, component] = selectComponentFromArgs(
       'edit',
-      internals,
+      parentArgs,
       args,
       factoryArgs as OctironEditArgs,
     );
 
     if (component == null) {
       return null;
-    }
-
-    // don't apply intercepter fn to edit calls.
-    // deno-lint-ignore no-explicit-any
-    const onChange: OnChange<any> = (value, args) => {
-      return internals.onUpdate(internals.pointer, value, args);
     }
 
     return m(component as EditComponent<JSONValue, BaseAttrs>, {
@@ -205,15 +155,15 @@ export function actionSelectionFactory<
       name: self.inputName,
       value: self.value,
       attrs,
-      onchange: onChange,
-      onChange,
+      onchange: rendererArgs.update,
+      onChange: rendererArgs.update,
     });
   };
 
   self.present = self.edit;
 
   self.initial = (children: m.Children) => {
-    return internals.action.initial(children);
+    return parentArgs.action.initial(children);
   };
 
   self.success = (
@@ -221,7 +171,7 @@ export function actionSelectionFactory<
     arg2?: OctironSelectArgs | SelectView,
     arg3?: SelectView,
   ) => {
-    return internals.action.success(
+    return parentArgs.action.success(
       arg1 as Selector,
       arg2 as OctironSelectArgs,
       arg3 as SelectView,
@@ -233,7 +183,7 @@ export function actionSelectionFactory<
     arg2?: OctironSelectArgs | SelectView,
     arg3?: SelectView,
   ) => {
-    return internals.action.failure(
+    return parentArgs.action.failure(
       arg1 as Selector,
       arg2 as OctironSelectArgs,
       arg3 as SelectView,
@@ -241,10 +191,14 @@ export function actionSelectionFactory<
   };
 
   self.remove = (
-    args: UpdateArgs = {},
+    _args: UpdateArgs = {},
   ) => {
-    const parentValue = internals.parent.value as JSONObject;
-    const value = parentValue[internals.propType];
+    if (rendererArgs.propType == null) {
+      return;
+    }
+
+    const parentValue = parentArgs.parent.value as JSONObject;
+    const value = parentValue[rendererArgs.propType];
 
     if (isIterable(value)) {
       const arrValue = getIterableValue(value);
@@ -252,10 +206,10 @@ export function actionSelectionFactory<
       arrValue.splice(self.index, 1);
 
       if (arrValue.length === 0) {
-        delete parentValue[internals.propType];
+        delete parentValue[rendererArgs.propType];
       }
     } else if (isJSONObject(value)) {
-      delete parentValue[internals.propType];
+      delete parentValue[rendererArgs.propType];
     }
 
     mithrilRedraw()
@@ -271,7 +225,7 @@ export function actionSelectionFactory<
     value: JSONValue = {},
     args: UpdateArgs = {},
   ) => {
-    const type = internals.store.expand(termOrType);
+    const type = parentArgs.store.expand(termOrType);
 
     if (isJSONObject(self.value)) {
       const prevValue = self.value[type];
@@ -284,8 +238,7 @@ export function actionSelectionFactory<
       }
 
       nextValue.push(value);
-
-      return internals.onUpdate(internals.pointer, {
+        return parentArgs.updatePointer(rendererArgs.pointer, {
         ...self.value,
         [type]: nextValue,
       }, args);

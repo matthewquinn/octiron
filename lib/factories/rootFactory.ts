@@ -1,18 +1,15 @@
-import type { OctironRoot, TypeDefs } from '../types/octiron.ts';
-import type { Store } from "../store.ts";
+import type { CommonParentArgs, OctironRoot } from '../types/octiron.ts';
 import { octironFactory } from "./octironFactory.ts";
 
-export type RootFactoryInternals = {
-  store: Store;
-  typeDefs: TypeDefs;
-};
 
 export function rootFactory(
-  internals: RootFactoryInternals,
+  parentArgs: CommonParentArgs,
 ): OctironRoot {
+  const factoryArgs = {};
   const self = octironFactory(
     'root',
-    internals,
+    factoryArgs,
+    parentArgs,
   );
 
   return self as unknown as OctironRoot;

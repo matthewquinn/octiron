@@ -1,6 +1,6 @@
 import type m from 'mithril';
 import { selectionFactory } from '../factories/selectionFactory.ts';
-import type { OctironSelectArgs, OctironSelection, SelectView, TypeDefs } from '../types/octiron.ts';
+import type { CommonRendererArgs, OctironSelectArgs, OctironSelection, SelectionParentArgs, SelectView, TypeDefs } from '../types/octiron.ts';
 import type { EntityState } from '../types/store.ts';
 import type { Store } from "../store.ts";
 import type { Mutable } from "../types/common.ts";
@@ -16,9 +16,10 @@ export type ActionStateRendererAttrs = {
   type: 'initial' | 'success' | 'failure';
   children?: m.Children;
   selector?: string;
-  args?: OctironSelectArgs;
+  args: OctironSelectArgs;
   view?: SelectView;
-  refs: ActionRendererRef;
+  submitResult: EntityState;
+  parentArgs: SelectionParentArgs,
 };
 
 export const ActionStateRenderer: m.ClosureComponent<ActionStateRendererAttrs> = () => {
@@ -26,22 +27,26 @@ export const ActionStateRenderer: m.ClosureComponent<ActionStateRendererAttrs> =
   let o: OctironSelection | undefined;
 
   function setInstance(attrs: ActionStateRendererAttrs) {
-    if (typeof attrs.refs.submitResult === 'undefined') {
+    if (typeof attrs.submitResult === 'undefined') {
         submitResult = undefined;
       o = undefined;
     } else if (
       typeof submitResult === 'undefined' ||
-      attrs.refs.submitResult.ok !== submitResult.ok ||
-      attrs.refs.submitResult.status !== submitResult.status ||
-      attrs.refs.submitResult.value !== submitResult.value
+      attrs.submitResult.ok !== submitResult.ok ||
+      attrs.submitResult.status !== submitResult.status ||
+      attrs.submitResult.value !== submitResult.value
     ) {
-      submitResult = attrs.refs.submitResult;
+      submitResult = attrs.submitResult;
 
-      o = selectionFactory({
-        value: submitResult.value,
-        store: attrs.refs.store,
-        typeDefs: attrs.refs.typeDefs,
-      });
+      const rendererArgs: CommonRendererArgs = {
+        index: 0,
+        value: attrs.submitResult.value,
+      }
+      o = selectionFactory(
+        attrs.args,
+        attrs.parentArgs,
+        rendererArgs,
+      );
     }
   }
 

@@ -1,7 +1,7 @@
 import m from 'mithril';
 import type { Octiron } from "@octiron/octiron";
-import type { JSONValue, Mutable } from "../types/common.ts";
-import type { AnyAttrs, AnyComponent, BaseAttrs, EditAttrs, EditComponent, OctironAction, OctironActionSelection, OctironActionSelectionArgs, OctironDefaultArgs, OctironEditArgs, OctironPerformArgs, OctironPresentArgs, OctironRoot, OctironSelectArgs, OctironSelection, PerformView, Predicate, PresentAttrs, PresentComponent, Selector, SelectView, TypeDefs } from "../types/octiron.ts";
+import type { Mutable } from "../types/common.ts";
+import type { ActionParentArgs, ActionSelectionParentArgs, AnyAttrs, AnyComponent, BaseAttrs, CommonParentArgs, CommonRendererArgs, EditAttrs, EditComponent, OctironAction, OctironActionSelection, OctironActionSelectionArgs, OctironDefaultArgs, OctironPerformArgs, OctironPresentArgs, OctironRoot, OctironSelectArgs, OctironSelection, PerformView, Predicate, PresentAttrs, PresentComponent, SelectionParentArgs, Selector, SelectView, TypeDefs } from "../types/octiron.ts";
 import { isJSONObject } from "../utils/isJSONObject.ts";
 import { unravelArgs } from "../utils/unravelArgs.ts";
 import type { Store } from "../store.ts";
@@ -19,15 +19,6 @@ const TypeKeys = {
   'action-selection': 3,
 } as const;
 
-export type CommonInternals = {
-  index?: number;
-  propType?: string;
-  value?: JSONValue;
-  store: Store;
-  typeDefs: TypeDefs;
-  octiron?: Octiron;
-};
-
 export type CommonArgs = {
   pre?: m.Children,
   sep?: m.Children,
@@ -42,37 +33,65 @@ export type CommonArgs = {
   fallbackComponent?: AnyComponent,
 };
 
+export type ChildArgs =
+  & Partial<SelectionParentArgs>
+  & Partial<ActionParentArgs>
+  & Partial<ActionSelectionParentArgs>
+  & CommonParentArgs
+;
+
 export type InstanceHooks = {
-  _updateArgs: (args: OctironSelectArgs | OctironPerformArgs | OctironActionSelectionArgs) => void;
+  _updateArgs: (
+    type: 'args' | 'renderer' | 'parent',
+    args: OctironSelectArgs | OctironPerformArgs | OctironActionSelectionArgs,
+  ) => void;
 }
 
 export function octironFactory(
   octironType: 'root',
-  internals: CommonInternals,
+  factoryArgs: CommonArgs,
+  parentArgs: CommonParentArgs,
 ): Mutable<OctironRoot>;
 
 export function octironFactory(
   octironType: 'selection',
-  internals: CommonInternals,
-  args?: CommonArgs,
+  factoryArgs: CommonArgs,
+  parentArgs: CommonParentArgs,
+  rendererArgs: CommonRendererArgs,
+  childArgs: ChildArgs,
 ): Mutable<OctironSelection & InstanceHooks>;
 
 export function octironFactory(
   octironType: 'action',
-  internals: CommonInternals,
-  args?: CommonArgs,
+  factoryArgs: CommonArgs,
+  parentArgs: CommonParentArgs,
+  rendererArgs: CommonRendererArgs,
+  childArgs: ChildArgs,
 ): Mutable<OctironAction & InstanceHooks>;
 
 export function octironFactory(
   octironType: 'action-selection',
-  internals: CommonInternals,
-  args?: CommonArgs,
+  factoryArgs: CommonArgs,
+  parentArgs: CommonParentArgs,
+  rendererArgs: CommonRendererArgs,
+  childArgs: ChildArgs,
 ): Mutable<OctironActionSelection & InstanceHooks>;
 
+/**
+ * Creates the base Octiron instance.
+ *
+ * @param octironType - The Octiron instance type to create.
+ * @param factoryArgs - User specified args passed to the Octiron method creating the factory.
+ * @param parentArgs - Args passed from the Octiron parent instance of this instance.
+ * @param rendererArgs - Args passed from the Mithril renderer component.
+ * @param childArgs - Args to pass through to any child renderers, to be their parent args.
+ */
 export function octironFactory<O extends Octiron>(
   octironType: 'root' | 'selection' | 'action' | 'action-selection',
-  internals: CommonInternals,
-  factoryArgs: CommonArgs = {},
+  factoryArgs: CommonArgs,
+  parentArgs: CommonParentArgs,
+  rendererArgs: CommonRendererArgs = {} as CommonRendererArgs,
+  childArgs: ChildArgs = {} as ChildArgs,
 ): Mutable<O> {
   const typeKey = TypeKeys[octironType];
   const self: Mutable<O & InstanceHooks> = function(
@@ -88,17 +107,24 @@ export function octironFactory<O extends Octiron>(
     return null;
   } as O & InstanceHooks;
 
-  self.id = internals.store.key();
+  self.id = parentArgs.store.key();
   self.isOctiron = true;
   self.octironType = octironType;
   self.readonly = true;
-  self.value = internals.value ?? null;
-  self.store = internals.store;
-  self.index = internals.index ?? 0;
+  self.value = rendererArgs.value ?? null;
+  self.store = parentArgs.store;
+  self.index = rendererArgs.index ?? 0;
   self.position = -1;
 
+  // easiest to define the common child args here
+  // but the object is passed in from the parent factory
+  // so it has references and control over the values.
+  childArgs.parent = self as unknown as Octiron;
+  childArgs.store = factoryArgs.store ?? parentArgs.store;
+  childArgs.typeDefs = factoryArgs.typeDefs ?? parentArgs.typeDefs;
+
   if (typeKey !== TypeKeys['root']) {
-    self.propType = internals.propType;
+    self.propType = rendererArgs.propType;
     self.dataType = getDataType(self.value);
   }
 
@@ -145,11 +171,7 @@ export function octironFactory<O extends Octiron>(
       selector,
       args,
       view,
-      internals: {
-        store: internals.store,
-        typeDefs: args?.typeDefs ?? factoryArgs?.typeDefs ?? internals.typeDefs,
-        parent: self as unknown as OctironAction,
-      },
+      parentArgs: childArgs as SelectionParentArgs,
     });
   };
 
@@ -162,9 +184,9 @@ export function octironFactory<O extends Octiron>(
     const [childSelector, args, view] = unravelArgs(arg1, arg2, arg3);
 
     if (childSelector == null) {
-      selector = internals.store.rootIRI;
+      selector = parentArgs.store.rootIRI;
     } else {
-      selector = `${internals.store.rootIRI} ${childSelector}`;
+      selector = `${parentArgs.store.rootIRI} ${childSelector}`;
     }
 
     return self.enter(selector, args, view);
@@ -183,7 +205,7 @@ export function octironFactory<O extends Octiron>(
       ): m.Children => {
         const [selector, args, view] = unravelArgs(arg1, arg2, arg3);
 
-        if (!isJSONObject(internals.value)) {
+        if (!isJSONObject(self.value)) {
           return null;
         }
 
@@ -193,12 +215,7 @@ export function octironFactory<O extends Octiron>(
             selector,
             args,
             view,
-            internals: {
-              store: internals.store,
-              typeDefs: args?.typeDefs || internals.typeDefs,
-              value: internals.value,
-              parent: self as unknown as OctironSelection,
-            },
+            parentArgs: childArgs as SelectionParentArgs,
           },
         );
       };
@@ -214,7 +231,7 @@ export function octironFactory<O extends Octiron>(
       ): m.Children => {
         const [attrs, component] = selectComponentFromArgs(
           'present',
-          internals,
+          parentArgs,
           args,
           factoryArgs as OctironPresentArgs,
         );
@@ -228,7 +245,6 @@ export function octironFactory<O extends Octiron>(
           factoryArgs,
           args,
         );
-
 
         // deno-lint-ignore no-explicit-any
         return m(component as any, {
@@ -251,7 +267,6 @@ export function octironFactory<O extends Octiron>(
   ) => {
     return self.present(Object.assign({ component: null }, args));
   };
-  // self.default = self.present;
 
   switch (typeKey) {
     case TypeKeys['root']:
@@ -273,7 +288,7 @@ export function octironFactory<O extends Octiron>(
         ));
       };
       break;
-    default:
+    default: {
       self.perform = (
         arg1?: Selector | OctironPerformArgs | PerformView,
         arg2?: OctironPerformArgs | PerformView,
@@ -285,21 +300,30 @@ export function octironFactory<O extends Octiron>(
           selector,
           args,
           view,
-          internals: {
-            octiron: self as unknown as OctironSelection,
-            store: args.store ?? internals.store,
-            typeDefs: args.typeDefs ?? internals.typeDefs,
-          },
+          parentArgs: childArgs as SelectionParentArgs & ActionParentArgs,
         });
       };
       break;
+    }
   }
 
   if (typeKey !== TypeKeys['root']) {
-    const updateArgs: InstanceHooks['_updateArgs'] = (args) => {
+    const updateArgs: InstanceHooks['_updateArgs'] = (type, args) => {
+      const currentArgs = type === 'args'
+        ? factoryArgs
+        : type === 'parent'
+        ? parentArgs
+        : rendererArgs;
+
+      // Hack, still don't know if it will work...
+      for (const key of Object.keys(currentArgs)) {
+        // deno-lint-ignore no-explicit-any
+        delete (currentArgs as Record<string, any>)[key];
+      }
+
       for (const [key, value] of Object.entries(args)) {
         // deno-lint-ignore no-explicit-any
-        (factoryArgs as Record<string, any>)[key] = value;
+        (currentArgs as Record<string, any>)[key] = value;
       }
     };
 

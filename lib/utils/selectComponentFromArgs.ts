@@ -1,7 +1,5 @@
-import type { CommonInternals } from "../factories/octironFactory.ts";
-import type { AnyComponent, BaseAttrs, EditComponent, OctironEditArgs, OctironPresentArgs, PresentComponent } from "../types/octiron.ts";
+import type { AnyComponent, BaseAttrs, CommonParentArgs, EditComponent, OctironEditArgs, OctironPresentArgs, PresentComponent } from "../types/octiron.ts";
 import { getComponent } from "./getComponent.ts";
-import { getDataType } from "./getValueType.ts";
 
 
 /**
@@ -23,7 +21,7 @@ export const selectComponentFromArgs = <
   )
 >(
   style: Style,
-  internals: CommonInternals,
+  parentArgs: CommonParentArgs,
   args?: Args,
   factoryArgs?: Args,
 ): [Attrs, Component | undefined] => {
@@ -35,11 +33,11 @@ export const selectComponentFromArgs = <
 
   const component = getComponent({
     style,
-    propType: internals.octiron?.propType,
-    type: internals.octiron?.dataType,
+    propType: parentArgs.parent?.propType,
+    type: parentArgs.parent?.dataType,
     firstPickComponent,
     fallbackComponent,
-    typeDefs: args?.typeDefs ?? internals.typeDefs,
+    typeDefs: args?.typeDefs ?? parentArgs.typeDefs,
   });
 
   return [attrs, component];

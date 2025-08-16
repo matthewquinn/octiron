@@ -1,5 +1,5 @@
 import type { Attributes, Children, ComponentTypes } from 'mithril';
-import type { JSONObject, JSONPrimitive, JSONValue } from './common.ts'
+import type { JSONObject, JSONPrimitive, JSONValue, SCMPropertyValueSpecification } from './common.ts'
 import type { Store } from '../store.ts';
 import type {
   ContentHandlingFailure,
@@ -821,10 +821,59 @@ export interface OctironActionSelection
   readonly actionValue: Octiron;
 }
 
-
 export type Octiron =
   | OctironRoot
   | OctironSelection
   | OctironAction
   | OctironActionSelection
 ;
+
+export type CommonParentArgs = {
+  store: Store;
+  typeDefs: TypeDefs;
+  parent: Octiron;
+};
+
+
+export type SelectionParentArgs = CommonParentArgs & {
+  value: JSONValue;
+};
+
+export type ActionParentArgs = CommonParentArgs;
+
+export type Submit = () => Promise<void>;
+export type UpdatePointer = (pointer: string, value: JSONValue, args?: UpdateArgs) => void;
+
+export type ActionSelectionParentArgs = CommonParentArgs & {
+  action: OctironAction;
+  submitting: boolean;
+  submit: Submit;
+  updatePointer: UpdatePointer;
+};
+
+export type CommonRendererArgs = {
+  index: number;
+  propType?: string;
+  value: JSONValue;
+};
+
+/**
+ * Arguments passed from the perform renderer to any
+ * Octiron action instances it manages.
+ */
+export type PerformRendererArgs = CommonRendererArgs & {
+
+}
+
+export type Update = (value: JSONValue) => void;
+
+/**
+ * Arguments passed from the action selection renderer
+ * to any Octiron action selection instance it manages.
+ */
+export type ActionSelectionRendererArgs = CommonRendererArgs & {
+  pointer: string;
+  spec?: SCMPropertyValueSpecification;
+  actionValue?: JSONValue;
+  update: Update;
+}
