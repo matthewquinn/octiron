@@ -10,6 +10,7 @@ import { type ChildArgs, type CommonArgs, type InstanceHooks, octironFactory } f
 import { isIterable } from "../utils/isIterable.ts";
 import { getIterableValue } from "../utils/getIterableValue.ts";
 import { selectComponentFromArgs } from "../utils/selectComponentFromArgs.ts";
+import { parseArgs } from "node:util";
 
 
 export type OnActionSelectionSubmit = () => Promise<void>;
@@ -139,6 +140,7 @@ export function actionSelectionFactory<
     const [attrs, component] = selectComponentFromArgs(
       'edit',
       parentArgs,
+      rendererArgs,
       args,
       factoryArgs as OctironEditArgs,
     );
@@ -161,34 +163,9 @@ export function actionSelectionFactory<
   };
 
   self.present = self.edit;
-
-  self.initial = (children: m.Children) => {
-    return parentArgs.action.initial(children);
-  };
-
-  self.success = (
-    arg1?: Selector | OctironSelectArgs | SelectView,
-    arg2?: OctironSelectArgs | SelectView,
-    arg3?: SelectView,
-  ) => {
-    return parentArgs.action.success(
-      arg1 as Selector,
-      arg2 as OctironSelectArgs,
-      arg3 as SelectView,
-    );
-  };
-
-  self.failure = (
-    arg1?: Selector | OctironSelectArgs | SelectView,
-    arg2?: OctironSelectArgs | SelectView,
-    arg3?: SelectView,
-  ) => {
-    return parentArgs.action.failure(
-      arg1 as Selector,
-      arg2 as OctironSelectArgs,
-      arg3 as SelectView,
-    );
-  };
+  self.initial = parentArgs.action.initial;
+  self.success = parentArgs.action.success;
+  self.failure = parentArgs.action.failure;
 
   self.remove = (
     _args: UpdateArgs = {},

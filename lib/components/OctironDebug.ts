@@ -20,7 +20,7 @@ export const OctironDebug: m.ClosureComponent<OctironDebugAttrs> = ({
   let rendered: m.Children;
   let displayStyle: 'value' | 'action-value' | 'component' | 'expanded' | 'flattened' = 'value';
 
-  async function onRender(redraw: boolean = true) {
+  function onRender(redraw: boolean = true) {
     const { o } = currentAttrs;
     if (displayStyle === 'value') {
       rendered = m(OctironJSON, { value, selector: currentAttrs.selector, location: currentAttrs.location });
@@ -31,23 +31,7 @@ export const OctironDebug: m.ClosureComponent<OctironDebugAttrs> = ({
       )
     ) {
       rendered = m(OctironJSON, { value: o.actionValue.value, selector: currentAttrs.selector, location: currentAttrs.location })
-    } else if (displayStyle === 'expanded') {
-      const expanded = await jsonld.compact(value, attrs.o.store.context);
-
-      rendered = m(OctironJSON, {
-        value: expanded,
-        location: currentAttrs.location,
-      });
-      // rendered = JSON.stringify(renderValue, null, 2);
-    } else if (displayStyle === 'flattened') {
-      const flattened = flattenIRIObjects(value);
-      rendered = m(OctironJSON, {
-        value: flattened,
-        selector: currentAttrs.selector,
-        location: currentAttrs.location,
-      });
     }
-
     if (redraw) {
       mithrilRedraw();
     }
@@ -70,20 +54,6 @@ export const OctironDebug: m.ClosureComponent<OctironDebugAttrs> = ({
   function onSetComponent(e: MouseEvent & { redraw: boolean }) {
     e.redraw = false;
     displayStyle = 'component';
-
-    onRender();
-  }
-
-  function onSetExpanded(e: MouseEvent & { redraw: boolean }) {
-    e.redraw = false;
-    displayStyle = 'expanded';
-
-    onRender();
-  }
-
-  function onSetFlattened(e: MouseEvent & { redraw: boolean }) {
-    e.redraw = false;
-    displayStyle = 'flattened';
 
     onRender();
   }

@@ -232,6 +232,7 @@ export function octironFactory<O extends Octiron>(
         const [attrs, component] = selectComponentFromArgs(
           'present',
           parentArgs,
+          rendererArgs,
           args,
           factoryArgs as OctironPresentArgs,
         );
