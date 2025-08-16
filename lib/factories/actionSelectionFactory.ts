@@ -1,7 +1,7 @@
 import { JsonPointer } from 'json-ptr';
 import m from 'mithril';
 import { ActionSelectionRenderer } from "../renderers/ActionSelectionRenderer.ts";
-import type { JSONArray, JSONObject, JSONValue } from "../types/common.ts";
+import type { JSONArray, JSONObject, JSONValue, SCMPropertyValueSpecification } from "../types/common.ts";
 import type { ActionSelectionParentArgs, ActionSelectionRendererArgs, ActionSelectView, BaseAttrs, CommonParentArgs, CommonRendererArgs, EditComponent, Interceptor, Octiron, OctironAction, OctironActionSelection, OctironActionSelectionArgs, OctironDefaultArgs, OctironEditArgs, OctironPresentArgs, OctironSelectArgs, OctironSelection, OnChange, PayloadValueMapper, Selector, SelectView, TypeDefs, UpdateArgs } from "../types/octiron.ts";
 import { isJSONObject } from "../utils/isJSONObject.ts";
 import { mithrilRedraw } from "../utils/mithrilRedraw.ts";
@@ -148,10 +148,19 @@ export function actionSelectionFactory<
       return null;
     }
 
+    const spec = rendererArgs.spec as SCMPropertyValueSpecification;
+
     return m(component as EditComponent<JSONValue, BaseAttrs>, {
       o: self as unknown as OctironActionSelection,
-      required: true,
       readonly: false,
+      required: spec.valueRequired ?? false,
+      min: spec.minValue,
+      max: spec.maxValue,
+      step: spec.stepValue,
+      pattern: spec.valuePattern,
+      multiple: spec.multipleValues,
+      minLength: spec.valueMinLength,
+      maxLength: spec.valueMaxLength,
       renderType: "edit",
       name: self.inputName,
       value: rendererArgs.value,

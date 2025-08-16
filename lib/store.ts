@@ -475,6 +475,7 @@ export class Store {
       method?: string;
       accept?: string;
       body?: string;
+      contentType?: string;
     } = {}): Promise<void> {
       let headers: Headers;
       const url = new URL(iri);
@@ -488,6 +489,10 @@ export class Store {
         headers = new Headers(this.#origins.get(url.origin));
       } else {
         throw new Error('Unconfigured origin');
+      }
+
+      if (args.contentType != null) {
+        headers.set('content-type', args.contentType);
       }
 
       if (accept != null) {
@@ -600,7 +605,10 @@ export class Store {
      * @param {string} [args.body]        The body of the request.
      */
     public async submit(iri: string, args: SubmitArgs): Promise<SuccessEntityState | FailureEntityState> {
-      await this.#callFetcher(iri, args);
+      await this.#callFetcher(iri, {
+        ...args,
+        contentType: 'application/ld+json',
+      });
 
       return this.entity(iri) as SuccessEntityState | FailureEntityState;
     }

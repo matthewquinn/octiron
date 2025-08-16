@@ -24,7 +24,7 @@ export const OctironForm: m.ClosureComponent<OctironFormAttrs> = (vnode) => {
           method,
           enctype: enctypes[method || 'GET'],
           action: o.url,
-          onSubmit: (evt: SubmitEvent) => {
+          onsubmit: (evt: SubmitEvent) => {
             evt.preventDefault();
 
             o.submit();

@@ -86,11 +86,7 @@ export function getSubmitDetails({
 
   // only add body if supporting HTTP method
   if (method !== 'get' && method !== 'delete') {
-    const json: Record<string, JSONValue> = {};
-
-    for (const [key, value] of Object.entries(payload)) {
-      json[store.expand(key)] = value;
-    }
+    body = JSON.stringify(payload);
   }
 
   return {
