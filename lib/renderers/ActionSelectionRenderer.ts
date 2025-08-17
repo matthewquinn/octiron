@@ -1,6 +1,6 @@
 import type m from "mithril";
 import { actionSelectionFactory } from '../factories/actionSelectionFactory.ts';
-import type { ActionSelectionParentArgs, ActionSelectionRendererArgs, ActionSelectView, OctironActionSelection, OctironActionSelectionArgs, OctironSelectArgs, OctironSelection, SelectionParentArgs, Selector, Update, UpdatePointer } from '../types/octiron.ts';
+import type { ActionSelectionParentArgs, ActionSelectionRendererArgs, ActionSelectView, CommonRendererArgs, OctironActionSelection, OctironActionSelectionArgs, OctironSelectArgs, OctironSelection, SelectionParentArgs, Selector, Update, UpdatePointer } from '../types/octiron.ts';
 import type { ActionSelectionResult, SelectionDetails } from '../types/store.ts';
 import { getSelection } from '../utils/getSelection.ts';
 import { isJSONObject } from '../utils/isJSONObject.ts';
@@ -72,22 +72,27 @@ export const ActionSelectionRenderer: m.FactoryComponent<ActionSelectionRenderer
         );
       };
 
+      const actionValueRendererArgs: CommonRendererArgs = {
+        index,
+        value: selectionResult.actionValue,
+        propType: selectionResult.propType,
+      }
+
+      const actionValue = selectionFactory(
+        currentAttrs.args as OctironSelectArgs,
+        parentArgs as unknown as SelectionParentArgs,
+        actionValueRendererArgs,
+      );
+
       const rendererArgs: ActionSelectionRendererArgs = {
         index,
         update,
+        actionValue,
         pointer: selectionResult.pointer,
         propType: selectionResult.propType,
         value: selectionResult.value,
-        actionValue: selectionResult.actionValue,
         spec: selectionResult.spec,
       };
-
-      const selection = selectionFactory(
-        currentAttrs.args as OctironSelectArgs,
-        parentArgs as unknown as SelectionParentArgs,
-        rendererArgs,
-      );
-
 
       const actionSelection = actionSelectionFactory(
         currentAttrs.args,
@@ -97,7 +102,7 @@ export const ActionSelectionRenderer: m.FactoryComponent<ActionSelectionRenderer
 
       instances[selectionResult.pointer] = {
         rendererArgs,
-        selection,
+        selection: actionValue,
         octiron: actionSelection,
         selectionResult,
       };

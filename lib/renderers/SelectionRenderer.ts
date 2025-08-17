@@ -1,4 +1,4 @@
-import type { Mutable } from "../types/common.ts";
+import type { JSONObject, Mutable } from "../types/common.ts";
 import type {
 CommonRendererArgs,
   OctironSelectArgs,
@@ -19,6 +19,7 @@ import { mithrilRedraw } from "../utils/mithrilRedraw.ts";
 
 
 export type SelectionRendererAttrs = {
+  entity?: boolean;
   selector: Selector;
   args: OctironSelectArgs;
   view: SelectView;
@@ -175,6 +176,10 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
 
     details = next;
 
+    if (currentAttrs.entity) {
+      console.log('ENTITY', details)
+    }
+
     if (required.length > 0) {
       fetchRequired(required);
     }
@@ -183,22 +188,27 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
   }
 
   function subscribe() {
+    const { entity, selector, parentArgs: { value, store } } = currentAttrs;
     if (
-      typeof currentAttrs.parentArgs.value !== 'undefined' &&
-      !isJSONObject(currentAttrs.parentArgs.value)
+      !entity &&
+      !isJSONObject(value)
     ) {
-      currentAttrs.parentArgs.store.unsubscribe(key);
+      store.unsubscribe(key);
       createInstances();
 
       return;
     }
 
-    details = currentAttrs.parentArgs.store.subscribe({
+    details = store.subscribe({
       key,
-      selector: currentAttrs.selector,
-      value: currentAttrs.parentArgs.value,
+      selector,
+      value: entity ? undefined : value as JSONObject,
       listener,
     });
+
+    if (entity) {
+      console.log('ENTITY', details)
+    }
 
     fetchRequired(details.required);
 

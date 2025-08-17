@@ -72,7 +72,7 @@ export function actionSelectionFactory<
     }
 
     if (typeof interceptor === 'function') {
-      next = interceptor(next, prev, rendererArgs.actionValue as JSONObject);
+      next = interceptor(next, prev, rendererArgs.actionValue?.value as JSONObject);
     }
 
     parentArgs.updatePointer(rendererArgs.pointer, next, args);
@@ -122,7 +122,7 @@ export function actionSelectionFactory<
         parentArgs: childArgs as ActionSelectionParentArgs,
         selector,
         value: self.value,
-        actionValue: rendererArgs.actionValue as JSONObject,
+        actionValue: rendererArgs.actionValue.value as JSONObject,
         args,
         view,
       },

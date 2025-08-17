@@ -154,7 +154,7 @@ export function actionFactory<
 
   self.value = refs.payload;
   self.action = parentArgs.parent;
-  self.actionValue = parentArgs.parent;
+  self.actionValue = rendererArgs.actionValue;
 
   childArgs.action = self as unknown as OctironAction;
   childArgs.submitting = self.submitting;

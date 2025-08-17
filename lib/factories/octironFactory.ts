@@ -1,4 +1,4 @@
-import m from 'mithril';
+import m, { render } from 'mithril';
 import type { Octiron } from "@octiron/octiron";
 import type { Mutable } from "../types/common.ts";
 import type { ActionParentArgs, ActionSelectionParentArgs, AnyAttrs, AnyComponent, BaseAttrs, CommonParentArgs, CommonRendererArgs, EditAttrs, EditComponent, OctironAction, OctironActionSelection, OctironActionSelectionArgs, OctironDefaultArgs, OctironPerformArgs, OctironPresentArgs, OctironRoot, OctironSelectArgs, OctironSelection, PerformView, Predicate, PresentAttrs, PresentComponent, SelectionParentArgs, Selector, SelectView, TypeDefs } from "../types/octiron.ts";
@@ -168,12 +168,18 @@ export function octironFactory<O extends Octiron>(
     const [selector, args, view] = unravelArgs(arg1, arg2, arg3);
 
     return m(SelectionRenderer, {
+      entity: true,
       selector,
       args,
       view,
       parentArgs: childArgs as SelectionParentArgs,
     });
   };
+
+  const rootChildArgs = {
+    ...childArgs,
+    value: parentArgs.store.entity(parentArgs.store.rootIRI)?.value,
+  }
 
   self.root = (
     arg1?: Selector | OctironSelectArgs | SelectView,
@@ -189,7 +195,15 @@ export function octironFactory<O extends Octiron>(
       selector = `${parentArgs.store.rootIRI} ${childSelector}`;
     }
 
-    return self.enter(selector, args, view);
+    return m(SelectionRenderer, {
+      entity: true,
+      selector,
+      args,
+      view,
+      parentArgs: rootChildArgs as SelectionParentArgs,
+    });
+
+    // return self.enter(selector, args, view);
   };
 
   // action and action selection define their own select method

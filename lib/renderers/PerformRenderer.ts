@@ -2,11 +2,12 @@ import type m from 'mithril';
 import { actionFactory } from '../factories/actionFactory.ts';
 import { selectionFactory } from '../factories/selectionFactory.ts';
 import type { JSONObject, Mutable } from '../types/common.ts';
-import type { ActionParentArgs, OctironAction, OctironPerformArgs, OctironSelection, PerformRendererArgs, PerformView, SelectionParentArgs, Selector } from '../types/octiron.ts';
+import type { ActionParentArgs, CommonRendererArgs, OctironAction, OctironPerformArgs, OctironSelection, PerformRendererArgs, PerformView, SelectionParentArgs, Selector } from '../types/octiron.ts';
 import type { Failure, ReadonlySelectionResult, SelectionDetails } from '../types/store.ts';
 import { isIRIObject } from '../utils/isIRIObject.ts';
 import { mithrilRedraw } from '../utils/mithrilRedraw.ts';
 import type { InstanceHooks } from "../factories/octironFactory.ts";
+import { render } from "mithril";
 
 export type PerformRendererAttrs = {
   parentArgs: SelectionParentArgs & ActionParentArgs,
@@ -62,24 +63,37 @@ export const PerformRenderer: m.FactoryComponent<PerformRendererAttrs> = ({ attr
 
       hasChanges = true;
 
-      const rendererArgs: PerformRendererArgs = {
+      const actionValueRendererArgs: CommonRendererArgs = {
         index,
         value: selectionResult.value,
-      };
-      const octiron = selectionFactory(
+      } as PerformRendererArgs;
+
+      const actionValue = selectionFactory(
         args,
         parentArgs,
-        rendererArgs,
+        actionValueRendererArgs,
       );
+
+      const rendererArgs = {
+        index,
+        value: selectionResult.value,
+        actionValue,
+      } as PerformRendererArgs;
+
       const action = actionFactory(
         args,
         parentArgs,
         rendererArgs,
       );
 
+      console.log('INSTANCES');
+      console.log('OCTIRON', actionValue)
+      console.log('ACTION', action)
+      console.log('SELECTION', selectionResult)
+
       instances[selectionResult.pointer] = {
         action,
-        octiron,
+        octiron: actionValue,
         selectionResult,
       };
     }
