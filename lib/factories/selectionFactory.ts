@@ -16,7 +16,8 @@ export function selectionFactory<Attrs extends BaseAttrs>(
 ): OctironSelection & InstanceHooks {
   const factoryArgs = Object.assign({}, args);
   const childArgs = {
-    value: parentArgs.value,
+    // value: parentArgs.value,
+    value: rendererArgs.value,
   } as SelectionParentArgs & ActionParentArgs;
   const self = octironFactory(
     'selection',

@@ -1,4 +1,4 @@
-import m, { render } from 'mithril';
+import m from 'mithril';
 import type { Octiron } from "@octiron/octiron";
 import type { Mutable } from "../types/common.ts";
 import type { ActionParentArgs, ActionSelectionParentArgs, AnyAttrs, AnyComponent, BaseAttrs, CommonParentArgs, CommonRendererArgs, EditAttrs, EditComponent, OctironAction, OctironActionSelection, OctironActionSelectionArgs, OctironDefaultArgs, OctironPerformArgs, OctironPresentArgs, OctironRoot, OctironSelectArgs, OctironSelection, PerformView, Predicate, PresentAttrs, PresentComponent, SelectionParentArgs, Selector, SelectView, TypeDefs } from "../types/octiron.ts";
@@ -11,6 +11,7 @@ import { isIterable } from "../utils/isIterable.ts";
 import { getIterableValue } from "../utils/getIterableValue.ts";
 import { PerformRenderer } from "../renderers/PerformRenderer.ts";
 import { selectComponentFromArgs } from "../utils/selectComponentFromArgs.ts";
+import { isIRIObject } from "../utils/isIRIObject.ts";
 
 const TypeKeys = {
   'root': 0,
@@ -94,10 +95,13 @@ export function octironFactory<O extends Octiron>(
   childArgs: ChildArgs = {} as ChildArgs,
 ): Mutable<O> {
   const typeKey = TypeKeys[octironType];
-  const self: Mutable<O & InstanceHooks> = function(
+  const name = isIRIObject(rendererArgs.value) ? rendererArgs.value['@id'] : rendererArgs.propType ?? 'octiron';
+
+  // hack to give the function a dynamically set name...
+  const self: Mutable<O & InstanceHooks> = ({ [name]: (
     predicate: Predicate,
     children: m.Children,
-  ): m.Children {
+  ): m.Children => {
     const passes = predicate(self as O);
 
     if (passes) {
@@ -105,7 +109,7 @@ export function octironFactory<O extends Octiron>(
     }
 
     return null;
-  } as O & InstanceHooks;
+  } })[name] as unknown as O & InstanceHooks;
 
   self.id = parentArgs.store.key();
   self.isOctiron = true;

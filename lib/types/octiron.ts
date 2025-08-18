@@ -81,8 +81,11 @@ export type AnyAttrs<
   Value extends JSONValue = JSONValue,
   Attrs extends BaseAttrs = BaseAttrs,
 > =
-  | PresentAttrs<Value, Attrs>
-  | EditAttrs<Value, Attrs>;
+  & { o: Octiron }
+  & (
+    | Omit<PresentAttrs<Value, Attrs>, 'o'>
+    | Omit<EditAttrs<Value, Attrs>, 'o'>
+  );
 
 export type PresentComponent<
   Value extends JSONValue = JSONValue,
@@ -853,11 +856,30 @@ export interface OctironActionSelection
   readonly actionValue: Octiron;
 }
 
+/**
+ * The generic Octiron type re-defines instance methods to allow for generic
+ * access without typescript throwing wobblies.
+ */
 export type Octiron =
-  | OctironRoot
-  | OctironSelection
-  | OctironAction
-  | OctironActionSelection
+  & {
+    select(selector: Selector): Children;
+    select<Attrs extends BaseAttrs = BaseAttrs>(
+      selector: Selector,
+      args: OctironSelectArgs<Attrs> | OctironActionSelectionArgs<Attrs>,
+    ): Children;
+    select(selector: Selector, view: SelectView | ActionSelectView): Children;
+    select<Attrs extends BaseAttrs = BaseAttrs>(
+      selector: Selector,
+      args: OctironSelectArgs<Attrs>,
+      view: (o: Octiron) => Children,
+    ): Children;
+  }
+  & (
+    | Omit<OctironRoot, 'select'>
+    | Omit<OctironSelection, 'select'>
+    | Omit<OctironAction, 'select'>
+    | Omit<OctironActionSelection, 'select'>
+  );
 ;
 
 export type CommonParentArgs = {
@@ -894,8 +916,8 @@ export type CommonRendererArgs = {
  * Octiron action instances it manages.
  */
 export type PerformRendererArgs = CommonRendererArgs & {
-
-}
+  actionValue: Octiron;
+};
 
 export type Update = (value: JSONValue) => void;
 
@@ -906,6 +928,6 @@ export type Update = (value: JSONValue) => void;
 export type ActionSelectionRendererArgs = CommonRendererArgs & {
   pointer: string;
   spec?: SCMPropertyValueSpecification;
-  actionValue?: JSONValue;
+  actionValue?: Octiron;
   update: Update;
 }

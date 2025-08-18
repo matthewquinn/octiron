@@ -176,10 +176,6 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
 
     details = next;
 
-    if (currentAttrs.entity) {
-      console.log('ENTITY', details)
-    }
-
     if (required.length > 0) {
       fetchRequired(required);
     }
@@ -206,9 +202,6 @@ export const SelectionRenderer: m.FactoryComponent<SelectionRendererAttrs> = (
       listener,
     });
 
-    if (entity) {
-      console.log('ENTITY', details)
-    }
 
     fetchRequired(details.required);
 

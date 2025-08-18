@@ -19,7 +19,7 @@ export type ActionStateRendererAttrs = {
   selector?: string;
   args: OctironSelectArgs;
   view?: SelectView;
-  submitResult: EntityState;
+  submitResult?: EntityState;
   parentArgs: SelectionParentArgs,
 };
 
@@ -28,11 +28,11 @@ export const ActionStateRenderer: m.ClosureComponent<ActionStateRendererAttrs> =
   let o: OctironSelection | undefined;
 
   function setInstance(attrs: ActionStateRendererAttrs) {
-    if (typeof attrs.submitResult === 'undefined') {
+    if (attrs.submitResult == null) {
         submitResult = undefined;
       o = undefined;
     } else if (
-      typeof submitResult === 'undefined' ||
+      submitResult == null ||
       attrs.submitResult.ok !== submitResult.ok ||
       attrs.submitResult.status !== submitResult.status ||
       attrs.submitResult.value !== submitResult.value
@@ -59,7 +59,7 @@ export const ActionStateRenderer: m.ClosureComponent<ActionStateRendererAttrs> =
       setInstance(attrs);
     },
     view: ({ attrs: { type, selector, args, view, ...attrs }, children }) => {
-      if (type === 'initial' && typeof submitResult === 'undefined') {
+      if (type === 'initial' && submitResult == null) {
         return children;
       } else if (submitResult == null || o == null) {
         return null;

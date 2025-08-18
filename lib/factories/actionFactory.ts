@@ -40,37 +40,6 @@ export function actionFactory<
     }
   }
 
-  let url: string | undefined;
-  let method: string | undefined;
-  let body: string | undefined
-  // this object is passed into children which need to keep hold of the
-  // original object but read the most recent value after mutations on
-  // on its members.
-  const refs: ActionRefs = {
-    submitting: false,
-    payload,
-    store: parentArgs.store,
-    typeDefs: parentArgs.typeDefs,
-    submitResult,
-  };
-
-  try {
-    const submitDetails = getSubmitDetails({
-      payload,
-      action: rendererArgs.value as SCMAction,
-      store: parentArgs.store,
-    });
-    refs.url = submitDetails.url;
-    refs.method = submitDetails.method;
-    body = submitDetails.body;
-  } catch (err) {
-    console.error(err);
-  }
-
-  if (body == null && url != null) {
-    refs.submitResult = submitResult = parentArgs.store.entity(url);
-  }
-
   async function submit() {
     const { url, method, body, contentType, encodingType } = getSubmitDetails({
       payload,
@@ -78,12 +47,13 @@ export function actionFactory<
       store: parentArgs.store,
     });
 
+    self.submitting = true;
+    self.url = new URL(url);
+
+    mithrilRedraw();
+
     try {
-      refs.submitting = true;
-
-      mithrilRedraw();
-
-      refs.submitResult = await parentArgs.store.submit(url, {
+      submitResult = await parentArgs.store.submit(url, {
         method,
         body,
         contentType,
@@ -93,7 +63,7 @@ export function actionFactory<
       console.error(err);
     }
 
-    refs.submitting = false;
+    self.submitting = false;
 
     mithrilRedraw();
   }
@@ -114,8 +84,8 @@ export function actionFactory<
     } else {
       payload = next;
     }
-    // TODO: perform _updateArgs() when supported
-    childArgs.value = self.value = refs.payload = value;
+
+    childArgs.value = self.value = value;
 
     mithrilRedraw();
   }
@@ -152,7 +122,7 @@ export function actionFactory<
     childArgs as ChildArgs,
   );
 
-  self.value = refs.payload;
+  self.value = payload;
   self.action = parentArgs.parent;
   self.actionValue = rendererArgs.actionValue;
 
@@ -247,7 +217,7 @@ export function actionFactory<
           not,
           type: 'initial',
           args: {},
-          submitResult: refs.submitResult as EntityState,
+          submitResult,
           parentArgs: childArgs as SelectionParentArgs,
         },
         children,
@@ -272,7 +242,7 @@ export function actionFactory<
         selector,
         args,
         view,
-        submitResult: refs.submitResult as EntityState,
+        submitResult,
         parentArgs: childArgs as SelectionParentArgs,
       });
     }
@@ -284,6 +254,22 @@ export function actionFactory<
   self.not.success = makeActionStateMethod('success', true);
   self.failure = makeActionStateMethod('failure');
   self.not.failure = makeActionStateMethod('failure', true);
+
+  try {
+    const submitDetails = getSubmitDetails({
+      payload: self.value,
+      action: rendererArgs.value as SCMAction,
+      store: parentArgs.store,
+    });
+    self.url = new URL(submitDetails.url);
+    self.method = submitDetails.method;
+  } catch (err) {
+    console.error(err);
+  }
+
+  if (self.url != null) {
+    submitResult = parentArgs.store.entity(self.url.toString());
+  }
 
   if (
     typeof window === 'undefined' && args.submitOnInit &&

@@ -59,6 +59,7 @@ export const PerformRenderer: m.FactoryComponent<PerformRendererAttrs> = ({ attr
         ) {
           continue;
         }
+        continue;
       }
 
       hasChanges = true;
@@ -85,11 +86,6 @@ export const PerformRenderer: m.FactoryComponent<PerformRendererAttrs> = ({ attr
         parentArgs,
         rendererArgs,
       );
-
-      console.log('INSTANCES');
-      console.log('OCTIRON', actionValue)
-      console.log('ACTION', action)
-      console.log('SELECTION', selectionResult)
 
       instances[selectionResult.pointer] = {
         action,
@@ -153,7 +149,7 @@ export const PerformRenderer: m.FactoryComponent<PerformRendererAttrs> = ({ attr
   function subscribe() {
     const { selector, parentArgs } = currentAttrs;
 
-    if (typeof selector === 'undefined') {
+    if (selector == null) {
       // The value is the action
       let result: ReadonlySelectionResult;
 
