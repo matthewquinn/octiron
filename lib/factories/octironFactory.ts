@@ -154,6 +154,10 @@ export function octironFactory<O extends Octiron>(
       return null;
     }
 
+    if (termOrType.startsWith('@')) {
+      return self.value[termOrType];
+    }
+
     const type = self.store.expand(termOrType);
     const value = self.value[type] ?? null;
 

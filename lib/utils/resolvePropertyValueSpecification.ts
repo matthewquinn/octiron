@@ -1,6 +1,7 @@
 
 import type { Store } from "../store.ts";
 import type { JSONObject, SCMPropertyValueSpecification } from '../types/common.ts';
+import type { Spec } from '../types/octiron.ts';
 
 const httpRe = /^https?\:\/\//;
 const scmCtxRe = /^https?\:\/\/schema\.org/;
@@ -12,7 +13,7 @@ export function resolvePropertyValueSpecification({
 }: {
   spec: JSONObject;
   store: Store;
-}) {
+}): Spec {
   const pvs: SCMPropertyValueSpecification = {
     readonlyValue: false,
     valueRequired: false,
@@ -53,5 +54,14 @@ export function resolvePropertyValueSpecification({
     }
   }
 
-  return pvs;
+  return {
+    required: pvs.valueRequired,
+    min: pvs.minValue,
+    max: pvs.maxValue,
+    step: pvs.stepValue,
+    pattern: pvs.valuePattern,
+    multiple: pvs.multipleValues,
+    minLength: pvs.valueMinLength,
+    maxLength: pvs.valueMaxLength,
+  };
 }

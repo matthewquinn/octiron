@@ -55,15 +55,7 @@ export type OnChange<Value extends JSONValue = JSONValue> = (
   args?: UpdateArgs,
 ) => void;
 
-export type EditAttrs<
-  Value extends JSONValue = JSONValue,
-  Attrs extends BaseAttrs = BaseAttrs,
-> = {
-  renderType: 'edit';
-  o: OctironActionSelection;
-  attrs: Attrs;
-  value: Value;
-  name: string;
+export type Spec = {
   required: boolean;
   readonly: boolean;
   min?: JSONPrimitive;
@@ -73,8 +65,20 @@ export type EditAttrs<
   multiple?: boolean;
   minLength?: number;
   maxLength?: number;
+};
+
+export type EditAttrs<
+  Value extends JSONValue = JSONValue,
+  Attrs extends BaseAttrs = BaseAttrs,
+> = {
+  renderType: 'edit';
+  o: OctironActionSelection;
+  attrs: Attrs;
+  value: Value;
+  name: string;
   onchange: OnChange;
   onChange: OnChange;
+  spec: Spec;
 };
 
 export type AnyAttrs<
@@ -927,7 +931,7 @@ export type Update = (value: JSONValue) => void;
  */
 export type ActionSelectionRendererArgs = CommonRendererArgs & {
   pointer: string;
-  spec?: SCMPropertyValueSpecification;
+  spec?: Spec;
   actionValue?: Octiron;
   update: Update;
 }
