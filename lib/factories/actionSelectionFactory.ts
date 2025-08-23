@@ -45,7 +45,8 @@ export function actionSelectionFactory<
   );
 
   self.readonly = rendererArgs.spec == null ? true : (rendererArgs.spec.readonlyValue ?? false);
-  self.inputName = rendererArgs.propType as string;
+
+  self.inputName = rendererArgs.spec?.valueName != null ? rendererArgs.spec?.valueName : rendererArgs.propType as string;
   self.submitting = parentArgs.submitting;
   self.action = parentArgs.action;
 

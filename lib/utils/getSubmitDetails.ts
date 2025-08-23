@@ -1,7 +1,8 @@
 import uriTemplates from 'uri-templates';
 import type { Store } from "../store.ts";
-import type { JSONObject, JSONValue, SCMAction } from '../types/common.ts';
+import type { JSONObject, SCMAction } from '../types/common.ts';
 import { isJSONObject } from './isJSONObject.ts';
+import { isTypeObject } from "./isTypedObject.ts";
 
 
 export type SubmitDetails = {
@@ -79,14 +80,33 @@ export function getSubmitDetails({
     throw new Error('Action has invalid https://schema.org/target');
   }
 
+  const fillArgs: JSONObject = {};
+
+  const submitBody = Object.assign({}, payload);
+
+  for (const [type, value] of Object.entries(action)) {
+    if (!isTypeObject(value) || value['@type'] !== 'https://schema.org/PropertyValueSpecification') {
+      continue;
+    }
+
+    const valueName = value['https://schema.org/valueName'] as string;
+
+    if (valueName != null) {
+      const propType = type.replace(/-input$/, '');
+
+      fillArgs[valueName] = payload[propType];
+      delete submitBody[valueName];
+    }
+  }
+
   const template = uriTemplates(urlTemplate);
 
   // deno-lint-ignore no-explicit-any
-  const url: string = template.fill(payload as any);
+  const url: string = template.fill(fillArgs as any);
 
   // only add body if supporting HTTP method
   if (method !== 'get' && method !== 'delete') {
-    body = JSON.stringify(payload);
+    body = JSON.stringify(submitBody);
   }
 
 
