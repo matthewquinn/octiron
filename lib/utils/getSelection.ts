@@ -261,7 +261,7 @@ function resolveValue({
       value,
       actionValue,
       spec: pvs,
-      readonly: pvs.readonlyValue,
+      readonly: pvs.readonly,
     });
 
     return;

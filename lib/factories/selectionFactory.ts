@@ -1,5 +1,4 @@
-import type { ActionParentArgs } from "types/octiron";
-import type { BaseAttrs, CommonRendererArgs, OctironSelectArgs, OctironSelection, SelectionParentArgs } from '../types/octiron.ts';
+import type { ActionParentArgs, BaseAttrs, CommonRendererArgs, OctironSelectArgs, OctironSelection, SelectionParentArgs } from '../types/octiron.ts';
 import { type CommonArgs, type InstanceHooks, octironFactory } from "./octironFactory.ts";
 
 /**

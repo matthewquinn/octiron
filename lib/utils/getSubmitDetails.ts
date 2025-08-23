@@ -1,5 +1,4 @@
 import uriTemplates from 'uri-templates';
-import type { Store } from "../store.ts";
 import type { JSONObject, SCMAction } from '../types/common.ts';
 import { isJSONObject } from './isJSONObject.ts';
 import { isTypeObject } from "./isTypedObject.ts";
@@ -19,16 +18,13 @@ export type SubmitDetails = {
  *
  * @param args.payload The current payload value.
  * @param args.action The schema.org styled action object.
- * @param args.store The Octiron store.
  */
 export function getSubmitDetails({
   payload,
   action,
-  store,
 }: {
   payload: JSONObject;
   action: SCMAction;
-  store: Store;
 }): SubmitDetails {
   let urlTemplate: string | undefined;
   let body: string | undefined;
@@ -85,7 +81,8 @@ export function getSubmitDetails({
   const submitBody = Object.assign({}, payload);
 
   for (const [type, value] of Object.entries(action)) {
-    if (!isTypeObject(value) || value['@type'] !== 'https://schema.org/PropertyValueSpecification') {
+    if (!isTypeObject(value) ||
+        value['@type'] !== 'https://schema.org/PropertyValueSpecification') {
       continue;
     }
 

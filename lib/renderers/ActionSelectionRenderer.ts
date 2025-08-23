@@ -54,7 +54,7 @@ export const ActionSelectionRenderer: m.FactoryComponent<ActionSelectionRenderer
           continue;
         }
 
-        const rendererArgs = instances[selectionResult.pointer].rendererArgs;
+        const { rendererArgs, selection, octiron } = instances[selectionResult.pointer];
 
         rendererArgs.value = next.value;
         rendererArgs.spec = next.spec;

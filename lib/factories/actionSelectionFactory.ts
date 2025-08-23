@@ -1,8 +1,8 @@
 import { JsonPointer } from 'json-ptr';
 import m from 'mithril';
 import { ActionSelectionRenderer } from "../renderers/ActionSelectionRenderer.ts";
-import type { JSONArray, JSONObject, JSONValue, SCMPropertyValueSpecification } from "../types/common.ts";
-import type { ActionSelectionParentArgs, ActionSelectionRendererArgs, ActionSelectView, BaseAttrs, CommonParentArgs, CommonRendererArgs, EditComponent, Interceptor, Octiron, OctironAction, OctironActionSelection, OctironActionSelectionArgs, OctironDefaultArgs, OctironEditArgs, OctironPresentArgs, OctironSelectArgs, OctironSelection, OnChange, PayloadValueMapper, Selector, SelectView, TypeDefs, UpdateArgs } from "../types/octiron.ts";
+import type { JSONObject, JSONValue } from "../types/common.ts";
+import type { Spec, ActionSelectionParentArgs, ActionSelectionRendererArgs, ActionSelectView, BaseAttrs, CommonParentArgs, CommonRendererArgs, EditComponent, OctironActionSelection, OctironActionSelectionArgs, OctironDefaultArgs, OctironEditArgs, OctironPresentArgs, PayloadValueMapper, Selector, UpdateArgs } from "../types/octiron.ts";
 import { isJSONObject } from "../utils/isJSONObject.ts";
 import { mithrilRedraw } from "../utils/mithrilRedraw.ts";
 import { unravelArgs } from "../utils/unravelArgs.ts";
@@ -44,9 +44,8 @@ export function actionSelectionFactory<
     childArgs as ChildArgs,
   );
 
-  self.readonly = rendererArgs.spec == null ? true : (rendererArgs.spec.readonlyValue ?? false);
-
-  self.inputName = rendererArgs.spec?.valueName != null ? rendererArgs.spec?.valueName : rendererArgs.propType as string;
+  self.readonly = rendererArgs.spec == null ? true : (rendererArgs.spec.readonly ?? false);
+  self.inputName = rendererArgs.spec?.name != null ? rendererArgs.spec?.name : rendererArgs.propType as string;
   self.submitting = parentArgs.submitting;
   self.action = parentArgs.action;
 
@@ -149,13 +148,9 @@ export function actionSelectionFactory<
       return null;
     }
 
-    const spec = rendererArgs.spec as SCMPropertyValueSpecification;
-
     return m(component as EditComponent<JSONValue, BaseAttrs>, {
       o: self as unknown as OctironActionSelection,
-      readonly: false,
-      required: spec.valueRequired ?? false,
-      spec,
+      spec: rendererArgs.spec as Spec,
       renderType: "edit",
       name: self.inputName,
       value: rendererArgs.value,
@@ -168,7 +163,7 @@ export function actionSelectionFactory<
   self.default = (args?: OctironDefaultArgs<BaseAttrs>) => {
     return self.edit(Object.assign({ component: null }, args) as OctironEditArgs<BaseAttrs>)
   }
-  // self.default = self.edit;
+
   self.initial = parentArgs.action.initial;
   self.success = parentArgs.action.success;
   self.failure = parentArgs.action.failure;
@@ -196,11 +191,6 @@ export function actionSelectionFactory<
     }
 
     mithrilRedraw()
-    // internals.onUpdate(
-    //   internals.pointer,
-    //   null as unknown as JSONObject,
-    //   args,
-    // );
   };
 
   self.append = (
@@ -208,25 +198,30 @@ export function actionSelectionFactory<
     value: JSONValue = {},
     args: UpdateArgs = {},
   ) => {
-    const type = parentArgs.store.expand(termOrType);
-
-    if (isJSONObject(self.value)) {
-      const prevValue = self.value[type];
-      let nextValue: JSONArray = [];
-
-      if (prevValue != null && !Array.isArray(prevValue)) {
-        nextValue.push(prevValue);
-      } else if (Array.isArray(prevValue)) {
-        nextValue = [...prevValue.filter((value) => value != null)];
-      }
-
-      nextValue.push(value);
-        return parentArgs.updatePointer(rendererArgs.pointer, {
-        ...self.value,
-        [type]: nextValue,
-      }, args);
+    if (!isJSONObject(rendererArgs.value)) {
+      console.warn(`Attempt to append to non object octiron selection ${termOrType}`);
+      return;
     }
+
+    let nextValue: JSONValue;
+    const type = parentArgs.store.expand(termOrType);
+    const lastValue = rendererArgs.value[type];
+
+    if (lastValue == null) {
+      nextValue = value;
+    } else if (Array.isArray(lastValue)) {
+      nextValue = [...lastValue, value];
+    } else {
+      nextValue = [lastValue, value];
+    }
+
+    return parentArgs.updatePointer(
+      rendererArgs.pointer,
+      Object.assign({}, self.value, { [type]: nextValue }),
+      args,
+    );
   };
 
   return self as unknown as OctironActionSelection & InstanceHooks;
 }
+

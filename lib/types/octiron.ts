@@ -1,5 +1,5 @@
 import type { Attributes, Children, ComponentTypes } from 'mithril';
-import type { JSONObject, JSONPrimitive, JSONValue, SCMPropertyValueSpecification } from './common.ts'
+import type { JSONObject, JSONPrimitive, JSONValue } from './common.ts'
 import type { Store } from '../store.ts';
 import type {
   ContentHandlingFailure,
@@ -56,6 +56,7 @@ export type OnChange<Value extends JSONValue = JSONValue> = (
 ) => void;
 
 export type Spec = {
+  name?: string;
   required: boolean;
   readonly: boolean;
   min?: JSONPrimitive;
