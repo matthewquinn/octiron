@@ -6,10 +6,18 @@ import type { Octiron } from "../types/octiron.ts";
 import { OctironJSON } from "./OctironJSON.ts";
 import { flattenIRIObjects } from "../utils/flattenIRIObjects.ts";
 
+export type OctironDebugDisplayStyle =
+  | 'value'
+  | 'action-value'
+  | 'component'
+;
+
 export type OctironDebugAttrs = {
   o: Octiron;
   selector?: string;
   location?: URL;
+  initialDisplayStyle?: OctironDebugDisplayStyle;
+  availableControls?: OctironDebugDisplayStyle[];
 };
 
 export const OctironDebug: m.ClosureComponent<OctironDebugAttrs> = ({
@@ -18,12 +26,16 @@ export const OctironDebug: m.ClosureComponent<OctironDebugAttrs> = ({
   let currentAttrs = attrs;
   let value = attrs.o.value as JSONObject;
   let rendered: m.Children;
-  let displayStyle: 'value' | 'action-value' | 'component' | 'expanded' | 'flattened' = 'value';
+  let displayStyle: OctironDebugDisplayStyle = attrs.initialDisplayStyle ?? 'value';
 
   function onRender(redraw: boolean = true) {
     const { o } = currentAttrs;
     if (displayStyle === 'value') {
-      rendered = m(OctironJSON, { value, selector: currentAttrs.selector, location: currentAttrs.location });
+      rendered = m(OctironJSON, {
+        value,
+        selector: currentAttrs.selector,
+        location: currentAttrs.location,
+      });
     } else if (
       displayStyle === 'action-value' && (
         o.octironType === 'action' ||
@@ -71,10 +83,10 @@ export const OctironDebug: m.ClosureComponent<OctironDebugAttrs> = ({
         onRender(true);
       }
     },
-    view: ({ attrs: { o } }) => {
-      const actions: m.Children[] = [];
+    view: ({ attrs: { o, availableControls } }) => {
       let children: m.Children;
       let actionValueAction: m.Children;
+      const controls: m.Children = [];
 
       if (displayStyle === 'component') {
         children = m('.oct-debug-body', o.default());
@@ -86,17 +98,29 @@ export const OctironDebug: m.ClosureComponent<OctironDebugAttrs> = ({
         actionValueAction = m('button.oct-button', { type: 'button', onclick: onSetActionValue }, 'Action value');
       }
 
+      if (availableControls == null || availableControls.includes('value')) {
+        controls.push(
+            m('button.oct-button', { type: 'button', onclick: onSetValue }, 'Value'),
+        );
+      } else if (availableControls == null || availableControls.includes('action-value')) {
+        controls.push(actionValueAction);
+      } else if (availableControls == null || availableControls.includes('component')) {
+        controls.push(
+            m('button.oct-button', { type: 'button', onclick: onSetComponent }, 'Component'),
+        );
+      } else if (availableControls == null || availableControls.includes('log')) {
+        controls.push(
+            m('button.oct-button', { type: 'button', onclick: () => console.debug(o) }, 'Log'),
+        );
+      }
+
       return m(
         'aside.oct-debug',
         m(
           '.oct-debug-controls',
           m(
             '.oct-button-group',
-            m('button.oct-button', { type: 'button', onclick: onSetValue }, 'Value'),
-            actionValueAction,
-            m('button.oct-button', { type: 'button', onclick: onSetComponent }, 'Component'),
-            m('button.oct-button', { type: 'button', onclick: () => console.debug(o) }, 'Log'),
-            ...actions,
+            ...controls,
           ),
         ),
         children,
