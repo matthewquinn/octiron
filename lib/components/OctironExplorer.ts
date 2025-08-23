@@ -90,6 +90,7 @@ export const OctironExplorer: m.ClosureComponent<OctironExplorerAttrs> = ({
           o,
           selector,
           location: attrs.location,
+          initialPresentaionStyle: attrs.presentationStyle,
           availableControls: !!attrs.childControls == false ? undefined : [],
         }));
       } else if (selector.length !== 0) {
@@ -102,6 +103,7 @@ export const OctironExplorer: m.ClosureComponent<OctironExplorerAttrs> = ({
         children = o.root((o) => m(OctironDebug, {
           o, selector,
           location: attrs.location,
+          initialPresentaionStyle: attrs.presentationStyle,
           availableControls: !!attrs.childControls ? undefined : [],
         }));
       } else {
@@ -111,10 +113,17 @@ export const OctironExplorer: m.ClosureComponent<OctironExplorerAttrs> = ({
       }
 
       if (attrs.location != null && selector.length !== 0) {
-        const upSelector = attrs.selector.replace(/\s+([^\s]+)$/, '')
+        const upSelector =
+          attrs.selector.trim().includes(' ')
+            ? attrs.selector.replace(/\s+([^\s]+)$/, '')
+            : '';
         
         upURL = new URL(attrs.location);
-        upURL.searchParams.set('selector', upSelector);
+        if (upSelector != null) {
+          upURL.searchParams.set('selector', upSelector);
+        } else {
+          upURL.searchParams.delete('selector');
+        }
       }
 
       if (attrs.location != null) {
@@ -161,7 +170,7 @@ export const OctironExplorer: m.ClosureComponent<OctironExplorerAttrs> = ({
                   disabled: typeof window === 'undefined',
                   onclick: onSetDebug,
                 }, 'Debug')
-              : m('a', {
+              : m('a.oct-button', {
                   href: debugURL.toString(),
                   onclick: onSetDebug,
                 }, 'Debug'),
@@ -176,25 +185,6 @@ export const OctironExplorer: m.ClosureComponent<OctironExplorerAttrs> = ({
                   href: componentsURL.toString(),
                   onclick: onSetComponents,
                 }, 'Components'),
-
-            // m(
-            //   'button.oct-button',
-            //   {
-            //     type: 'button',
-            //     disabled: typeof window !== undefined || presentationStyle === 'debug',
-            //     onclick: onSetDebug,
-            //   },
-            //   'Debug',
-            // ),
-            // m(
-            //   'a.oct-button',
-            //   {
-            //     type: 'button',
-            //     disabled: typeof window === undefined || presentationStyle === 'components',
-            //     onclick: onSetComponents,
-            //   },
-            //   'Components',
-            // ),
           ),
         ),
         m('pre.oct-explorer-body', children),

@@ -6,7 +6,7 @@ import type { Octiron } from "../types/octiron.ts";
 import { OctironJSON } from "./OctironJSON.ts";
 import { flattenIRIObjects } from "../utils/flattenIRIObjects.ts";
 
-export type OctironDebugDisplayStyle =
+export type OctironDebugPresentationStyle =
   | 'value'
   | 'action-value'
   | 'component'
@@ -16,8 +16,8 @@ export type OctironDebugAttrs = {
   o: Octiron;
   selector?: string;
   location?: URL;
-  initialDisplayStyle?: OctironDebugDisplayStyle;
-  availableControls?: OctironDebugDisplayStyle[];
+  initialPresentationStyle?: OctironDebugPresentationStyle;
+  availableControls?: OctironDebugPresentationStyle[];
 };
 
 export const OctironDebug: m.ClosureComponent<OctironDebugAttrs> = ({
@@ -26,18 +26,18 @@ export const OctironDebug: m.ClosureComponent<OctironDebugAttrs> = ({
   let currentAttrs = attrs;
   let value = attrs.o.value as JSONObject;
   let rendered: m.Children;
-  let displayStyle: OctironDebugDisplayStyle = attrs.initialDisplayStyle ?? 'value';
+  let presentationStyle: OctironDebugPresentationStyle = attrs.initialPresentationStyle ?? 'value';
 
   function onRender(redraw: boolean = true) {
     const { o } = currentAttrs;
-    if (displayStyle === 'value') {
+    if (presentationStyle === 'value') {
       rendered = m(OctironJSON, {
         value,
         selector: currentAttrs.selector,
         location: currentAttrs.location,
       });
     } else if (
-      displayStyle === 'action-value' && (
+      presentationStyle === 'action-value' && (
         o.octironType === 'action' ||
         o.octironType === 'action-selection'
       )
@@ -51,21 +51,21 @@ export const OctironDebug: m.ClosureComponent<OctironDebugAttrs> = ({
 
   function onSetValue(e: MouseEvent & { redraw: boolean }) {
     e.redraw = false;
-    displayStyle = 'value';
+    presentationStyle = 'value';
 
     onRender();
   }
 
   function onSetActionValue(e: MouseEvent & { redraw: boolean }) {
     e.redraw = false;
-    displayStyle = 'action-value';
+    presentationStyle = 'action-value';
 
     onRender();
   }
 
   function onSetComponent(e: MouseEvent & { redraw: boolean }) {
     e.redraw = false;
-    displayStyle = 'component';
+    presentationStyle = 'component';
 
     onRender();
   }
@@ -88,7 +88,7 @@ export const OctironDebug: m.ClosureComponent<OctironDebugAttrs> = ({
       let actionValueAction: m.Children;
       const controls: m.Children = [];
 
-      if (displayStyle === 'component') {
+      if (presentationStyle === 'component') {
         children = m('.oct-debug-body', o.default());
       } else {
         children = m('.oct-debug-body', rendered);
@@ -102,7 +102,11 @@ export const OctironDebug: m.ClosureComponent<OctironDebugAttrs> = ({
         controls.push(
             m('button.oct-button', { type: 'button', onclick: onSetValue }, 'Value'),
         );
-      } else if (availableControls == null || availableControls.includes('action-value')) {
+      } else if (
+        actionValueAction != null && (
+          availableControls == null ||
+          availableControls.includes('action-value')
+      )) {
         controls.push(actionValueAction);
       } else if (availableControls == null || availableControls.includes('component')) {
         controls.push(
