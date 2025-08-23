@@ -55,7 +55,9 @@ export function resolvePropertyValueSpecification({
   }
 
   return {
+    readonly: pvs.readonlyValue,
     required: pvs.valueRequired,
+    name: pvs.valueName,
     min: pvs.minValue,
     max: pvs.maxValue,
     step: pvs.stepValue,
