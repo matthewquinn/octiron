@@ -1,5 +1,6 @@
 import { JsonPointer } from 'json-ptr';
 import m from 'mithril';
+import { EditRenderer } from '../renderers/EditRenderer.ts';
 import { ActionSelectionRenderer } from "../renderers/ActionSelectionRenderer.ts";
 import type { JSONObject, JSONValue } from "../types/common.ts";
 import type { Spec, ActionSelectionParentArgs, ActionSelectionRendererArgs, ActionSelectView, BaseAttrs, CommonParentArgs, CommonRendererArgs, EditComponent, OctironActionSelection, OctironActionSelectionArgs, OctironDefaultArgs, OctironEditArgs, OctironPresentArgs, PayloadValueMapper, Selector, UpdateArgs } from "../types/octiron.ts";
@@ -55,7 +56,7 @@ export function actionSelectionFactory<
     args?: UpdateArgs,
     interceptor = factoryArgs.interceptor,
   ) => {
-    const prev = self.value as JSONObject;
+    const prev = rendererArgs.value as JSONObject;
 
     if (!isJSONObject(prev)) {
       console.warn(`Non object action change intercepted.`);
@@ -82,7 +83,7 @@ export function actionSelectionFactory<
     arg1: PayloadValueMapper<JSONObject> | JSONObject,
     args?: UpdateArgs,
   ): Promise<void> => {
-    const value = self.value;
+    const value = rendererArgs.value;
 
     if (!isJSONObject(value)) {
       throw new Error(`Cannot call update on a non object selection instance`);
@@ -110,7 +111,7 @@ export function actionSelectionFactory<
     arg2?: OctironActionSelectionArgs | ActionSelectView,
     arg3?: ActionSelectView,
   ): m.Children => {
-    if (!isJSONObject(self.value)) {
+    if (!isJSONObject(rendererArgs.value)) {
       return null;
     }
 
@@ -135,6 +136,14 @@ export function actionSelectionFactory<
     if (self.readonly) {
       return self.present(args as OctironPresentArgs<BaseAttrs>);
     }
+
+    return m(EditRenderer, {
+      o: self,
+      args,
+      factoryArgs,
+      parentArgs,
+      rendererArgs,
+    });
 
     const [attrs, component] = selectComponentFromArgs(
       'edit',

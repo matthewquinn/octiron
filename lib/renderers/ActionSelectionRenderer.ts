@@ -14,7 +14,7 @@ export type ActionSelectionRendererAttrs = {
   value: JSONObject;
   actionValue: JSONObject;
   selector: Selector;
-  parentArgs: ActionSelectionParentArgs,
+  parentArgs: ActionSelectionParentArgs;
   args: OctironActionSelectionArgs;
   view: ActionSelectView;
   selectionArgs?: OctironActionSelectionArgs;
@@ -54,10 +54,20 @@ export const ActionSelectionRenderer: m.FactoryComponent<ActionSelectionRenderer
           continue;
         }
 
-        const { rendererArgs, selection, octiron } = instances[selectionResult.pointer];
+        const { rendererArgs, octiron } = instances[selectionResult.pointer];
 
+        const update: Update = (value) => {
+          return parentArgs.updatePointer(
+            selectionResult.pointer,
+            value,
+            selectionArgs,
+          );
+        };
+
+        octiron.value = next.value;
         rendererArgs.value = next.value;
         rendererArgs.spec = next.spec;
+        rendererArgs.update = update;
 
         continue;
       }

@@ -901,6 +901,7 @@ export type SelectionParentArgs = CommonParentArgs & {
 export type ActionParentArgs = CommonParentArgs;
 
 export type Submit = () => Promise<void>;
+
 export type UpdatePointer = (pointer: string, value: JSONValue, args?: UpdateArgs) => void;
 
 export type ActionSelectionParentArgs = CommonParentArgs & {
@@ -935,4 +936,5 @@ export type ActionSelectionRendererArgs = CommonRendererArgs & {
   spec?: Spec;
   actionValue?: Octiron;
   update: Update;
-}
+};
+

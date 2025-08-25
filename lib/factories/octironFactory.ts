@@ -6,11 +6,11 @@ import { isJSONObject } from "../utils/isJSONObject.ts";
 import { unravelArgs } from "../utils/unravelArgs.ts";
 import type { Store } from "../store.ts";
 import { SelectionRenderer } from "../renderers/SelectionRenderer.ts";
+import { PresentRenderer } from '../renderers/PresentRenderer.ts';
 import { getDataType } from "../utils/getValueType.ts";
 import { isIterable } from "../utils/isIterable.ts";
 import { getIterableValue } from "../utils/getIterableValue.ts";
 import { PerformRenderer } from "../renderers/PerformRenderer.ts";
-import { selectComponentFromArgs } from "../utils/selectComponentFromArgs.ts";
 import { isIRIObject } from "../utils/isIRIObject.ts";
 
 const TypeKeys = {
@@ -129,7 +129,7 @@ export function octironFactory<O extends Octiron>(
 
   if (typeKey !== TypeKeys['root']) {
     self.propType = rendererArgs.propType;
-    self.dataType = getDataType(self.value);
+    self.dataType = getDataType(rendererArgs.value);
   }
 
   self.not = (
@@ -227,7 +227,7 @@ export function octironFactory<O extends Octiron>(
       ): m.Children => {
         const [selector, args, view] = unravelArgs(arg1, arg2, arg3);
 
-        if (!isJSONObject(self.value)) {
+        if (!isJSONObject(rendererArgs.value)) {
           return null;
         }
 
@@ -251,36 +251,12 @@ export function octironFactory<O extends Octiron>(
       self.present = (
         args?: OctironPresentArgs<BaseAttrs>,
       ): m.Children => {
-        const [attrs, component] = selectComponentFromArgs(
-          'present',
+        return m(PresentRenderer, {
+          o: self as unknown as Octiron,
+          args: args as OctironPresentArgs,
+          factoryArgs: factoryArgs as OctironPresentArgs,
           parentArgs,
           rendererArgs,
-          args,
-          factoryArgs as OctironPresentArgs,
-        );
-
-        if (component == null) {
-          return null;
-        }
-
-        const { pre, sep, post, start, end, predicate } = Object.assign(
-          {},
-          factoryArgs,
-          args,
-        );
-
-        // deno-lint-ignore no-explicit-any
-        return m(component as any, {
-          o: self,
-          renderType: "present",
-          value: self.value,
-          attrs,
-          pre,
-          sep,
-          post,
-          start,
-          end,
-          predicate,
         });
       };
   }
