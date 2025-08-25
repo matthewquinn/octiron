@@ -122,7 +122,7 @@ export function actionSelectionFactory<
       {
         parentArgs: childArgs as ActionSelectionParentArgs,
         selector,
-        value: self.value,
+        value: rendererArgs.value,
         actionValue: rendererArgs.actionValue.value as JSONObject,
         args,
         view,
@@ -226,7 +226,7 @@ export function actionSelectionFactory<
 
     return parentArgs.updatePointer(
       rendererArgs.pointer,
-      Object.assign({}, self.value, { [type]: nextValue }),
+      Object.assign({}, rendererArgs.value, { [type]: nextValue }),
       args,
     );
   };

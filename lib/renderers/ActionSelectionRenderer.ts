@@ -45,15 +45,6 @@ export const ActionSelectionRenderer: m.FactoryComponent<ActionSelectionRenderer
       nextKeys.push(selectionResult.pointer);
 
       if (instances[selectionResult.pointer] != null) {
-        const next = selectionResult;
-        const prev = instances[selectionResult.pointer].selectionResult;
-
-        if (
-          next.value === prev.value
-        ) {
-          continue;
-        }
-
         const { rendererArgs, octiron } = instances[selectionResult.pointer];
 
         const update: Update = (value) => {
@@ -64,9 +55,8 @@ export const ActionSelectionRenderer: m.FactoryComponent<ActionSelectionRenderer
           );
         };
 
-        octiron.value = next.value;
-        rendererArgs.value = next.value;
-        rendererArgs.spec = next.spec;
+        rendererArgs.value = octiron.value = selectionResult.value;
+        rendererArgs.spec = selectionResult.spec;
         rendererArgs.update = update;
 
         continue;
